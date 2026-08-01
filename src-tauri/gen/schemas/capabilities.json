@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Opening a save and choosing where to export need the file dialog; everything else goes through the app's own commands.","local":true,"windows":["main"],"permissions":["core:default","dialog:allow-open","dialog:allow-save"]}}

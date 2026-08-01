@@ -1,0 +1,12 @@
+[package]
+name = "fm-save"
+version = "0.1.0"
+edition = "2021"
+description = "Reader for Football Manager 26 save files"
+
+[dependencies]
+thiserror = { workspace = true }
+zstd-safe = { workspace = true }
+
+[lints]
+workspace = true

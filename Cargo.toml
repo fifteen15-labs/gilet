@@ -1,0 +1,27 @@
+# Rust workspace. Save-file parsing lives in `crates/*` as pure, Tauri-free
+# library code so it can be tested without booting the app; `src-tauri` is the
+# thin app shell over it.
+[workspace]
+members = ["crates/*", "src-tauri"]
+resolver = "2"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+
+# Parsing untrusted bytes off disk must not panic: a malformed save should
+# surface an error, never abort the app.
+unwrap_used = "deny"
+expect_used = "deny"
+indexing_slicing = "deny"
+
+# Allowed with rationale: the parser deals in byte offsets and widths, where
+# the casts are deliberate and the truncation is the documented format.
+cast_possible_truncation = "allow"
+cast_lossless = "allow"
+module_name_repetitions = "allow"
+
+[workspace.dependencies]
+thiserror = "2"
+zstd = "0.13"
+zstd-safe = "7"

@@ -1,0 +1,106 @@
+@import 'tailwindcss';
+
+@import '@fontsource/ibm-plex-sans-condensed/400.css';
+@import '@fontsource/ibm-plex-sans-condensed/600.css';
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+
+/*
+ * Anorak is an instrument, not a dashboard. The base is a cold slate with a
+ * deliberate blue cast rather than near-black, and there are exactly two
+ * accents, each with one job: hi-vis orange marks what the user chose,
+ * teal marks what the data says. Nothing else is allowed to be bright.
+ */
+@theme {
+	--color-void: #0e1419;
+	--color-panel: #161e26;
+	--color-raised: #1d2833;
+	--color-line: #263340;
+	--color-line-soft: #1e2830;
+
+	--color-bright: #e8eff4;
+	--color-mist: #9fb0be;
+	--color-faint: #61717e;
+
+	/* User intent: shortlisted, selected, focused. */
+	--color-hivis: #ff6a13;
+	--color-hivis-dim: #7a3409;
+
+	/* Data: ability, potential headroom. */
+	--color-signal: #3fbfa8;
+	--color-signal-dim: #1b4a43;
+
+	--font-display: 'IBM Plex Sans Condensed', ui-sans-serif, system-ui, sans-serif;
+	--font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+	--font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+	/* A scouting table is read by scanning, so rows stay tight. */
+	--spacing-row: 2rem;
+}
+
+@layer base {
+	html {
+		background-color: var(--color-void);
+		color-scheme: dark;
+	}
+
+	body {
+		font-family: var(--font-sans);
+		color: var(--color-bright);
+		-webkit-font-smoothing: antialiased;
+	}
+
+	/* Numbers are compared down columns, so they must not shift width. */
+	.tabular {
+		font-family: var(--font-mono);
+		font-variant-numeric: tabular-nums;
+		font-feature-settings: 'tnum';
+	}
+
+	:focus-visible {
+		outline: 2px solid var(--color-hivis);
+		outline-offset: 1px;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		*,
+		*::before,
+		*::after {
+			animation-duration: 0.01ms !important;
+			transition-duration: 0.01ms !important;
+		}
+	}
+}
+
+@layer components {
+	/*
+	 * Column headers and micro-labels: condensed, tracked, uppercase. This is
+	 * the timetable-board voice that separates a specialist tool from a
+	 * generic table.
+	 */
+	.eyebrow {
+		font-family: var(--font-display);
+		font-size: 0.6875rem;
+		font-weight: 600;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-faint);
+	}
+
+	/*
+	 * The undecoded state for ability data. Diagonal hatching reads as
+	 * "no reading available" on real instruments, and keeps the column the
+	 * same visual weight as a populated one so rows stay scannable.
+	 */
+	.hatched {
+		background-image: repeating-linear-gradient(
+			45deg,
+			var(--color-line) 0,
+			var(--color-line) 1px,
+			transparent 1px,
+			transparent 5px
+		);
+	}
+}
