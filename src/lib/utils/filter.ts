@@ -95,6 +95,29 @@ export function matches(player: Player, filters: Filters, shortlisted: ReadonlyS
 	return normalise(player.name).includes(needle) || normalise(player.club).includes(needle);
 }
 
+export type NationOption = { id: number; name: string };
+
+/**
+ * Distinct nations present in the loaded save, named ones alphabetical and the
+ * undecoded tail as raw identifiers at the bottom — an unnamed nation still
+ * groups and filters correctly, it just cannot say which flag it is.
+ */
+export function nationsIn(players: readonly Player[]): NationOption[] {
+	const seen = new Map<number, string>();
+	for (const p of players) {
+		if (!seen.has(p.nation_id)) seen.set(p.nation_id, p.nation);
+	}
+	const named: NationOption[] = [];
+	const unnamed: NationOption[] = [];
+	for (const [id, name] of seen) {
+		if (name === '') unnamed.push({ id, name: `#${id}` });
+		else named.push({ id, name });
+	}
+	named.sort((a, b) => a.name.localeCompare(b.name));
+	unnamed.sort((a, b) => a.id - b.id);
+	return [...named, ...unnamed];
+}
+
 /** Renders a bounded range the way a scout would say it out loud: "CA 120+",
  * "CA up to 140", or "CA 120-140". Null when neither bound is set. */
 function describeRange(label: string, min: number | null, max: number | null): string | null {
@@ -106,7 +129,7 @@ function describeRange(label: string, min: number | null, max: number | null): s
 
 /** Names a shortlist after the search that produced it, so a saved list says
  * what it was rather than "Shortlist 3". */
-export function describeFilters(filters: Filters): string {
+export function describeFilters(filters: Filters, nationName?: string): string {
 	const parts: string[] = [];
 	if (filters.kind === 'players') parts.push('Players');
 	if (filters.kind === 'staff') parts.push('Staff');
@@ -115,7 +138,7 @@ export function describeFilters(filters: Filters): string {
 	if (filters.contract === 'free') parts.push('Free agents');
 	if (filters.contract === 'expiring') parts.push('Expiring contracts');
 	if (filters.position !== null) parts.push(filters.position);
-	if (filters.nationId !== null) parts.push(`nation ${filters.nationId}`);
+	if (filters.nationId !== null) parts.push(nationName ?? `nation ${filters.nationId}`);
 	if (filters.maxAge !== null) parts.push(`Under ${filters.maxAge}`);
 	const ca = describeRange('CA', filters.minAbility, filters.maxAbility);
 	if (ca !== null) parts.push(ca);

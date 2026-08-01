@@ -2,7 +2,7 @@
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { shortlists } from '$lib/classes/Shortlists.svelte';
 	import { savedFilters } from '$lib/classes/SavedFilters.svelte';
-	import { describeFilters, hasAbilityData } from '$lib/utils/filter';
+	import { describeFilters, hasAbilityData, nationsIn } from '$lib/utils/filter';
 
 	let savingPreset = $state(false);
 	let presetName = $state('');
@@ -31,6 +31,8 @@
 	/** Slot order runs back to front, so listing them this way reads like a
 	 * team sheet rather than the file's own ordering. */
 	const POSITIONS = ['GK', 'DL', 'DC', 'DR', 'WBL', 'WBR', 'DM', 'ML', 'MC', 'MR', 'AML', 'AMC', 'AMR', 'ST'];
+	const nations = $derived(nationsIn(scout.players));
+	const nationName = $derived(nations.find((n) => n.id === scout.filters.nationId)?.name);
 	const resultCount = $derived(scout.matching(shortlists.activeMembers).length);
 	const filtered = $derived(
 		scout.filters.query.trim() !== '' ||
@@ -41,6 +43,7 @@
 			scout.filters.maxPotential !== null ||
 			scout.filters.kind !== 'all' ||
 			scout.filters.position !== null ||
+			scout.filters.nationId !== null ||
 			scout.filters.gender !== 'all' ||
 			scout.filters.contract !== 'any' ||
 			scout.filters.shortlistedOnly
@@ -102,6 +105,18 @@
 			<option value={null}>Any position</option>
 			{#each POSITIONS as p (p)}
 				<option value={p}>{p}</option>
+			{/each}
+		</select>
+
+		<select
+			bind:value={scout.filters.nationId}
+			aria-label="Filter by nationality"
+			class="max-w-36 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+				text-[var(--color-mist)] focus:border-[var(--color-hivis)] focus:outline-none"
+		>
+			<option value={null}>Any nation</option>
+			{#each nations as n (n.id)}
+				<option value={n.id}>{n.name}</option>
 			{/each}
 		</select>
 
@@ -287,9 +302,9 @@
 				class="text-xs text-[var(--color-faint)] hover:text-[var(--color-mist)]
 					disabled:cursor-not-allowed disabled:opacity-40"
 				disabled={!filtered}
-				title={filtered ? `Save "${describeFilters(scout.filters)}"` : 'Set a filter first'}
+				title={filtered ? `Save "${describeFilters(scout.filters, nationName)}"` : 'Set a filter first'}
 				onclick={() => {
-					presetName = describeFilters(scout.filters);
+					presetName = describeFilters(scout.filters, nationName);
 					savingPreset = true;
 				}}
 			>
