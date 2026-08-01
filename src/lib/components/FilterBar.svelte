@@ -10,6 +10,9 @@
 	const AGE_PRESETS = [18, 21, 23];
 
 	const abilityKnown = $derived(hasAbilityData(scout.players));
+	/** Gender derives from the save's own squads; without women's football it
+	 * stays unknown and the filter hides rather than lying. */
+	const genderKnown = $derived(scout.players.some((p) => p.female !== null));
 	/** Slot order runs back to front, so listing them this way reads like a
 	 * team sheet rather than the file's own ordering. */
 	const POSITIONS = ['GK', 'DL', 'DC', 'DR', 'WBL', 'WBR', 'DM', 'ML', 'MC', 'MR', 'AML', 'AMC', 'AMR', 'ST'];
@@ -21,6 +24,7 @@
 			scout.filters.minPotential !== null ||
 			scout.filters.kind !== 'all' ||
 			scout.filters.position !== null ||
+			scout.filters.gender !== 'all' ||
 			scout.filters.shortlistedOnly
 	);
 </script>
@@ -51,6 +55,25 @@
 				</button>
 			{/each}
 		</div>
+
+		{#if genderKnown}
+			<div class="flex items-center gap-1">
+				{#each [{ k: 'all', label: 'Everyone' }, { k: 'men', label: 'Men' }, { k: 'women', label: 'Women' }] as opt (opt.k)}
+					<button
+						type="button"
+						class="rounded-[2px] border px-2 py-1 text-xs transition-colors
+							{scout.filters.gender === opt.k
+							? 'border-[var(--color-hivis)] text-[var(--color-hivis)]'
+							: 'border-[var(--color-line)] text-[var(--color-mist)] hover:border-[var(--color-faint)]'}"
+						aria-pressed={scout.filters.gender === opt.k}
+						onclick={() =>
+							(scout.filters.gender = opt.k === 'men' ? 'men' : opt.k === 'women' ? 'women' : 'all')}
+					>
+						{opt.label}
+					</button>
+				{/each}
+			</div>
+		{/if}
 
 		<select
 			bind:value={scout.filters.position}

@@ -28,6 +28,8 @@ export type Player = {
 	position_ratings: number[];
 	/** Short name of the club whose squad lists this person; empty when unattached. */
 	club: string;
+	/** Whether this person is a woman; null when the save can't say. */
+	female: boolean | null;
 	/** Weekly wage in the save's display currency. Null when out of contract. */
 	wage: number | null;
 	/** Contract expiry as YYYY-MM-DD; empty when unknown. */

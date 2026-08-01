@@ -98,7 +98,10 @@
 		class="flex shrink-0 items-center gap-4 border-b border-[var(--color-line)] px-4 pt-7 pb-3"
 		data-tauri-drag-region
 	>
-		<h1 class="font-display text-sm font-semibold tracking-[0.2em] text-[var(--color-bright)] uppercase">
+		<h1
+			class="font-display flex items-center gap-2 text-sm font-semibold tracking-[0.2em] text-[var(--color-bright)] uppercase"
+		>
+			<img src="/logo.png" alt="" class="h-5 w-5" />
 			Gilet
 		</h1>
 

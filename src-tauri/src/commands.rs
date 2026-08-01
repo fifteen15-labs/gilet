@@ -96,6 +96,9 @@ pub struct PlayerRow {
     /// Short name of the club whose first-team squad lists this person, empty
     /// when unattached — free agents, national staff, unresolved records.
     pub club: String,
+    /// Whether this person is a woman, inferred from the forename pool.
+    /// `None` when the save has no women's football to derive the split from.
+    pub female: Option<bool>,
     /// Weekly wage in the save's display currency. `None` when no contract
     /// was found — the unemployed and the retired.
     pub wage: Option<u32>,
@@ -247,6 +250,7 @@ pub fn load_save(
                     .and_then(|eid| club_names.get(&eid).copied())
                     .unwrap_or_default()
                     .to_owned(),
+                female: p.female,
                 wage: p.wage,
                 contract_until: p
                     .contract_until

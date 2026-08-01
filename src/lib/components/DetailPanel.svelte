@@ -41,6 +41,22 @@
 						</dd>
 					</div>
 					<div>
+						<dt class="eyebrow">Club</dt>
+						<dd class="text-sm text-[var(--color-bright)]">{player.club || '—'}</dd>
+					</div>
+					{#if player.wage !== null}
+						<div>
+							<dt class="eyebrow">Wage</dt>
+							<dd class="tabular text-sm text-[var(--color-bright)]">£{player.wage.toLocaleString()}/w</dd>
+						</div>
+					{/if}
+					{#if player.contract_until}
+						<div>
+							<dt class="eyebrow">Contract until</dt>
+							<dd class="tabular text-sm text-[var(--color-bright)]">{player.contract_until}</dd>
+						</div>
+					{/if}
+					<div>
 						<dt class="eyebrow">Current ability</dt>
 						<dd class="tabular text-lg text-[var(--color-bright)]">{player.ability ?? '\u2014'}</dd>
 					</div>
@@ -87,9 +103,6 @@
 					{/if}
 				</button>
 
-				<p class="mt-4 border-t border-[var(--color-line)] pt-3 text-xs leading-relaxed text-[var(--color-faint)]">
-					Position and club are not decoded from the save format yet.
-				</p>
 			{:else if club}
 				<dl class="space-y-3">
 					<div>
@@ -105,10 +118,6 @@
 						<dd class="tabular text-sm text-[var(--color-bright)]">{club.nation_id}</dd>
 					</div>
 				</dl>
-				<p class="mt-5 border-t border-[var(--color-line)] pt-3 text-xs leading-relaxed text-[var(--color-faint)]">
-					Squad lists are not decoded yet, so a club cannot be linked to its players. Nation IDs have not
-					been resolved to names.
-				</p>
 			{/if}
 		</div>
 	</aside>

@@ -166,6 +166,12 @@ impl Save {
                     .collect();
                 squads = squad::scan_squads(&frame.data, &club_ids);
                 link_members(&mut people, &squads, &chain);
+
+                // Gender falls out of the squad structure: squads are
+                // single-gender and the female forename pool is the tail of
+                // the name table, so the split derives from the save itself.
+                let boundary = person::female_forename_boundary(&people, &squads);
+                person::bind_gender(&mut people, boundary);
             }
 
             // Attribute blocks sit ahead of the person they belong to, so they

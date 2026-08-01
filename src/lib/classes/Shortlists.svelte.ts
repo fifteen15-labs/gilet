@@ -66,8 +66,12 @@ class Shortlists {
 		return unique;
 	}
 
-	/** Adds or removes a player on the active list. */
+	/** Adds or removes a player on the active list. Ticking a row before any
+	 * list exists creates one rather than silently doing nothing. */
 	async toggle(playerName: string): Promise<void> {
+		if (!this.active) {
+			await this.create('Shortlist');
+		}
 		const list = this.active;
 		if (!list) return;
 		const players = list.players.includes(playerName)

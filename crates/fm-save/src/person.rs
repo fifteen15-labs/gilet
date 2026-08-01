@@ -32,6 +32,10 @@ pub struct Person {
     /// Entity id of the club whose first-team squad lists this person.
     /// Filled from the squad table by `Save::parse`, `None` for the unattached.
     pub club_eid: Option<u32>,
+    /// Whether this person is a woman, inferred from the forename pool.
+    /// `None` when the save gives no basis for the split — see
+    /// [`female_forename_boundary`].
+    pub female: Option<bool>,
     /// Weekly wage in the save's display currency, from the contract block.
     /// `None` when no contract parses — the unemployed and the retired.
     pub wage: Option<u32>,
@@ -81,6 +85,7 @@ pub fn nation_name(id: u16) -> Option<&'static str> {
         1 => Some("Angola"),
         6 => Some("Cameroon"),
         7 => Some("Cape Verde"),
+        11 => Some("Egypt"),
         15 => Some("Gambia"),
         16 => Some("Ghana"),
         18 => Some("Guinea-Bissau"),
@@ -259,6 +264,7 @@ fn parse_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<(Person, u
             eid: None,
             uid: None,
             club_eid: None,
+            female: None,
             wage: None,
             contract_until: None,
             // Filled in by `Save::parse`, which matches blocks to people once
@@ -361,6 +367,64 @@ pub fn bind_contracts(frame: &[u8], people: &mut [Person]) {
                 }
                 Date::from_day_of_year(day, year)
             });
+    }
+}
+
+/// The gap between squad-median forename ids must be at least this wide to
+/// count as the male/female split. A save without women's football has only
+/// the scatter of one population, whose gaps are far smaller.
+const MIN_GENDER_GAP: u32 = 5_000;
+
+/// Derives the forename id at which the female name pool begins.
+///
+/// FM's forename pool stores female names as its tail: in the reference save
+/// every known man's forename id is at most 246,372 and every known woman's
+/// at least 246,373 ("Kaur", the exclusively female Sikh patronymic, opens
+/// the female block). The exact number varies per database, so it is derived
+/// from the save itself: each squad is single-gender, so squad *median*
+/// forename ids form two clusters, and the widest gap between adjacent
+/// medians is the boundary. Returns `None` when no gap is wide enough —
+/// a save without women's football — in which case gender is unknown, not
+/// assumed.
+#[must_use]
+pub fn female_forename_boundary(people: &[Person], squads: &[crate::squad::Squad]) -> Option<u32> {
+    let by_eid: std::collections::HashMap<u32, u32> = people
+        .iter()
+        .filter_map(|p| Some((p.eid?, p.first_name_id)))
+        .collect();
+
+    let mut medians = Vec::new();
+    for s in squads {
+        let mut ids: Vec<u32> = s
+            .player_eids
+            .iter()
+            .filter_map(|e| by_eid.get(e).copied())
+            .collect();
+        if ids.len() < 5 {
+            continue;
+        }
+        ids.sort_unstable();
+        if let Some(&m) = ids.get(ids.len() / 2) {
+            medians.push(m);
+        }
+    }
+    medians.sort_unstable();
+
+    let (gap, boundary) = medians
+        .windows(2)
+        .filter_map(|w| match w {
+            [a, b] => Some((b - a, a + (b - a) / 2)),
+            _ => None,
+        })
+        .max()?;
+    (gap >= MIN_GENDER_GAP).then_some(boundary)
+}
+
+/// Sets `Person::female` from the derived boundary.
+pub fn bind_gender(people: &mut [Person], boundary: Option<u32>) {
+    let Some(b) = boundary else { return };
+    for p in people.iter_mut() {
+        p.female = Some(p.first_name_id >= b);
     }
 }
 
