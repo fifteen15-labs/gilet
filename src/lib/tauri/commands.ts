@@ -15,6 +15,8 @@ export type Player = {
 	potential: number | null;
 	/** True for players; false for staff. */
 	is_player: boolean;
+	/** The 54 attributes on FM's 1-20 scale. Empty for staff. */
+	attributes: number[];
 };
 
 export type Club = {
@@ -29,12 +31,22 @@ export type SaveSummary = {
 	path: string;
 	players: Player[];
 	clubs: Club[];
+	/** Attribute indices that belong to the goalkeeping set. */
+	goalkeeping_indices: number[];
 	/** The save's in-game date. Null when it could not be read, in which case
 	 * ages fall back to the system clock. */
 	game_date: string | null;
 	frames: number;
 	decompressed_bytes: number;
 	parse_millis: number;
+};
+
+/** Where the file dialogs should open, resolved per platform in Rust. */
+export type Locations = {
+	/** Football Manager's saves folder, when it exists on this machine. */
+	saves: string | null;
+	/** The user's Documents folder. */
+	documents: string | null;
 };
 
 export type ImportResult = {
@@ -62,6 +74,10 @@ export function exportCsv(path: string, rows: Player[]): Promise<void> {
  * which imported names it could not find. */
 export function importCsv(path: string, known: string[]): Promise<ImportResult> {
 	return invoke<ImportResult>('import_csv', { path, known });
+}
+
+export function defaultLocations(): Promise<Locations> {
+	return invoke<Locations>('default_locations');
 }
 
 export function loadShortlists(): Promise<Shortlist[]> {

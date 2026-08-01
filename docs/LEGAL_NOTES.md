@@ -1,4 +1,4 @@
-# Anorak — legal research notes
+# Gilet — legal research notes
 
 **This is research, not legal advice.** I am not a solicitor and this is not a legal
 opinion. It is a sourced survey of the statutes, cases and observable industry
@@ -61,11 +61,15 @@ creates no estoppel — but it is a well-founded basis for expecting to be left 
    databases, no "export all players". This keeps every extraction the *user's* lawful
    act under CDPA s50D and reg 19, and it is the one line the tool community itself
    polices (Genie Scout declines bulk export on EULA grounds).
-2. **Name and market it carefully.** Keep "Anorak"; put "Football Manager" only in a
-   descriptive strapline (TMA 1994 s11(2)(c)); no logos, no mark in the domain, and a
-   clear "not affiliated with or endorsed by Sports Interactive or SEGA" disclaimer.
-   Never position it as an alternative to SI's paid in-game editor — that framing
-   costs him both the trade mark defence and SI's goodwill.
+2. **Keep the mark out of the product name; put it only in the strapline.** This is the
+   holding of *BMW v Technosport* [2017] EWCA Civ 779 — "informative use" (a coined name
+   plus "a save file viewer for Football Manager") is lawful; a *trading style*
+   containing the mark is not, and since 2019 s10(4)(ca) makes trade-name use an express
+   infringing act. No logos, no mark in the domain, clear non-affiliation disclaimer —
+   but note a disclaimer does **not** cure a bad name (*Arsenal v Reed* para 57: Reed had
+   one and lost anyway). **Separately: the product's own name is unchecked**, and it
+   changed twice during this research. "Gilet" is an ordinary word for a garment, so
+   run a class 9 clearance search before committing.
 3. **Stay read-only and never circumvent anything.** No process attachment, no memory
    reading, no touching Denuvo — and **stop immediately if SI ever encrypts the save
    format**, because that single change flips both the UK and US analyses from "no
@@ -90,7 +94,7 @@ come from the project's own `docs/SAVE_FORMAT.md` and `CLAUDE.md`.
 | Does not attach to the game process, no `ReadProcessMemory`, no code injection | Distinguishes it from most existing FM tools (see §7) |
 | Does not decompile or disassemble the game executable | **Critical** — takes s50B and the *LzLabs* problem off the table |
 | Save is **zstd-compressed, not encrypted** | Strong argument no technological protection measure exists |
-| No licence check, DRM or access control bypassed | Denuvo protects the executable; Anorak never touches it |
+| No licence check, DRM or access control bypassed | Denuvo protects the executable; Gilet never touches it |
 | Ships **no game data** — user must own the game and supply their own save | No distribution of SI's copyright works or database |
 | Format derived by inspecting bytes in his own save files | Observation of program *output*, not of program *code* |
 | Goal includes surfacing Current Ability / Potential Ability, which the game hides | The most legally and commercially provocative feature |
@@ -180,7 +184,7 @@ every clause that matters here, so the ambiguity does not change the analysis.
 **Section 21 — Governing law:** England and Wales, exclusive jurisdiction of the
 English courts (California law and arbitration for US/Canada residents).
 
-### 2.3 Reading these against Anorak
+### 2.3 Reading these against Gilet
 
 **Does it prohibit reverse engineering outright? No — 7(e) is expressly subject to
 "except where permitted by law".** That carve-out is doing enormous work, and §3
@@ -193,10 +197,10 @@ clause about third-party utilities as such. Section 6 covers user-generated
 audio-visual content (streams, Let's Plays) and expressly excludes Mods, which go to
 Schedule 2.
 
-**The clause actually aimed at Anorak is 7(h), not 7(e).** This is the single most
+**The clause actually aimed at Gilet is 7(h), not 7(e).** This is the single most
 important finding in this section and it is easy to miss. Clause 7(h) prohibits
 creating "data or executable programs which mimic data or functionality in the
-Product" unless the functionality is provided in an SEGA-authorised Editor. Anorak is
+Product" unless the functionality is provided in an SEGA-authorised Editor. Gilet is
 an executable program that reproduces functionality found in the Product (looking up
 players, reading their attributes) and, in its intended form, surfaces data the
 Product holds. On a literal reading, 7(h) bites.
@@ -211,7 +215,7 @@ Three things make 7(h) worse than 7(e) for him:
    it. See §3.5.
 3. **The "Editors" definition is circular in SEGA's favour.** Functionality is
    permitted only via software "authorised for use … by SEGA". SEGA has not
-   authorised Anorak, so by definition the exception does not apply.
+   authorised Gilet, so by definition the exception does not apply.
 
 Confidence that 7(h) is the primary contractual exposure: **arguable, and I would
 put it high.** Confidence about whether 7(h) is *enforceable*: **uncertain** — see
@@ -287,7 +291,7 @@ achieve the permitted objective".
 
 ### 3.2 Why this matters less than it looks — he did not decompile anything
 
-The question asks me to address this head-on, so: **s50B is irrelevant to Anorak, and
+The question asks me to address this head-on, so: **s50B is irrelevant to Gilet, and
 that is good news, not bad.**
 
 s50B is the messy, condition-laden provision. It only applies to *decompilation* —
@@ -295,7 +299,7 @@ converting object code into something higher-level. It comes with the "permitted
 objective" test, the "readily available" bar, and the prohibition on using the
 information for any other purpose. It is where reverse engineers get into trouble.
 
-Anorak never decompiled the FM executable. It read a data file the program wrote. So
+Gilet never decompiled the FM executable. It read a data file the program wrote. So
 none of s50B's conditions need to be satisfied, and none of its traps apply.
 
 ### 3.3 Does s50BA cover reading a *data file* rather than the *program*?
@@ -337,7 +341,7 @@ no sense as policy.
 **The best authority for the output-vs-code line is *IBM v LzLabs*.** In
 *IBM United Kingdom Ltd v LzLabs GmbH* [2025] EWHC 532 (TCC), O'Farrell J read
 s50BA narrowly and found against the reverse engineers — but the line she drew is
-precisely the line Anorak sits on the right side of:
+precisely the line Gilet sits on the right side of:
 
 > "A lawful user is entitled to observe output…to determine behaviour…They are not
 > entitled to gain access to source or object code and reproduce the expression"
@@ -346,7 +350,7 @@ precisely the line Anorak sits on the right side of:
 
 LzLabs lost because they disassembled IBM object code, transferred code fragments,
 and recreated IBM data structures — the court called it "deliberate and systematic
-disregard of the terms". Anorak does none of that. It observes output. Permission to
+disregard of the terms". Gilet does none of that. It observes output. Permission to
 appeal was refused by the Court of Appeal on 4 July 2025, *LZLabs GmbH v IBM UK Ltd*
 [2025] EWCA Civ 842
 ([Solicitors Journal](https://www.solicitorsjournal.com/sjarticle/lzlabs-v-ibm-court-of-appeal-refuses-permission-to-appeal-intellectual-property-breach)),
@@ -376,7 +380,7 @@ is a high bar after *Football Dataco* (§4.2), but it is not zero.
 
 **What WPL actually did is the point.** WPL had **no access to SAS source code**. It
 studied the program's *behaviour* and its manuals. That is methodologically the same
-thing Anorak did — study observable behaviour and output, infer the structure, write
+thing Gilet did — study observable behaviour and output, infer the structure, write
 an independent implementation.
 
 **And the licence restriction was held void.** Arnold J held that WPL's use of the
@@ -503,7 +507,7 @@ transformation of the work, or a copy control mechanism".
 
 Applying that:
 
-- **Denuvo protects the executable. Anorak never touches the executable.** No
+- **Denuvo protects the executable. Gilet never touches the executable.** No
   circumvention, on any reading. Confidence: **settled**.
 - **zstd compression is not a TPM.** The honest risk here is the phrase "or other
   transformation", which compression arguably is. But the definitional limb is
@@ -515,7 +519,7 @@ Applying that:
   not settled.
 - Note s296ZA and s296ZF(1) both apply to "a copyright work **other than a computer
   program**". Computer programs have their own narrower regime in **s296**, which
-  targets *dealing in* circumvention devices. Anorak is not a circumvention device.
+  targets *dealing in* circumvention devices. Gilet is not a circumvention device.
 - *Nintendo v PC Box* (C-355/12, 23 January 2014) held that video games are "complex
   works" falling under the InfoSoc Directive rather than being excluded as computer
   programs, that "effective technological measure" is construed broadly, **but** that
@@ -605,7 +609,7 @@ Apply that to FM:
   investment in generating those numbers is investment in **creating** data, which
   does not count towards database right.
 
-That is a real argument that the very data Anorak most wants to show — CA/PA — is the
+That is a real argument that the very data Gilet most wants to show — CA/PA — is the
 data least well protected by database right. I want to be honest that this is
 **arguable, not settled**: I found no case applying *BHB* to game-generated
 attribute ratings, the distinction between "creating" and "verifying" is notoriously
@@ -630,7 +634,7 @@ The chain of reasoning:
 
 1. **The user lawfully possesses the save file.** It is on their disk, generated by
    software they bought.
-2. **Anorak copies its contents into RAM.** That is technically "copying" under CDPA
+2. **Gilet copies its contents into RAM.** That is technically "copying" under CDPA
    s17, including transient copies. So a restricted act does occur, and it needs a
    justification.
 3. **s28A (temporary copies) does not help.** It expressly excludes computer programs
@@ -664,7 +668,7 @@ The chain of reasoning:
    > parts…"
 
 **So the user is well covered, and contract cannot take it away.** The important
-structural point: **the acts are the user's, not the developer's.** Anorak ships no
+structural point: **the acts are the user's, not the developer's.** Gilet ships no
 data. Every extraction happens on the user's machine, from the user's own lawfully
 acquired copy, under the user's own licence. He is not extracting anything; he is
 supplying a tool.
@@ -716,7 +720,7 @@ authorising it
 ([judgment PDF](https://www.ip4all.co.uk/wp-content/uploads/cbslimitedvamstradhol.pdf);
 [case note](https://www.casemine.com/judgement/uk/5a8ff87560d03e7f57ec0dc1)).
 
-Anorak is a considerably better case than Amstrad's: it has an obvious primary use
+Gilet is a considerably better case than Amstrad's: it has an obvious primary use
 that infringes nothing at all (viewing your own save), it ships no infringing content,
 and it is not marketed as a way to appropriate SI's database. Confidence: **arguable,
 and strong** — Amstrad is directly on point.
@@ -752,7 +756,7 @@ data**, and those really are different.
 | **Donations for the tool** | Voluntary payments for software *he wrote*, which contains none of SI's content | Low risk |
 | **Selling the data** | Charging for access to SI's player database, or shipping saves/extracts | High risk — this is where database right and 7(a) genuinely bite |
 
-Anorak is squarely the first. It ships no game data (§1). A user without their own FM
+Gilet is squarely the first. It ships no game data (§1). A user without their own FM
 save gets nothing. What a donor is paying for is **his parser and his UI**, which are
 his own copyright. **Nobody is buying SI's data, because none is being supplied.**
 
@@ -774,7 +778,7 @@ Football Manager itself
 
 He is not commercially exploiting Football Manager. He is not renting it out, running
 it in an internet café, reselling it, or charging anyone for access to it. He plays his
-own copy personally, and separately writes his own software. **Donations for Anorak are
+own copy personally, and separately writes his own software. **Donations for Gilet are
 not commercial exploitation of the Product** any more than a paid YouTube channel about
 FM is.
 
@@ -827,33 +831,152 @@ For completeness, since the brief asked. UK fair dealing exceptions split on thi
 | s30(1ZA) quotation | No |
 | s30A parody, caricature, pastiche | No |
 
-The honest position: **none of these is doing meaningful work for Anorak.** His defence
-rests on s50D/s296B and reg 19 (§4.3), not on fair dealing. But if he ever leaned on
-s29 for the *research phase* of format discovery, the donation link would undercut it.
-Another reason the format work being already done and documented is helpful.
+The honest position: **none of these is doing meaningful work for Gilet** — and s29 is
+not merely unhelpful, it is **expressly unavailable**. CDPA s29 carves software reverse
+engineering out of fair dealing altogether
+([legislation.gov.uk](https://www.legislation.gov.uk/ukpga/1988/48/section/29)):
+
+> "(4A) It is **not fair dealing** to observe, study or test the functioning of a
+> computer program in order to determine the ideas and principles which underlie any
+> element of the program (these acts being permitted **if done in accordance with
+> section 50BA**)."
+
+So Parliament routed this conduct deliberately: **s50BA is the exclusive gateway, not
+fair dealing.** That is helpful rather than harmful, because s50BA carries **no
+commerciality requirement at all**, whereas s29 does. The donation link cannot damage a
+defence he was never entitled to use in the first place.
+
+Three further points worth recording, because they are easy to get wrong:
+
+- **s29A (text and data mining) is doubly unavailable**: it requires "the sole purpose
+  of research for a **non-commercial** purpose", *and* s29A(2)(a) re-infringes the moment
+  "the copy is transferred to any other person" — fatal for a distributed tool.
+- **s50C is contractually excludable**, unlike s50B and s50BA. It applies only where
+  copying "is not prohibited under any term or condition of an agreement", and s296A
+  does not protect it. Another reason the argument should rest on s50BA and s50D.
+- **Schedule 1 to the Database Regulations is not a fair dealing provision.** It is
+  headed "**Exceptions to Database Right for Public Administration**" — parliamentary
+  and judicial proceedings, Royal Commissions, statutory registers
+  ([legislation.gov.uk](https://www.legislation.gov.uk/uksi/1997/3032/schedule/1)). The
+  non-commercial fair dealing provision for database right is **reg 20(1) alone**.
 
 ### 5.5 Trade mark: "in the course of trade" — donations probably cross it
 
-Trade mark infringement under TMA 1994 s10 requires use "in the course of trade". This
-does **not** require profit, and the threshold is low — non-profit and voluntary-funded
-activity can still be in the course of trade where it is more than purely private.
+Trade mark infringement under TMA 1994 s10 requires use "in the course of trade". The
+test is from *Arsenal v Reed* (C-206/01) para 40 — use "**in the context of commercial
+activity with a view to economic advantage and not as a private matter**" — restated in
+*Céline* (C-17/06) para 17 as "with a view to gain and not as a private matter".
 
-Practical effect: **a donation link probably does put him in the course of trade.** So
-the "it's just a hobby" argument should not be relied on. The real protection is the
-s11(2)(c) referential-use defence in §6, which does not care whether he trades.
+**Profit is not required, and non-profit status is not a defence.** Two authorities make
+this unusually clear:
 
-Confidence: **arguable**, and I would advise assuming the worse position.
+*Verein Radetzky-Orden* (C-442/07, Grand Chamber), paras 16 and 18:
 
-### 5.6 Tax — small, real, easily handled
+> "**the fact that goods or services are offered on a non-profit-making basis is not
+> decisive.**" … "In modern society, various types of non-profit-making association have
+> sprung up which, **at first sight, offer their services free but which, in reality, are
+> financed through subsidies or receive payment in various forms.**"
 
-HMRC's **trading allowance** exempts up to **£1,000 a year** of trading or casual
-income. Below that, no need to tell HMRC (subject to specific exceptions). Above it,
-he must **register for Self Assessment**
-([gov.uk](https://www.gov.uk/guidance/tax-free-allowances-on-property-and-trading-income)).
+And the closest UK authority, ***APT Training & Consultancy Ltd v Birmingham & Solihull
+Mental Health NHS Foundation Trust* [2019] EWHC 19 (IPEC)**, HHJ Melissa Clarke
+([judgment](https://caselaw.nationalarchives.gov.uk/ewhc/ipec/2019/19)):
 
-Donations for software are very likely trading income rather than gifts, because they
-are connected to something supplied. Practical advice: **track the total**, and if it
-approaches £1,000, register. This is administrative, not risky.
+> **[26]** "…any use of a sign: (i) in the context of commercial activity with a view to
+> economic advantage; (ii) and not as a private matter; **no matter how modest**, will be
+> sufficient to satisfy the requirement for 'use in the course of trade'."
+>
+> **[117]** "…**I am satisfied that there is nothing in the relevant legislation or the
+> authorities requiring the primary aim of a party to be profit.**"
+
+The defendant there was a non-profit NHS trust providing services **free of charge**.
+Infringement was found.
+
+**Where the line actually falls is private vs public**, not free vs paid. *L'Oréal v
+eBay* (C-324/09) para 55: an individual's sale outside "the context of a commercial
+activity" is outside the proprietor's right, but "**owing to their volume, their
+frequency or other characteristics**", sales that "go beyond the realms of a private
+activity" are in the course of trade.
+
+**Honest answer: there is no direct UK or CJEU authority on whether voluntary donations
+for free software constitute use in the course of trade.** None was found. What follows:
+
+1. **"It's free" is not a defence** — *Radetzky* [16]–[18] and *APT* [117]. Note how
+   precisely *Radetzky* [18] describes a donation-funded project: services offered free
+   but "financed … through payment in various forms". **Settled.**
+2. **The donation link makes the "economic advantage" limb easier for a claimant**,
+   given *APT*'s "no matter how modest". **Arguable, but the better view.**
+3. **Removing it would not create a reliable defence.** A publicly distributed desktop
+   application is hard to call a "private matter" under *L'Oréal* [55] either way.
+4. **So the donation link is not the thing to optimise.** The ground that actually works
+   is s11(2), which is entirely **commercial-neutral** — it applies whether or not he
+   trades. Fix the naming (§6.4), not the funding.
+
+*Ironic footnote:* Reed himself was found to be trading while selling scarves that
+buyers treated as "badges of support, loyalty or affiliation", and the CJEU held that
+this perception was immaterial.
+
+### 5.6 Tax — small, real, and the analysis is two-stage
+
+**Stage one: is there a trade at all?** If not, a genuinely unconditional tip is a gift
+and is **not taxable**. HMRC **BIM100110**
+([gov.uk](https://www.gov.uk/hmrc-internal-manuals/business-income-manual/bim100110)):
+
+> "A casual receipt is taxable … where it is received **for a service performed as
+> agreed/arranged for reward**. This contrasts with **a simple gift as a 'thank you'** …
+> where there was no agreement/arrangement/common expectation that such was for reward.
+> **Voluntary gifts are not taxable under the miscellaneous income provisions.**"
+
+**Stage two: if there is a trade, voluntary payments attached to it are taxable.** HMRC
+**BIM41810**
+([gov.uk](https://www.gov.uk/hmrc-internal-manuals/business-income-manual/bim41810)):
+
+> "**voluntary payments or gifts, are not taxable unless they can be attached to a
+> pre-existing source** … **it is the character of the payment in the recipient's hands
+> that determines whether it is taxable** … **Voluntary payments designed in some way to
+> augment the consideration payable for goods or services whether past, present or
+> future, are taxable**…"
+
+The **badges of trade** (BIM20205) map poorly onto "I wrote free software and people
+tipped me" — most are about buying and selling assets — and HMRC itself cautions that
+"the presence or absence of a particular badge is unlikely, by itself, to provide a
+conclusive answer".
+
+**The £1,000 trading allowance**
+([gov.uk](https://www.gov.uk/guidance/tax-free-allowances-on-property-and-trading-income)):
+if gross trading income exceeds £1,000 he must **register for Self Assessment**. Note
+**gross, not net** — £1,100 of donations against £900 of hosting costs is still over the
+line. And it only bites if there is a trade at all.
+
+**Correction worth flagging: the £3,000 figure is not in force.** A rise in the ITSA
+reporting threshold from £1,000 to £3,000 gross was announced on 11 March 2025
+([gov.uk](https://www.gov.uk/government/news/boost-for-side-hustlers-as-300000-people-to-be-taken-out-of-tax-returns-government-announces)),
+but (a) it is a **reporting** threshold, not a tax-free allowance — the trading allowance
+stays at £1,000 and income between the two remains taxable; and (b) gov.uk guidance
+still says £1,000. Commencement is stated only as "within this parliament"; I could not
+verify a date on a primary source.
+
+**Assume HMRC sees it.** Ko-fi, Buy Me a Coffee and Patreon fall within the UK
+implementation of the OECD Model Reporting Rules for Digital Platforms and report
+creator income annually. *(Ko-fi's own guidance is Cloudflare-blocked; secondary.)*
+
+**VAT: unconditional donations are outside the scope.** HMRC **VATSC06110**
+([gov.uk](https://www.gov.uk/hmrc-internal-manuals/vat-supply-and-consideration/vatsc06110)):
+"**If a monetary donation is freely given, it is not consideration for any supply and so
+is outside the scope of VAT** … the donation has to be **unconditional**." The governing
+authority is ***Tolsma* (C-16/93)** — a street musician who solicited and received
+donations. The Court held there was no supply for consideration "**even if the musician
+solicits money and receives sums, in the form of donations, whose amount is however
+neither quantified nor quantifiable**". That is about as close to an on-point authority
+for a tip-jar button as exists. The VAT threshold is £90,000 in any event.
+
+**Practical:** keep donations **genuinely unconditional** — no donor-only features, no
+early access, no tiers, no ad-free build gated behind payment. The moment donors get
+"clearly identifiable benefits", VATSC06110 reclassifies it as sponsorship and the
+*Tolsma* analysis fails. Track the gross figure against £1,000.
+
+Note this cuts against copying Genie Scout's model exactly: its ad-free "g" edition is
+**gated behind a donation**, which is precisely the conditionality that would make the
+payment consideration for a supply.
 
 ### 5.7 The precedent point that should reassure him most
 
@@ -877,6 +1000,57 @@ is close to the least risky thing in this entire document.**
 This is the most tractable area in the document. The law gives a clear, usable answer,
 and the line between safe and unsafe is bright.
 
+### 6.0 Who actually owns what — the register
+
+The register was read directly. **Every "Football Manager" mark is owned by Sports
+Interactive Limited, not SEGA.** No SEGA entity appears as proprietor of any mark
+containing "football manager".
+
+| Number | Mark | Type | Classes | Status |
+| --- | --- | --- | --- | --- |
+| UK00002169952 | FOOTBALL MANAGER / FM 2 / FM 3 / FM 4 (series) | Word | **9 only** | Registered |
+| UK00903563616 | FOOTBALL MANAGER | Word | 9, 16, 25, 28 | Registered |
+| UK00904014718 | FOOTBALL MANAGER | **Figurative** | 9, 16, 25, 28, **41** | Registered |
+| UK00904909933 | FOOTBALL MANAGER | Word | 9, 16, 25 | Registered |
+| UK00903600053 | footballmanager.com | Figurative | 28, 35, 41 | Registered |
+| UK00003335782 | FOOTBALL MANAGER 2019 | Figurative | 9, 41 | Registered |
+| UK00003472962 etc. | SPORTS INTERACTIVE | **Figurative only** | 9, 41 | Registered |
+| UK00003723202 | **FM FC** | Figurative | 9, 25, 41 | Registered |
+
+Three findings that matter:
+
+1. **The plain word mark "FOOTBALL MANAGER" does not cover class 41.** The bare-phrase
+   word registrations cover classes 9/16/25/28, 9/16/25, and class 9 alone. Class 41
+   protection for the bare phrase exists only through the **figurative** mark
+   UK00904014718 — the stylised logo, not the words.
+2. **Neither SEGA nor SI owns "FM".** An exact search returns 115 marks across many
+   owners (FM Approvals LLC, Microsoft, ITV Studios). What SI owns is **"FM FC"**,
+   figurative, from 2022 — materially narrower than "FM".
+3. **"SPORTS INTERACTIVE" has no word-only registration** — all three are logo marks.
+
+Note the pattern: **SI's registered rights are strongest exactly where logo use would
+infringe, and thinnest for the bare words.** That is favourable for descriptive use of
+the phrase and unfavourable for any use of the styling.
+
+The register also tolerates "FOOTBALL MANAGER" inside longer composite marks for
+different products — Gamegou's TOP MANAGER FOOTBALL, ARUKU's INVINCIBLE FOOTBALL
+MANAGER, Dancer Digital's CLUBVERSE FOOTBALL MANAGER MMO are all registered.
+
+SI's own attribution, verbatim from
+[sports-interactive.com/brand](https://www.sports-interactive.com/brand) and the
+[Steam FM26 page](https://store.steampowered.com/app/3551340/Football_Manager_26/):
+
+> "**Football Manager, the Football Manager logo, Sports Interactive and the Sports
+> Interactive logo are either registered trademarks or trademarks of Sports Interactive
+> Limited.**"
+
+Note SI attributes the mark to *itself*, not SEGA — matching the register — and hedges
+with "either registered trademarks or trademarks", consistent with the class-41 gap.
+
+Confidence: **high**, read directly from the register. Two "FM" records
+(WO0000001813892, WO0000001817000, classes 9/36/42) would not load; their classes make
+an SI connection implausible.
+
 ### 6.1 The statutory defence is directly on point
 
 **Trade Marks Act 1994, s11(2)**, as amended by the Trade Marks Regulations 2018/825
@@ -896,11 +1070,37 @@ with effect from 14 January 2019
 > provided the use is **in accordance with honest practices in industrial or commercial
 > matters**."
 
-**s11(2)(c) was added specifically to codify referential use.** Saying "Anorak is a save
+**s11(2)(c) was added specifically to codify referential use.** Saying "Gilet is a save
 file viewer for Football Manager" is using the mark to refer to SI's goods as SI's
-goods, and it is necessary to indicate Anorak's intended purpose. That is what
+goods, and it is necessary to indicate Gilet's intended purpose. That is what
 s11(2)(c) exists for. Confidence: **settled** as to the provision applying; the
 question is always the honest-practices proviso.
+
+**Two 2019 amendments to s10 change the shape of this materially**, and both cut
+against putting the mark in a product name
+([TMA 1994 s10](https://www.legislation.gov.uk/ukpga/1994/26/section/10);
+[Bird & Bird on the changes](https://www.twobirds.com/en/insights/2018/uk/changes-to-the-trade-marks-act)):
+
+- **s10(4)(ca) was inserted**, making it an express infringing act to use a sign "**as a
+  trade or company name or part of a trade or company name**". Product and app names sit
+  squarely in this territory. Before 2019 this had to be argued; now it is on the face
+  of the statute.
+- **s10(6) was repealed.** The old s10(6) was a general referential-use *saving* built
+  into the infringement provision itself. That protection now lives **entirely** in
+  s11(2)(c), which is a **defence subject to the honest-practices proviso**. This is a
+  genuine structural downgrade, not a relabelling: the burden and the proviso now
+  attach where previously there was a carve-out.
+
+Note also that **s11(2)(a), the own-name defence, is now limited to "an individual"** —
+since 2019 a company or trading name gets no own-name defence at all. Irrelevant while
+he is a sole hobbyist; relevant if he ever incorporates.
+
+**And s10(3) is in play regardless of confusion.** FOOTBALL MANAGER plainly has a UK
+reputation, and *L'Oréal v Bellure* (C-487/07) held at para 50 that taking unfair
+advantage "does not require that there be a likelihood of confusion", catching a party
+who "seeks by that use to **ride on the coat-tails of the mark with a reputation**".
+s11(2) defends against s10(3) too — but branding that leans on FM's pull rather than
+merely stating compatibility is exposed even where nobody is confused.
 
 ### 6.2 The honest practices test — the four ways to lose it
 
@@ -920,16 +1120,16 @@ Use is **not** in accordance with honest practices where:
 *BMW v Deenik* (C-63/97) established the same principle earlier for services —
 an independent garage may advertise that it services BMWs.
 
-Map these onto Anorak:
+Map these onto Gilet:
 
-| Gillette limb | Anorak's position | Risk |
+| Gillette limb | Gilet's position | Risk |
 | --- | --- | --- |
 | Commercial connection | Cured by a prominent disclaimer + distinctive own name | Low |
 | Unfair advantage | Using "Football Manager" in a *domain* or *product name* would be | **Controllable** |
 | Discredit | Avoid "SI hides this from you" framing | Low |
 | Imitation/replica | Do **not** market as an alternative to SI's official Editor | **Watch this** |
 
-The fourth limb is the sharp one and it connects to §8.2: **positioning Anorak as a
+The fourth limb is the sharp one and it connects to §8.2: **positioning Gilet as a
 free substitute for SI's £7.49 in-game editor is exactly the framing that forfeits the
 honest-practices defence.** FM Live Editor markets itself as a "High-octane alternative
 to the official In-Game Editor" (§7.6) — that is the thing not to copy.
@@ -954,7 +1154,7 @@ goodwill gesture, SEGA maintaining throughout that it **did not need a licence**
 [VGC](https://www.videogameschronicle.com/news/football-manager-will-no-longer-use-the-manchester-united-name-following-a-trademark-dispute/)).
 
 So SI/SEGA have publicly and formally advanced **precisely the referential-use argument
-Anorak would rely on**. That does not bind them, but it makes an aggressive trade mark
+Gilet would rely on**. That does not bind them, but it makes an aggressive trade mark
 claim against a descriptive strapline awkward for them, and it is worth knowing.
 
 Two further lessons from that case:
@@ -966,58 +1166,161 @@ Two further lessons from that case:
   packs*.** Third-party FM add-ons featured in the litigation as a grievance — against
   SI, not against the tool makers.
 
-### 6.4 What is safe and what crosses the line
+### 6.4 The sharpest distinction: product NAME vs descriptive strapline
 
-**Safe:**
+This is not a matter of degree. It is the holding of the leading modern UK case, and it
+is **Court of Appeal** authority.
 
-- Product name **"Anorak"** — distinctive, unrelated, no implication of origin.
-- Strapline: *"A save file viewer for Football Manager"* — textbook s11(2)(c).
-- *"Football Manager is a trade mark of Sports Interactive Limited. This tool is not
-  affiliated with or endorsed by Sports Interactive or SEGA."*
-- Domain `anorak.app` or similar with no mark in it.
-- Plain-text references to "FM26" in changelogs to indicate compatibility.
+***Bayerische Motoren Werke AG v Technosport London Ltd* [2017] EWCA Civ 779**, Floyd
+LJ ([judgment](https://caselaw.nationalarchives.gov.uk/ewca/civ/2017/779)), para 18:
 
-**Crosses the line:**
+> "The distinction is between uses which convey the true message **'my business provides
+> a service which repairs BMWs and/or uses genuine BMW spare parts'** and those which
+> convey the false message **'my repairing service is commercially connected with BMW'**.
+> … For convenience I call the former message **'informative use'** and the latter
+> **'misleading use'**."
 
-- **"Football Manager" or "FM" in the product name** — e.g. "FM Anorak", "Football
-  Manager Scout". This is use as a badge of origin, not reference.
-- **Any domain containing the mark** — `fmanorak.com`, `footballmanagertools.com`.
-  Domains signal origin strongly, and they also expose him to a cheap dispute-
-  resolution complaint that costs SEGA very little to bring.
-- **SI or SEGA logos, the FM wordmark, or FM's distinctive styling.** Logos are figurative
-  marks; there is no descriptive necessity to reproduce them, so limb 2 of *Gillette*
-  fails immediately.
-- **Game screenshots** in marketing.
-- Anything implying endorsement, partnership, or official status.
+And para 31, which is the one that governs naming:
 
-### 6.5 Passing off, and whether disclaimers work
+> "the use of a trade mark within a trading style in this way, and **without further
+> explanation, is naturally taken by the average consumer as an identifier of the
+> business** and the services it provides."
 
-Separately from registered marks, **passing off** requires the classic trinity from
-*Reckitt & Colman v Borden* ("Jif Lemon"): goodwill, misrepresentation, and damage.
-Follow §6.4 and there is no misrepresentation as to origin, so the claim does not get
-off the ground.
+Technosport was a genuine independent BMW repairer, and its factual *descriptions* of
+what it did were fine. What infringed was the trading style **"TECHNOSPORT–BMW"** on its
+van, the Twitter handle **@TechnosportBMW**, and the BMW roundel and M logos on signage
+and business cards. The court accepted Technosport could have described its services
+accurately in other ways — such as "BMW repair specialist" used **"in a manner visually
+distinct from the name Technosport"**
+([D Young analysis](https://www.dyoung.com/en/knowledgebank/articles/bmwvtechnosport-1)).
 
-**Do disclaimers work?** Partially, and he should be realistic. A disclaimer is
-**good evidence on the honest-practices proviso and on the misrepresentation limb of
-passing off** — it shows he took care not to imply a connection. It is **not a cure**
-for a name or domain that itself misrepresents origin: courts have repeatedly held that
-a disclaimer buried at the bottom of a page does not undo a confusing brand. The
-sequence matters — **choose a non-infringing name first, then disclaim.** A disclaimer
-is a seatbelt, not a licence.
+Mapping onto Gilet:
 
-### 6.6 What I could not verify
+| Formulation | Risk | Why |
+| --- | --- | --- |
+| **"Gilet"** + strapline "a save file viewer for Football Manager" | **Low** | Informative use; s11(2)(b) and (c); *Gillette* necessity satisfied — you cannot state what it reads without naming the game |
+| "Gilet for Football Manager" | **Low–moderate** | Still descriptive, but "for X" bolted to the name edges toward a trading style. Keep it typographically subordinate |
+| "Football Manager Save Viewer" | **High** | Mark inside the product name = trading style = s10(4)(ca) + *Technosport* para 31 |
+| "FM Gilet" / "Gilet FM" | **Moderate** | SI holds no "FM" registration — but "FM FC" and passing off still bite |
+| "Gilet FM26" | **Moderate–high** | SI uses FM26 as official branding; adjacency implies an official companion product |
 
-**I did not confirm the UK IPO register entries for "FOOTBALL MANAGER", "SPORTS
-INTERACTIVE" or "FM".** The register search was not completed, so I cannot give
-registration numbers, owners or classes. This is stated as a gap rather than assumed.
+The instruction from *Technosport* is precise and cheap to follow: **make the name
+visually distinct from the descriptive line, and be seen to have made that
+distinction.** *Gillette* para 46 says the court weighs exactly this — "the circumstances
+in which a distinction is made between that mark and the mark or sign of the third
+party, and **the effort made by that third party to ensure that consumers distinguish
+its products**".
 
-What can be said: SEGA/SI clearly assert rights in "Football Manager" (SI is named as
-the proprietor in third-party disclaimers such as MacScout26's), and Manchester United
-held EU registrations covering computer software and games in the litigation above. It
-would be sensible to run the register search at
-[trademarks.ipo.gov.uk](https://trademarks.ipo.gov.uk/) before launch, and to check
-that **"Anorak"** itself is clear in class 9 — a check that has also not been done.
-Confidence in the underlying analysis: **high**; in the register specifics: **unverified**.
+### 6.5 Domains
+
+A domain is riskier than the app name, because it carries none of the surrounding
+context that saves a strapline.
+
+**WIPO Jurisprudential Overview 3.0**, §2.5.1
+([PDF](https://www.wipo.int/export/sites/www/amc/en/docs/overview3.pdf)):
+
+> "**Even where a domain name consists of a trademark plus an additional term** (at the
+> second- or top-level), UDRP panels have largely held that such composition **cannot
+> constitute fair use if it effectively impersonates or suggests sponsorship or
+> endorsement** by the trademark owner."
+
+§2.7.2 adds that a general right to run a fan site "does not necessarily extend to
+registering or using a domain name that is identical to the complainant's trademark".
+The **Oki Data** test at §2.8.1 requires that "the site must accurately and prominently
+disclose the registrant's relationship with the trademark holder".
+
+For `.uk`, the **Nominet DRS Policy**
+([PDF](https://media.nominet.uk/wp-content/uploads/2017/10/17150434/final-proposed-DRS-policy.pdf))
+§5.1.2 and §5.1.6 make confusing or exact-match registrations abusive; §8.1.1.3 and
+§8.1.2 provide fair-use defences, but §8.2 refers to sites operated **"solely"** in
+tribute or criticism.
+
+*BT v One In A Million* [1999] 1 WLR 903 (CA) held that mere registration of a domain
+corresponding to a well-known mark can be passing off — the "instrument of fraud"
+doctrine. *(Sourced from a [secondary summary](https://www.casemine.com/judgement/uk/5a938b3f60d03e5f6b82bbd8); BAILII blocks automated access.)*
+
+**Fine:** `gilet.app`, `getgilet.dev`. **Not fine:** `footballmanager-tools.com`,
+`fmsaveviewer.com` — §2.5.1 is explicit that trade-mark-plus-descriptive-term does not
+rescue you.
+
+### 6.6 Logos — the clearest red line, and SI says so itself
+
+Do not use the SI logo, the SEGA logo, the Football Manager logo, or FM's wordmark
+styling. *Technosport* is directly on point: consumers take logos as displayed only by
+authorised businesses. Recall from §6.0 that SI's registered rights are **strongest
+exactly here** — SPORTS INTERACTIVE exists only as figurative marks, and class-41
+protection for the bare phrase runs through the figurative mark.
+
+SI's own brand terms, verbatim
+([sports-interactive.com/brand](https://www.sports-interactive.com/brand)):
+
+> "The use of our brand resources must be to promote Sports Interactive in the form in
+> which it is published. Therefore, **you are not permitted to use any images, logos or
+> any other form of SI that has been modded in any way.** … **Any logos or branding found
+> elsewhere online are not approved for use.**"
+
+Also avoid **game screenshots** in marketing — a copyright question rather than a trade
+mark one, but it points the same way.
+
+### 6.7 Passing off
+
+Independent of registration, and the reason "FM26" is a risk despite no registration —
+SI has goodwill in it. The classic trinity from *Reckitt & Colman Products Ltd v Borden
+Inc* [1990] 1 WLR 491 (HL), Lord Oliver: (1) **goodwill or reputation** attached to the
+get-up such that it is "recognised by the public as distinctive specifically of the
+plaintiff's goods"; (2) **a misrepresentation** (whether or not intentional) leading the
+public to believe the defendant's goods are the claimant's; (3) **damage**
+([summary](https://en.wikipedia.org/wiki/Reckitt_%26_Colman_Products_Ltd_v_Borden_Inc)
+— the 1990 judgment predates free full-text availability).
+
+Follow §6.4 and there is no misrepresentation as to origin, so the claim fails at limb 2.
+
+### 6.8 Do disclaimers work? Not as much as people think
+
+**No — and the authority is unusually direct.** In *Arsenal v Reed* (C-206/01), Reed
+**had** a disclaimer, quoted at para 17 of the judgment: a large sign stating the logos
+were "used solely to adorn the product and does not imply or indicate any affiliation or
+relationship with the manufacturers or distributors of any other product". He lost
+anyway. Para 57:
+
+> "**That conclusion is not affected by the presence on Mr Reed's stall of the notice**
+> stating that the goods at issue … are not official Arsenal FC products… **Even on the
+> assumption that such a notice may be relied on by a third party as a defence** … there
+> is a clear possibility … that some consumers, **in particular if they come across the
+> goods after they have been sold by Mr Reed and taken away from the stall where the
+> notice appears**, may interpret the sign as designating Arsenal FC as the undertaking
+> of origin…"
+
+The Court did not even concede that a notice *can* be a defence — it assumed it and
+still found infringement. **The stated reason is portability**, and the digital analogue
+is exact: a README disclaimer does not travel with a screenshot, a search result, a
+Discord link, an app window title, or a forum post.
+
+**So sequencing matters.** A disclaimer is worth having — it is evidence of the "effort …
+to ensure that consumers distinguish" under *Gillette* para 46, and it is a *required
+element* of legitimate nominative use under Oki Data. But it is most useful precisely
+where the underlying use is **already informative**. Choose a non-infringing name first;
+then disclaim. A disclaimer is a seatbelt, not a licence.
+
+### 6.9 A 2026 case linking the EULA to the trade mark defence
+
+Worth flagging because it connects §3 to §6 in a way that is easy to miss.
+
+In ***Banham Patent Locks Ltd v Rogers* [2026] EWHC 528 (Pat)**, Bacon J held that the
+s11(2) honest-practices defence **failed where the advertised services included
+patent-infringing activity** — a defendant could not rely on honest commercial practices
+where the advertisement promotes services that are themselves unlawful
+([Lewis Silkin analysis](https://www.lewissilkin.com/insights/2026/04/14/on-your-marks-defence-of-honest-commercial-practices-is-inapplicable-where-trade-102mpkj)).
+
+**Why this matters:** if a court concluded the underlying activity breached EULA clause
+7(h) (§3.5) *and* that this amounted to relevant unlawfulness, *Banham* suggests the
+trade mark defence could fall with it. The counterweights are real — 7(e)'s "except
+where permitted by law" carve-out, s296A voiding contrary terms, and the fact that
+breach of contract is not illegality in the sense *Banham* addressed — but the linkage
+is live and nobody should assume the two questions are independent.
+
+Confidence: **arguable**; a single first-instance decision, read via a law-firm summary
+rather than the judgment itself.
 
 ---
 
@@ -1065,7 +1368,7 @@ dispute about club crest and name usage which settled — nothing to do with too
 - Author is **Eugene Tarabanovsky** (*correction to the brief's premise: not
   "Tarasenko"; no evidence for "Nizzy"*).
 - It **openly advertises "observing attributes invisible in FM"** — i.e. exactly the
-  CA/PA reveal Anorak is aiming at.
+  CA/PA reveal Gilet is aiming at.
 - **Monetisation is donationware, not a licensed sale** — a free build with two banner
   ads, and an ad-free "g" edition obtained by donating, with "donations handled by
   Eugene" personally. *This is a near-exact match for the "Buy Me a Coffee" model, run
@@ -1097,7 +1400,7 @@ not a legal ruling.
   / ~€11.04/year subscription ([fmrte.com/fmrte](https://www.fmrte.com/fmrte/)).
   Licensor is **BraCa Soft** (*correction: I could not verify "Ruben Gonzalez"*).
 - It attaches to the running game process and **writes** to saves in real time —
-  vastly more invasive than Anorak.
+  vastly more invasive than Gilet.
 - Its own EULA concedes the point in terms:
 
   > "FMRTE is an unofficial editor for Football Manager and **it's use might be against
@@ -1182,7 +1485,7 @@ archived/disabled status):
 `dylanvir/fm-save-parser` is the notable one: a repository whose **stated purpose is
 publicly documenting FM's save binary format**, untouched. `Einzigart/MacScout26` is
 notable for a different reason — it is native macOS FM26 save scouting, i.e. **direct
-competition for Anorak's exact niche**, and it is alive.
+competition for Gilet's exact niche**, and it is alive.
 
 There is also a public Thunderstore mod database for FM26 including an official BepInEx
 pack, and a free "FM26 Player Export" plugin that dumps player lists to CSV/HTML
@@ -1224,7 +1527,7 @@ paper one.
 ### 8.0 A live template worth copying
 
 Before the list: **`Einzigart/MacScout26`** is a currently-live, public GitHub project
-doing almost exactly what Anorak proposes — native macOS FM26 save parsing, with a
+doing almost exactly what Gilet proposes — native macOS FM26 save parsing, with a
 **Ko-fi tip link** — and its README carries this notice
 ([GitHub](https://github.com/Einzigart/MacScout26)):
 
@@ -1237,19 +1540,48 @@ name**; affiliation is expressly denied; the mark is acknowledged as SI's. It is
 closed-source under a proprietary licence. This is the pattern to follow, and someone
 is already running it publicly in the same niche without incident.
 
+**An even closer match — same platform niche, same funding model — is
+`mavarobli/FMSuperScout`** ([GitHub](https://github.com/mavarobli/FMSuperScout)), an FM26
+save-file scouting tool with a Ko-fi link. Its README structure is worth copying almost
+verbatim:
+
+> "**FMSuperScout**" *(heading — coined name alone)*
+> "A fast, open source scouting tool for **Football Manager 26** (Windows)." *(game named
+> only in the descriptive line)*
+> "## Support — FMSuperScout is free and stays free. If it saved you an hour of squinting
+> at slow menus, you can **buy me a coffee**. If not, it keeps working anyway."
+> "## Disclaimer — **Not affiliated with Sports Interactive or SEGA. For personal,
+> single-player use. Football Manager is a trademark of Sports Interactive.**"
+
+Four things it gets right, all of which map onto the analysis above: coined name in the
+heading with the game named only in the descriptive line (*Technosport*, §6.4); the
+donation framed as **genuinely unconditional** — "it keeps working anyway" (*Tolsma* /
+VATSC06110, §5.6); an express **personal, single-player use** scope statement; and trade
+mark attribution to SI, correctly (§6.0).
+
 By contrast `dylanvir/fm-save-parser` — "a clean-room parser for Football Manager 2024
 save files" — carries **no trademark disclaimer at all** and is also untouched
 ([GitHub](https://github.com/dylanvir/fm-save-parser)). Note its framing though:
-"clean-room" is a good word to be able to use truthfully.
+"clean-room" is a good phrase to be able to use truthfully.
+
+**One unverified but supportive datapoint.** SI's own community house rules reportedly
+permit optional donations for fan content while forbidding paywalling — donations
+"need to be 100% optional and no content is to be locked (or delayed) behind a
+donation", and "paid only downloads … are not allowed". The forum
+([house rules](https://community.sports-interactive.com/forums/forum/265-house-rules-and-forum-guidelines/))
+is Cloudflare-protected and **could not be loaded**; this is from search snippets only
+and should be verified before being relied on. If accurate it is directly on point: SI's
+own stated norm is that a tip jar is fine and a paywall is not — which is exactly the
+line *Tolsma* draws for VAT, from an entirely different direction.
 
 ### 8.1 Naming and presentation
 
-- **Keep "Anorak" as the product name.** It is distinctive, unrelated to SI's marks,
+- **Keep "Gilet" as the product name.** It is distinctive, unrelated to SI's marks,
   and carries no implication of endorsement. Do not rename to anything containing
-  "FM" or "Football Manager". *(Worth a separate check that "Anorak" itself is clear
+  "FM" or "Football Manager". *(Worth a separate check that "Gilet" itself is clear
   of conflicting UK marks in class 9 — that check has not been done.)*
 - **Use the mark descriptively, in the strapline, not the title.** "A save file
-  viewer for Football Manager" is referential use. "Anorak Football Manager Scout" is
+  viewer for Football Manager" is referential use. "Gilet Football Manager Scout" is
   not.
 - **Never use SI or SEGA logos, the FM wordmark, or FM's typography, colours or UI
   styling.** Logos are where descriptive use defences fall apart fastest.
@@ -1258,7 +1590,7 @@ save files" — carries **no trademark disclaimer at all** and is also untouched
   complaint becomes available.
 - **Ship an explicit disclaimer** on the site, in the README, and in the app's About
   screen. Copy the MacScout26 wording; it is well judged.
-- **Never use screenshots of the game itself** in marketing. Screenshots of *Anorak's
+- **Never use screenshots of the game itself** in marketing. Screenshots of *Gilet's
   own UI* are yours.
 
 ### 8.2 Marketing copy — the cheapest and most important control
@@ -1464,7 +1796,7 @@ the essential step defense"
 *MDY* applied this to a game: WoW players are licensees. The SEGA EULA satisfies all
 three Vernor factors comfortably.
 
-But §117 is beside the point. It addresses copying *the program*. Anorak does not
+But §117 is beside the point. It addresses copying *the program*. Gilet does not
 install, run, adapt or copy FM's executable. And a save file is data generated on the
 user's machine by their own play — there is a strong argument the user owns that copy
 even while merely licensing the binary.
@@ -1509,7 +1841,7 @@ not alter or copy WoW software"
 - **Breach a covenant** → breach of contract only → actual damages, likely nominal
   for a free tool.
 
-Anorak is in a **stronger position than Glider**: it does not run alongside the game,
+Gilet is in a **stronger position than Glider**: it does not run alongside the game,
 does not automate play, touches no live server, evades no anti-cheat, and does not
 alter or copy the game software.
 
@@ -1592,7 +1924,7 @@ What is left is **clause 7(h)**:
 > "create data or executable programs which mimic data or functionality in the Product
 > unless such functionality is provided to you in the Editors"
 
-It is the one clause aimed squarely at what Anorak *is*, rather than at how it was
+It is the one clause aimed squarely at what Gilet *is*, rather than at how it was
 built. And it is dangerous for three specific reasons:
 
 1. **No "except where permitted by law" carve-out** — unlike 7(e), which concedes the
@@ -1601,7 +1933,7 @@ built. And it is dangerous for three specific reasons:
    studying, testing*, back-ups and s50B decompilation. 7(h) restricts *creating a
    program*. That is a different act, and the statutory list is closed.
 3. **The "Editors" definition is circular** — the exception applies only to software
-   "authorised … by SEGA", which Anorak by definition is not.
+   "authorised … by SEGA", which Gilet by definition is not.
 
 **Why it is nonetheless survivable:** the consequence is a **breach of contract claim
 against him personally**, not copyright infringement. No statutory damages, no
@@ -1661,7 +1993,15 @@ Stated explicitly rather than papered over.
 | Gap | Status |
 | --- | --- |
 | **An FM26-specific EULA** | `privacy.sega.com/en/fm26-eula-…` returns **404**. FM26's Steam EULA link resolves to `privacy.sega.com/en/fm_eula`, which serves the **SEGA Europe EULA effective 12 Dec 2024**. I infer that governs FM26; SEGA does not say so in terms. **Re-check before relying on it.** |
-| **UK IPO register entries** | Did not complete the register search. No registration numbers, owners or classes for "FOOTBALL MANAGER", "SPORTS INTERACTIVE" or "FM". Also unchecked: whether **"Anorak"** is clear in class 9. |
+| **The product's own name** | ⚠️ **Not checked, and it changed twice during this research** (Anorak → Anorac → **Gilet**). §6 addresses whether the product may *refer to* SI's marks; it does **not** establish that the product's own name is clear. **"Gilet" is an ordinary dictionary word for a garment**, so it is materially more likely to collide with existing class 9 / class 25 registrations than a coined term would be. **Run this check at [trademarks.ipo.gov.uk](https://trademarks.ipo.gov.uk/) before committing.** |
+| **Two "FM" register records** | WO0000001813892 and WO0000001817000 (mark text "FM", classes 9/36/42) would not load, so their proprietors are unconfirmed. Their classes make an SI connection implausible. |
+| **Article 14 EUTMR verbatim** | EUR-Lex bot-blocked; CELLAR returned 404. The operative UK provision s11(2)(c) **is** verified verbatim with its amendment provenance, and post-Brexit EUTMs no longer cover the UK, so this does not affect the analysis. |
+| **Full text of *Reckitt & Colman* (1990) and *BT v One In A Million* (1998)** | BAILII uses anti-bot proof-of-work; CaseMine returns 403. Both cited from secondary summaries. |
+| **SI's community house rules on donations** | Cloudflare-blocked; from search snippets only. Verify before relying on it (§8.0). |
+| **Commencement date for the £3,000 SA reporting threshold** | Only "within this parliament" appears on gov.uk. Secondary sources say 2027/28; unverified. |
+| **Any authority on donations and "in the course of trade"** | **None exists.** The §5.5 analysis is built by analogy from *Radetzky*, *APT* and *L'Oréal v eBay*. |
+| **Any Creative Commons guidance on donation buttons under NC** | Searched the CC FAQ and the NonCommercial interpretation wiki in full for "donat", "advertis", "fundrais" — **zero hits.** CC has published nothing on tip jars. Relevant only if Gilet ever consumes NC-licensed inputs (fonts, art, data); the safe course is to avoid them. |
+| **"Commercial purpose" in the database right context** | No IPO or EU guidance found further defining it beyond reg 20(1)'s bare wording. A genuine gap. |
 | **Miles Jacobson / official SI statements on third-party tools** | Searched interviews, X/Twitter, LinkedIn and the SI forums. **Found nothing.** Reported as searched-and-not-found, not as "he never commented" — his accounts and 20+ years of forum posts are not fully indexed. |
 | **Private cease-and-desist letters** | The GitHub DMCA corpus covers only published DMCA notices to GitHub. Private letters, notices to other hosts, and contract/trade mark claims outside the DMCA process **would not appear**. Zero published takedowns ≠ zero enforcement. |
 | **Whether SI licenses player data from third parties** | The brief assumed this. I could **not** verify it and the evidence points the other way — SI's attribute data comes from its own ~1,300-strong researcher network, and its FM26 licensing announcements cover leagues, clubs and competitions only. |
@@ -1698,6 +2038,19 @@ Stated explicitly rather than papered over.
 - *CBS Songs v Amstrad* [1988] UKHL 15 — [judgment PDF](https://www.ip4all.co.uk/wp-content/uploads/cbslimitedvamstradhol.pdf)
 - *OBG Ltd v Allan* [2007] UKHL 21 — [House of Lords](https://publications.parliament.uk/pa/ld200607/ldjudgmt/jd070502/obg-1.htm)
 - *Manchester United v SEGA & SI* — [William Fry](https://www.williamfry.com/knowledge/manchester-united-settle-trade-mark-dispute-with-sega/)
+- *BMW v Technosport London* [2017] EWCA Civ 779 — [judgment](https://caselaw.nationalarchives.gov.uk/ewca/civ/2017/779) · [D Young](https://www.dyoung.com/en/knowledgebank/articles/bmwvtechnosport-1)
+- *APT Training v Birmingham & Solihull MH NHS FT* [2019] EWHC 19 (IPEC) — [judgment](https://caselaw.nationalarchives.gov.uk/ewhc/ipec/2019/19)
+- *Banham Patent Locks v Rogers* [2026] EWHC 528 (Pat) — [Lewis Silkin](https://www.lewissilkin.com/insights/2026/04/14/on-your-marks-defence-of-honest-commercial-practices-is-inapplicable-where-trade-102mpkj)
+- *Arsenal v Reed* (C-206/01) · *Céline* (C-17/06) · *Radetzky-Orden* (C-442/07) · *L'Oréal v eBay* (C-324/09) · *L'Oréal v Bellure* (C-487/07) · *BMW v Deenik* (C-63/97) · *Tolsma* (C-16/93) — CJEU texts via the EU Publications Office CELLAR service, `http://publications.europa.eu/resource/celex/<CELEX>.ENG`
+
+**Trade mark, domains and tax**
+
+- [TMA 1994 s10](https://www.legislation.gov.uk/ukpga/1994/26/section/10) · [s11](https://www.legislation.gov.uk/ukpga/1994/26/section/11) · [IPO consolidated TMA (Aug 2024)](https://assets.publishing.service.gov.uk/media/66d6f1b6c52d5fb4c82ddd9c/Consolidated-Trade-Marks-Act-1994-August-2024.pdf)
+- [UK IPO register search](https://trademarks.ipo.gov.uk/) · [SI brand terms](https://www.sports-interactive.com/brand)
+- [WIPO Jurisprudential Overview 3.0](https://www.wipo.int/export/sites/www/amc/en/docs/overview3.pdf) · [Nominet DRS Policy](https://media.nominet.uk/wp-content/uploads/2017/10/17150434/final-proposed-DRS-policy.pdf)
+- [CDPA s29 (incl. s29(4A))](https://www.legislation.gov.uk/ukpga/1988/48/section/29) · [s29A](https://www.legislation.gov.uk/ukpga/1988/48/section/29A) · [s30A](https://www.legislation.gov.uk/ukpga/1988/48/section/30A) · [Database Regs Sch 1](https://www.legislation.gov.uk/uksi/1997/3032/schedule/1)
+- HMRC [BIM100110](https://www.gov.uk/hmrc-internal-manuals/business-income-manual/bim100110) · [BIM41810](https://www.gov.uk/hmrc-internal-manuals/business-income-manual/bim41810) · [BIM20205 badges of trade](https://www.gov.uk/hmrc-internal-manuals/business-income-manual/bim20205) · [VATSC06110](https://www.gov.uk/hmrc-internal-manuals/vat-supply-and-consideration/vatsc06110) · [trading allowance](https://www.gov.uk/guidance/tax-free-allowances-on-property-and-trading-income)
+- [CC BY-NC 4.0 legal code](https://creativecommons.org/licenses/by-nc/4.0/legalcode) · [CC NonCommercial interpretation](https://wiki.creativecommons.org/wiki/NonCommercial_interpretation)
 - US: *Lexmark v Static Control* · *MDY v Blizzard* · *Chamberlain v Skylink* · *Vernor v Autodesk* · *Davidson v Jung* · *Bowers v Baystate* · *Sega v Accolade* · *Sony v Connectix* · *Google v Oracle* · *Van Buren* — URLs inline at §9
 
 **The EULAs**

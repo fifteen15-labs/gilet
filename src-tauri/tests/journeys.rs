@@ -7,7 +7,7 @@
 
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use anorak_lib::commands;
+use gilet_lib::commands;
 
 fn save_path() -> Option<std::path::PathBuf> {
     let home = std::env::var_os("HOME")?;
@@ -82,7 +82,7 @@ fn a_shortlist_survives_export_and_reimport() {
     let picked: Vec<_> = summary.players.iter().take(25).cloned().collect();
     let names: Vec<String> = picked.iter().map(|p| p.name.clone()).collect();
 
-    let out = std::env::temp_dir().join("anorak-roundtrip.csv");
+    let out = std::env::temp_dir().join("gilet-roundtrip.csv");
     commands::export_csv(out.display().to_string(), picked).unwrap();
 
     let known: Vec<String> = summary.players.iter().map(|p| p.name.clone()).collect();
@@ -96,7 +96,7 @@ fn a_shortlist_survives_export_and_reimport() {
 
 #[test]
 fn import_reports_names_that_are_not_in_the_save() {
-    let out = std::env::temp_dir().join("anorak-unmatched.csv");
+    let out = std::env::temp_dir().join("gilet-unmatched.csv");
     std::fs::write(&out, "name\nErling Braut Haaland\nSomebody Who Does Not Exist\n").unwrap();
 
     let known = vec!["Erling Braut Haaland".to_owned()];
@@ -110,7 +110,7 @@ fn import_reports_names_that_are_not_in_the_save() {
 
 #[test]
 fn opening_something_that_is_not_a_save_is_an_error_not_a_panic() {
-    let out = std::env::temp_dir().join("anorak-not-a-save.fm");
+    let out = std::env::temp_dir().join("gilet-not-a-save.fm");
     std::fs::write(&out, b"this is not a Football Manager save file at all").unwrap();
 
     let err = commands::open_save(out.display().to_string(), today()).unwrap_err();

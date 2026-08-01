@@ -40,7 +40,8 @@
 	</td>
 	<td class="py-1.5 pr-4 text-sm text-[var(--color-bright)]">{player.name}</td>
 	<td class="tabular pr-4 text-sm text-[var(--color-mist)]">{player.age}</td>
-	<td class="tabular pr-4 text-xs text-[var(--color-faint)]">{player.born}</td>
+	<td class="tabular pr-4 text-sm text-[var(--color-bright)]">{player.ability ?? ''}</td>
+	<td class="tabular pr-4 text-sm text-[var(--color-signal)]">{player.potential ?? ''}</td>
 	<td class="pr-3">
 		<AbilityBar ability={player.ability} potential={player.potential} />
 	</td>

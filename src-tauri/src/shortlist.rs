@@ -5,6 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+use tauri::Manager as _;
 
 use crate::CommandError;
 
@@ -16,18 +17,21 @@ pub struct Shortlist {
     pub players: Vec<String>,
 }
 
-fn store_path() -> Option<PathBuf> {
-    let home = std::env::var_os("HOME")?;
-    Some(PathBuf::from(home).join("Library/Application Support/anorak/shortlists.json"))
+/// Tauri resolves this per platform from the app identifier — Application
+/// Support on macOS, `AppData` on Windows — rather than a hardcoded path.
+fn store_path(app: &tauri::AppHandle) -> Option<PathBuf> {
+    app.path().app_data_dir().ok().map(|d| d.join("shortlists.json"))
 }
 
 /// Reads saved shortlists, returning an empty list when none exist yet.
 ///
 /// # Errors
 /// Fails only if the file exists but cannot be read or parsed.
+// Tauri injects the handle by value; the signature is fixed by the macro.
+#[allow(clippy::needless_pass_by_value)]
 #[tauri::command]
-pub fn load_shortlists() -> Result<Vec<Shortlist>, CommandError> {
-    let Some(path) = store_path() else {
+pub fn load_shortlists(app: tauri::AppHandle) -> Result<Vec<Shortlist>, CommandError> {
+    let Some(path) = store_path(&app) else {
         return Ok(Vec::new());
     };
     if !path.exists() {
@@ -47,8 +51,8 @@ pub fn load_shortlists() -> Result<Vec<Shortlist>, CommandError> {
 // Commands receive owned values deserialised from the frontend payload.
 #[allow(clippy::needless_pass_by_value)]
 #[tauri::command]
-pub fn save_shortlists(lists: Vec<Shortlist>) -> Result<(), CommandError> {
-    let Some(path) = store_path() else {
+pub fn save_shortlists(app: tauri::AppHandle, lists: Vec<Shortlist>) -> Result<(), CommandError> {
+    let Some(path) = store_path(&app) else {
         return Ok(());
     };
     if let Some(dir) = path.parent() {

@@ -1,4 +1,4 @@
-# Anorak
+# Gilet
 
 A macOS scouting tool for Football Manager saves. Genie Scout is Windows-only
 and does not run under Wine; this reads the save file directly instead.
@@ -8,7 +8,7 @@ and does not run under Wine; this reads the save file directly instead.
 **Parse the save, never the process.** FM Scouting Tool and fm-explorer both
 read the running game's memory with `ReadProcessMemory`. That is Windows-only
 and cannot port — `task_for_pid` on macOS needs root or a debugger entitlement.
-Anorak reads the `.fm` file, which is the same format on every platform.
+Gilet reads the `.fm` file, which is the same format on every platform.
 
 **Never invent a number.** The save format is only partly understood. A field
 that has not been confirmed against real data is `None`, and the UI shows an
@@ -74,7 +74,7 @@ names, and the in-game date on FM 26.2.0 saves.
 **Parse the save, never the process.** FM Scouting Tool and fm-explorer both
 read the running game's memory with `ReadProcessMemory`. That is Windows-only
 and cannot port — `task_for_pid` on macOS needs root or a debugger entitlement.
-Anorak reads the `.fm` file, which is the same format on every platform.
+Gilet reads the `.fm` file, which is the same format on every platform.
 
 **Never invent a number.** The save format is only partly understood. A field
 that has not been confirmed against real data is `None`, and the UI shows an

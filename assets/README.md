@@ -1,4 +1,4 @@
-# Anorak mark
+# Gilet mark
 
 `logo.svg` is a hooded coat, flat-sketched front-on the way a technical
 outerwear spec sheet would draw it: a body that flares from the
@@ -10,10 +10,10 @@ opening is doing two jobs with one shape: it is the hood's face-hole
 and the chart's plot area at the same time, not a coat with a chart
 drawn on next to it.
 
-That's the whole brief in one mark: "anorak" as the obsessive-hobbyist
+That's the whole brief in one mark: "gilet" as the obsessive-hobbyist
 slang (the data glimpsed through the hood — someone who'd notice a
-player's hidden Current Ability), and "anorak" as the literal
-garment — the joke being that an anorak is a kind of mac(k), and the
+player's hidden Current Ability), and "gilet" as the literal
+garment — the joke being that an gilet is a kind of mac(k), and the
 app is a Mac (and Windows) app.
 
 ## Colour
@@ -40,7 +40,7 @@ opening, not just a solid badge.
 - `logo.svg` — square mark, `viewBox 0 0 512 512`, with its own dark
   backing plate. This is the source for the app icon.
 - `logo-wordmark.svg` — the same mark (bare, no backing plate, true
-  transparency) set beside "Anorak" in IBM Plex Sans Condensed Bold,
+  transparency) set beside "Gilet" in IBM Plex Sans Condensed Bold,
   for use directly on the app's dark background (headers, about box,
   etc). The project already ships `@fontsource/ibm-plex-sans-condensed`,
   so the font is available inside the app; the `font-family` also

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import AbilityBar from './AbilityBar.svelte';
+	import AttributeGrid from './AttributeGrid.svelte';
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { shortlists } from '$lib/classes/Shortlists.svelte';
 
@@ -24,20 +25,28 @@
 
 		<div class="flex-1 overflow-y-auto px-4 pb-4">
 			{#if player}
-				<dl class="space-y-3">
-					<div>
-						<dt class="eyebrow">Born</dt>
-						<dd class="tabular text-sm text-[var(--color-bright)]">{player.born}</dd>
-					</div>
+				<dl class="mb-4 grid grid-cols-2 gap-x-4 gap-y-3">
 					<div>
 						<dt class="eyebrow">Age</dt>
 						<dd class="tabular text-sm text-[var(--color-bright)]">{player.age}</dd>
 					</div>
 					<div>
-						<dt class="eyebrow mb-1">Ability</dt>
-						<dd><AbilityBar ability={player.ability} potential={player.potential} /></dd>
+						<dt class="eyebrow">Born</dt>
+						<dd class="tabular text-sm text-[var(--color-bright)]">{player.born}</dd>
+					</div>
+					<div>
+						<dt class="eyebrow">Current ability</dt>
+						<dd class="tabular text-lg text-[var(--color-bright)]">{player.ability ?? '\u2014'}</dd>
+					</div>
+					<div>
+						<dt class="eyebrow">Max ability</dt>
+						<dd class="tabular text-lg text-[var(--color-signal)]">{player.potential ?? '\u2014'}</dd>
 					</div>
 				</dl>
+
+				<div class="mb-4"><AbilityBar ability={player.ability} potential={player.potential} /></div>
+
+				<AttributeGrid attributes={player.attributes} />
 
 				<button
 					type="button"
@@ -58,9 +67,8 @@
 					{/if}
 				</button>
 
-				<p class="mt-5 border-t border-[var(--color-line)] pt-3 text-xs leading-relaxed text-[var(--color-faint)]">
-					Position, club and ability are still being decoded from the save format. Only fields confirmed
-					against real data are shown.
+				<p class="mt-4 border-t border-[var(--color-line)] pt-3 text-xs leading-relaxed text-[var(--color-faint)]">
+					Position and club are not decoded from the save format yet.
 				</p>
 			{:else if club}
 				<dl class="space-y-3">

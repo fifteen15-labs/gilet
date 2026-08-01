@@ -30,6 +30,7 @@ pub fn run() {
     let result = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
+            commands::default_locations,
             commands::open_save,
             commands::export_csv,
             commands::import_csv,
@@ -39,7 +40,7 @@ pub fn run() {
         .run(tauri::generate_context!());
 
     if let Err(e) = result {
-        eprintln!("anorak failed to start: {e}");
+        eprintln!("gilet failed to start: {e}");
         std::process::exit(1);
     }
 }

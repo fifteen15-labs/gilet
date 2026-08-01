@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Anorak — horizontal wordmark lockup
+  Gilet — horizontal wordmark lockup
 
   Same mark as logo.svg (tapered coat body, hood with a true cut-out
   drawstring aperture, two ascending data columns seen through the
@@ -18,8 +18,8 @@
   outlines in a vector tool (e.g. Illustrator/Inkscape/Figma "Object to
   Path") and drop the font-family entirely — see README.
 -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 240" width="900" height="240" role="img" aria-label="Anorak">
-  <title>Anorak</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 240" width="900" height="240" role="img" aria-label="Gilet">
+  <title>Gilet</title>
 
   <!-- mark, scaled and repositioned from its native 512x512 coordinates -->
   <g transform="translate(-77.8,-64.2) scale(0.719)">
@@ -43,5 +43,5 @@
     font-size="150"
     letter-spacing="1"
     fill="#e8eff4"
-  >Anorak</text>
+  >Gilet</text>
 </svg>

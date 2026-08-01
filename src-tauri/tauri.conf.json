@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Anorak",
+  "productName": "Gilet",
   "version": "0.1.0",
-  "identifier": "dev.pauldolden.anorak",
+  "identifier": "dev.pauldolden.gilet",
   "build": {
     "frontendDist": "../build",
     "devUrl": "http://localhost:1420",

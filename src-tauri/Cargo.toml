@@ -1,11 +1,11 @@
 [package]
-name = "anorak"
+name = "gilet"
 version = "0.1.0"
 edition = "2021"
 description = "Scouting tool for Football Manager saves"
 
 [lib]
-name = "anorak_lib"
+name = "gilet_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

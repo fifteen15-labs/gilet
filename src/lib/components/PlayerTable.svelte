@@ -28,12 +28,17 @@
 							Age{scout.sortKey === 'age' ? (scout.sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}
 						</button>
 					</th>
-					<th class="w-28 pr-4 pb-2 text-left"><span class="eyebrow">Born</span></th>
-					<th class="w-52 pr-3 pb-2 text-left">
+					<th class="w-16 pr-4 pb-2 text-left">
 						<button class="eyebrow hover:text-[var(--color-mist)]" onclick={() => scout.sortBy('ability')}>
-							Ability{scout.sortKey === 'ability' ? (scout.sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}
+							CA{scout.sortKey === 'ability' ? (scout.sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}
 						</button>
 					</th>
+					<th class="w-16 pr-4 pb-2 text-left">
+						<button class="eyebrow hover:text-[var(--color-mist)]" onclick={() => scout.sortBy('potential')}>
+							PA{scout.sortKey === 'potential' ? (scout.sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}
+						</button>
+					</th>
+					<th class="w-40 pr-3 pb-2 text-left"><span class="eyebrow">Ability / max</span></th>
 				</tr>
 			</thead>
 			<tbody>

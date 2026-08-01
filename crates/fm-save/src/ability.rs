@@ -13,6 +13,21 @@
 /// goalkeeping.
 pub const ATTRIBUTE_COUNT: usize = 54;
 
+/// Indices of the goalkeeping attributes.
+///
+/// Found empirically rather than assumed: at each of these, ~90% of players sit
+/// at 3 or below while a minority score highly — the signature of an attribute
+/// only keepers have. There are exactly 11, matching FM's goalkeeping set.
+/// The remaining 43 are outfield attributes whose individual names are not yet
+/// mapped, so they are presented by index rather than guessed at.
+pub const GOALKEEPING_INDICES: [usize; 11] = [11, 12, 13, 14, 15, 16, 19, 21, 31, 32, 33];
+
+/// Whether an attribute index belongs to the goalkeeping set.
+#[must_use]
+pub fn is_goalkeeping(index: usize) -> bool {
+    GOALKEEPING_INDICES.contains(&index)
+}
+
 /// Attributes are stored on the 1-20 scale times five, so every byte is a
 /// multiple of 5 in 5..=100.
 const SCALE: u8 = 5;

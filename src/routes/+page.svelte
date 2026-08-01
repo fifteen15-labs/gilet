@@ -7,14 +7,18 @@
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { shortlists } from '$lib/classes/Shortlists.svelte';
-	import { exportCsv, importCsv } from '$lib/tauri/commands';
+	import { defaultLocations, exportCsv, importCsv, type Locations } from '$lib/tauri/commands';
 	import { describeFilters } from '$lib/utils/filter';
 
 	let exportError = $state<string | null>(null);
 	let notice = $state<string | null>(null);
+	/** Dialogs open where macOS users expect: saves in FM's own folder, CSVs in
+	 * Documents. Resolved in Rust so the paths follow platform convention. */
+	let locations = $state<Locations>({ saves: null, documents: null });
 
 	$effect(() => {
 		void shortlists.load();
+		void defaultLocations().then((l) => (locations = l));
 	});
 
 	/** Keeps the current filtered results as a new shortlist, named after the
@@ -38,7 +42,11 @@
 			notice = 'Create a shortlist first, then import into it.';
 			return;
 		}
-		const picked = await open({ multiple: false, filters: [{ name: 'CSV', extensions: ['csv'] }] });
+		const picked = await open({
+			multiple: false,
+			defaultPath: locations.documents ?? undefined,
+			filters: [{ name: 'CSV', extensions: ['csv'] }]
+		});
 		if (typeof picked !== 'string') return;
 		try {
 			const known = scout.players.map((p) => p.name);
@@ -58,6 +66,7 @@
 	async function chooseSave() {
 		const picked = await open({
 			multiple: false,
+			defaultPath: locations.saves ?? undefined,
 			filters: [{ name: 'Football Manager save', extensions: ['fm'] }]
 		});
 		if (typeof picked === 'string') await scout.open(picked);
@@ -69,7 +78,8 @@
 		exportError = null;
 		notice = null;
 		const rows = scout.matching(shortlists.activeMembers);
-		const suggested = shortlists.active ? `${shortlists.active.name}.csv` : 'players.csv';
+		const file = shortlists.active ? `${shortlists.active.name}.csv` : 'players.csv';
+		const suggested = locations.documents ? `${locations.documents}/${file}` : file;
 		const target = await save({ defaultPath: suggested, filters: [{ name: 'CSV', extensions: ['csv'] }] });
 		if (!target) return;
 		try {
@@ -89,7 +99,7 @@
 		data-tauri-drag-region
 	>
 		<h1 class="font-display text-sm font-semibold tracking-[0.2em] text-[var(--color-bright)] uppercase">
-			Anorak
+			Gilet
 		</h1>
 
 		{#if scout.loaded}

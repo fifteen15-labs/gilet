@@ -5,8 +5,68 @@
 //! list sits alongside the definitions.
 
 use serde::{Deserialize, Serialize};
+use tauri::Manager as _;
 
 use crate::CommandError;
+
+/// Where the file dialogs should start.
+///
+/// Resolved in Rust so the paths follow each platform's own conventions rather
+/// than the frontend guessing at them.
+#[derive(Debug, Clone, Serialize)]
+pub struct Locations {
+    /// Football Manager's own saves folder, when it exists.
+    pub saves: Option<String>,
+    /// Where a CSV should be written by default.
+    pub documents: Option<String>,
+}
+
+/// FM keeps saves under Application Support on macOS and in Documents on
+/// Windows. Only the directory that actually exists is offered, so the dialog
+/// falls back to the system default rather than opening on a missing path.
+fn saves_dir(app: &tauri::AppHandle) -> Option<std::path::PathBuf> {
+    let path = app.path();
+    let candidates = if cfg!(target_os = "macos") {
+        vec![path.data_dir().ok()?.join("Sports Interactive")]
+    } else {
+        vec![path.document_dir().ok()?.join("Sports Interactive")]
+    };
+
+    for base in candidates {
+        if !base.is_dir() {
+            continue;
+        }
+        // Prefer the newest Football Manager folder, so a machine with several
+        // installed opens on the current one.
+        let mut versions: Vec<_> = std::fs::read_dir(&base)
+            .ok()?
+            .flatten()
+            .map(|e| e.path())
+            .filter(|p| p.join("games").is_dir())
+            .collect();
+        versions.sort();
+        if let Some(newest) = versions.pop() {
+            return Some(newest.join("games"));
+        }
+        return Some(base);
+    }
+    None
+}
+
+/// Returns the directories the open and save dialogs should default to.
+#[must_use]
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command]
+pub fn default_locations(app: tauri::AppHandle) -> Locations {
+    Locations {
+        saves: saves_dir(&app).map(|p| p.display().to_string()),
+        documents: app
+            .path()
+            .document_dir()
+            .ok()
+            .map(|p| p.display().to_string()),
+    }
+}
 
 /// A person as the table renders them.
 ///
@@ -23,6 +83,8 @@ pub struct PlayerRow {
     pub potential: Option<u8>,
     /// True when this person has ability data, i.e. is a player not staff.
     pub is_player: bool,
+    /// The 54 attributes on FM's 1-20 scale. Empty for staff.
+    pub attributes: Vec<u8>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -36,6 +98,8 @@ pub struct ClubRow {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct SaveSummary {
+    /// Which attribute indices are goalkeeping ones, so the UI can group them.
+    pub goalkeeping_indices: Vec<usize>,
     pub path: String,
     pub players: Vec<PlayerRow>,
     pub clubs: Vec<ClubRow>,
@@ -91,6 +155,7 @@ pub fn open_save(path: String, today: Vec<u16>) -> Result<SaveSummary, CommandEr
                 ability: p.ability.as_ref().map(|a| a.current),
                 potential: p.ability.as_ref().map(|a| a.potential),
                 is_player: p.is_player(),
+                attributes: p.ability.as_ref().map(|a| a.attributes.to_vec()).unwrap_or_default(),
             }
         })
         .collect();
@@ -108,6 +173,7 @@ pub fn open_save(path: String, today: Vec<u16>) -> Result<SaveSummary, CommandEr
         .collect();
 
     Ok(SaveSummary {
+        goalkeeping_indices: fm_save::ability::GOALKEEPING_INDICES.to_vec(),
         path,
         players,
         clubs,
