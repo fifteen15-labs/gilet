@@ -16,6 +16,7 @@ pub mod club;
 pub mod container;
 pub mod date;
 pub mod error;
+pub mod gamedate;
 pub mod person;
 
 pub use club::Club;
@@ -29,6 +30,9 @@ pub use person::Person;
 pub struct Save {
     pub people: Vec<Person>,
     pub clubs: Vec<Club>,
+    /// The save's own in-game date, when it can be read. `None` for FM 26.2.0
+    /// saves, which encode it differently.
+    pub game_date: Option<Date>,
     /// Decompressed size of every frame, kept so the UI can report what was
     /// read without holding 187 MB of frame payloads alive.
     pub frame_sizes: Vec<usize>,
@@ -49,9 +53,13 @@ impl Save {
         let people = main.map(|f| person::scan_people(&f.data)).unwrap_or_default();
         let clubs = main.map(|f| club::scan_clubs(&f.data)).unwrap_or_default();
 
+        // The in-game date lives in the small header frame, not the database.
+        let game_date = frames.first().and_then(|f| gamedate::find_game_date(&f.data));
+
         Ok(Self {
             people,
             clubs,
+            game_date,
             frame_sizes,
         })
     }

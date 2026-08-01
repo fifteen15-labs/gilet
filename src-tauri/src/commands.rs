@@ -39,6 +39,9 @@ pub struct SaveSummary {
     pub path: String,
     pub players: Vec<PlayerRow>,
     pub clubs: Vec<ClubRow>,
+    /// The save's in-game date, when it could be read. `None` means ages fall
+    /// back to the system clock, which the UI says out loud.
+    pub game_date: Option<String>,
     pub frames: usize,
     pub decompressed_bytes: usize,
     pub parse_millis: u64,
@@ -65,11 +68,15 @@ pub fn open_save(path: String, today: Vec<u16>) -> Result<SaveSummary, CommandEr
     let save = fm_save::Save::parse(&bytes).map_err(|e| CommandError::Parse(e.to_string()))?;
     let parse_millis = started.elapsed().as_millis() as u64;
 
-    let now = fm_save::Date {
+    // Ages are relative to the save's own date. Using the system clock instead
+    // reports everyone a year too old on a save left alone for a season.
+    let system_today = fm_save::Date {
         year: today.first().copied().unwrap_or(2026),
         month: today.get(1).copied().unwrap_or(1) as u8,
         day: today.get(2).copied().unwrap_or(1) as u8,
     };
+    let now = save.game_date.unwrap_or(system_today);
+    let dated_from_save = save.game_date.is_some();
 
     let players = save
         .people
@@ -103,6 +110,7 @@ pub fn open_save(path: String, today: Vec<u16>) -> Result<SaveSummary, CommandEr
         path,
         players,
         clubs,
+        game_date: dated_from_save.then(|| format!("{:04}-{:02}-{:02}", now.year, now.month, now.day)),
         frames: save.frame_sizes.len(),
         decompressed_bytes: save.frame_sizes.iter().sum(),
         parse_millis,

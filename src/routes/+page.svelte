@@ -8,6 +8,7 @@
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { shortlists } from '$lib/classes/Shortlists.svelte';
 	import { exportCsv, importCsv } from '$lib/tauri/commands';
+	import { describeFilters } from '$lib/utils/filter';
 
 	let exportError = $state<string | null>(null);
 	let notice = $state<string | null>(null);
@@ -15,6 +16,18 @@
 	$effect(() => {
 		void shortlists.load();
 	});
+
+	/** Keeps the current filtered results as a new shortlist, named after the
+	 * search that produced them. */
+	async function saveResultsAsShortlist() {
+		exportError = null;
+		const rows = scout.matching(shortlists.activeMembers);
+		const name = await shortlists.saveAs(
+			describeFilters(scout.filters),
+			rows.map((p) => p.name)
+		);
+		notice = name ? `Saved ${rows.length.toLocaleString()} players as "${name}".` : null;
+	}
 
 	/** Reads names from a CSV into the active shortlist. */
 	async function importIntoShortlist() {
@@ -82,8 +95,16 @@
 		{#if scout.loaded}
 			<p class="tabular flex items-center gap-3 text-xs text-[var(--color-faint)]">
 				<span class="text-[var(--color-mist)]">{fileName}</span>
+				{#if scout.summary?.game_date}
+					<span title="Ages are calculated against the save's own date">
+						{scout.summary.game_date}
+					</span>
+				{:else}
+					<span title="This save's in-game date could not be read, so ages use today's date">
+						date unknown
+					</span>
+				{/if}
 				<span>{scout.players.length.toLocaleString()} people</span>
-				<span>{scout.summary?.frames.toLocaleString()} frames</span>
 				<span>{scout.summary?.parse_millis}ms</span>
 			</p>
 		{/if}
@@ -150,7 +171,7 @@
 					{/each}
 				</div>
 
-				<FilterBar />
+				<FilterBar onSaveResults={saveResultsAsShortlist} />
 				{#if scout.tab === 'people'}
 					<PlayerTable />
 				{:else}

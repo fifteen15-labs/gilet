@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Anorak — horizontal wordmark lockup
+
+  Same mark as logo.svg (hood crown built from ascending bar-chart
+  steps, falling away in one clean diagonal, punched grommet doubling
+  as drawstring toggle / data-point), set bare — no backing panel —
+  beside the wordmark, for use directly on the app's own dark
+  background (#0e1419).
+
+  Type: IBM Plex Sans Condensed, bold. The project already ships
+  @fontsource/ibm-plex-sans-condensed, so it will be available inside
+  the app; a system condensed sans is listed as a fallback for any
+  other context. For pixel-perfect, install-independent output (icon
+  packs, marketing exports, print) convert the <text> element to
+  outlines in a vector tool (e.g. Illustrator/Inkscape/Figma "Object to
+  Path") and drop the font-family entirely — see README.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 240" width="900" height="240" role="img" aria-label="Anorak">
+  <title>Anorak</title>
+
+  <!-- mark, scaled and repositioned from its native 512x512 coordinates -->
+  <g transform="translate(-58.95,-48.42) scale(0.658)">
+    <path
+      fill-rule="evenodd"
+      fill="#ff6a13"
+      d="M120,408 L120,348 L168,348 L168,278 L216,278 L216,198 L256,198 L256,104 L392,408 Z
+         M272,370 A22,22 0 1,0 228,370 A22,22 0 1,0 272,370 Z"
+    />
+    <circle cx="250" cy="370" r="9" fill="#3fbfa8"/>
+  </g>
+
+  <!-- wordmark -->
+  <text
+    x="240"
+    y="120"
+    dominant-baseline="central"
+    font-family="'IBM Plex Sans Condensed', 'Arial Narrow', Arial, sans-serif"
+    font-weight="700"
+    font-size="150"
+    letter-spacing="1"
+    fill="#e8eff4"
+  >Anorak</text>
+</svg>

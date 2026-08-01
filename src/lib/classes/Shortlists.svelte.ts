@@ -44,6 +44,28 @@ class Shortlists {
 		await this.persist();
 	}
 
+	/**
+	 * Saves a set of players as a new shortlist — the "filter, then keep the
+	 * results" flow. Returns the name actually used, which is suffixed if one
+	 * already exists so an earlier list is never silently overwritten.
+	 */
+	async saveAs(name: string, players: string[]): Promise<string | null> {
+		const base = name.trim();
+		if (base === '' || players.length === 0) return null;
+
+		let unique = base;
+		let n = 2;
+		while (this.lists.some((l) => l.name === unique)) {
+			unique = `${base} (${n})`;
+			n += 1;
+		}
+
+		this.lists = [...this.lists, { name: unique, players: [...players] }];
+		this.activeName = unique;
+		await this.persist();
+		return unique;
+	}
+
 	/** Adds or removes a player on the active list. */
 	async toggle(playerName: string): Promise<void> {
 		const list = this.active;

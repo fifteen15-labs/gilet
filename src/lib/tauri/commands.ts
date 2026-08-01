@@ -27,6 +27,9 @@ export type SaveSummary = {
 	path: string;
 	players: Player[];
 	clubs: Club[];
+	/** The save's in-game date. Null when it could not be read, in which case
+	 * ages fall back to the system clock. */
+	game_date: string | null;
 	frames: number;
 	decompressed_bytes: number;
 	parse_millis: number;

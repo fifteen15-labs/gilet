@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Anorak — primary mark (512x512)
+
+  What it depicts: a hooded anorak, flat-sketched front-on the way a
+  technical outerwear spec sheet would draw it — peaked hood, flared
+  shoulders, stub sleeves with an armhole notch, a boxy pull-over body,
+  straight hem. It is a coat first; nothing about it should read as an
+  abstract badge.
+
+  The one deliberate break in an otherwise calm outline is the hood's
+  crown: instead of a smooth peak, the left side climbs in steps while
+  the right side falls in a single clean diagonal. Read left to right,
+  those steps are a bar chart climbing to its highest value — the
+  tallest "bar" IS the point of the hood. Same shape, both readings, at
+  the one place on a garment (the hood) the brief singles out as the
+  strongest candidate.
+
+  A single punched grommet at the hem stands in for the drawstring
+  toggle and, at the same time, for a highlighted data point / scouting
+  reticle — hardware that would exist on the real jacket regardless.
+
+  Colour: Accent 1 hi-vis orange (#ff6a13) leads, since orange is the
+  garment/technical-wear colour. The toggle's core is Accent 2 teal
+  (#3fbfa8), the data colour, the one spot where "obsessive spreadsheet
+  stats" gets its own dot of colour inside the coat.
+
+  Monochrome check: strip all colour and the shape still reads — the
+  grommet is a true cut-out (fill-rule: evenodd), not a colour trick,
+  so the silhouette survives as flat black/white line art.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Anorak">
+  <title>Anorak</title>
+
+  <!-- app background -->
+  <rect width="512" height="512" fill="#0e1419"/>
+
+  <!-- instrument panel: small radius, thin border, matches the app's own panel chrome -->
+  <rect x="64" y="64" width="384" height="384" rx="28" fill="#161e26" stroke="#263340" stroke-width="5"/>
+
+  <!-- anorak silhouette: stepped hood peak, shoulders, stub sleeves, boxy body, hem -->
+  <!-- punched grommet (evenodd hole) near the hem doubles as toggle / data point -->
+  <path
+    fill-rule="evenodd"
+    fill="#ff6a13"
+    d="M256,104 L256,132 L228,132 L228,161 L200,161 L200,190
+       L108,238 L108,278 L152,278 L184,232 L184,408
+       L328,408 L328,232 L360,278 L404,278 L404,238 L312,190 Z
+       M278,376 A22,22 0 1,0 234,376 A22,22 0 1,0 278,376 Z"
+  />
+
+  <!-- toggle / data-point core -->
+  <circle cx="256" cy="376" r="9" fill="#3fbfa8"/>
+</svg>
