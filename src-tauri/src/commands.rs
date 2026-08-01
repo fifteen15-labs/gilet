@@ -85,6 +85,10 @@ pub struct PlayerRow {
     pub is_player: bool,
     /// The 54 attributes on FM's 1-20 scale. Empty for staff.
     pub attributes: Vec<u8>,
+    /// Nation identifier, shared with the club records.
+    pub nation_id: u16,
+    /// Nation name where the identifier is confirmed, otherwise empty.
+    pub nation: String,
     /// Positions the player is comfortable in, strongest first. Empty for staff.
     pub positions: Vec<String>,
     /// Rating 1-20 for each of the 15 position slots. Empty for staff.
@@ -164,6 +168,8 @@ pub fn open_save(path: String, today: Vec<u16>) -> Result<SaveSummary, CommandEr
                 potential: p.ability.as_ref().map(|a| a.potential),
                 is_player: p.is_player(),
                 attributes: p.ability.as_ref().map(|a| a.attributes.to_vec()).unwrap_or_default(),
+                nation_id: p.nation_id,
+                nation: p.nation().unwrap_or_default().to_owned(),
                 positions: p
                     .ability
                     .as_ref()

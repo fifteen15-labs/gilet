@@ -17,6 +17,9 @@ pub struct Person {
     /// Full name as stored inline, e.g. `"Erling Braut Haaland"`.
     pub full_name: String,
     pub date_of_birth: Date,
+    /// Nation identifier, e.g. 139 for England. Shares the numbering the club
+    /// records use, so a club's nation and a player's match.
+    pub nation_id: u16,
     /// Ability and attributes, when this person has an attribute block.
     /// `None` means staff: only players carry one.
     pub ability: Option<crate::ability::Ability>,
@@ -28,11 +31,42 @@ impl Person {
     pub fn is_player(&self) -> bool {
         self.ability.is_some()
     }
+
+    /// The nation's name, for the identifiers confirmed so far.
+    #[must_use]
+    pub fn nation(&self) -> Option<&'static str> {
+        nation_name(self.nation_id)
+    }
+}
+
+/// Nation names for identifiers confirmed against known players.
+///
+/// The file does not store the name beside the identifier, so this is only the
+/// set verified directly: each was read from players whose nationality is not
+/// in doubt, and cross-checked against the nation the club records carry —
+/// German clubs and Florian Wirtz both report 145, English clubs and Saka both
+/// report 139. Unconfirmed identifiers return `None` and the raw number is
+/// shown, which still groups and filters correctly.
+#[must_use]
+pub fn nation_name(id: u16) -> Option<&'static str> {
+    match id {
+        139 => Some("England"),
+        143 => Some("France"),
+        145 => Some("Germany"),
+        160 => Some("Norway"),
+        162 => Some("Portugal"),
+        187 => Some("Argentina"),
+        189 => Some("Brazil"),
+        _ => None,
+    }
 }
 
 const NO_COMMON_NAME: u32 = 0xFFFF_FFFF;
 const MIN_NAME_LEN: usize = 2;
 const MAX_NAME_LEN: usize = 64;
+
+/// Bytes past the name where the nation identifier sits.
+const NATION_OFFSET: usize = 13;
 
 /// A person in a football save is born within this window. Wider than strictly
 /// necessary — the oldest staff and the youngest newgens both have to fit — but
@@ -99,12 +133,17 @@ fn parse_at(frame: &[u8], at: usize) -> Option<Person> {
     }
     let date_of_birth = Date::from_day_of_year(read_u16(frame, after)?, year)?;
 
+    // Nationality sits further out, so a record truncated at the end of the
+    // frame still parses — it is descriptive, not part of the acceptance test.
+    let nation_id = read_u16(frame, after + NATION_OFFSET).unwrap_or_default();
+
     Some(Person {
         offset: at,
         surname_id,
         common_name_id: (common_raw != NO_COMMON_NAME).then_some(common_raw),
         full_name: full_name.to_owned(),
         date_of_birth,
+        nation_id,
         // Filled in by `Save::parse`, which matches blocks to people once both
         // scans have run.
         ability: None,
@@ -163,6 +202,25 @@ mod tests {
         v.extend_from_slice(&doy.to_le_bytes());
         v.extend_from_slice(&year.to_le_bytes());
         v
+    }
+
+    #[test]
+    fn reads_the_nation_identifier() {
+        // 139 is England, confirmed from Saka, Kane, Walker, Grealish and
+        // Bellingham, and matching the nation the English clubs carry.
+        // Pad out to the nation field, which sits 13 bytes past the name.
+        let mut buf = record(1, NO_COMMON_NAME, "Bukayo Ayoyinka Saka", 248, 2001);
+        buf.extend_from_slice(&[0u8; 9]);
+        buf.extend_from_slice(&139u16.to_le_bytes());
+        buf.extend_from_slice(&[0u8; 8]);
+        let found = scan_people(&buf);
+        assert_eq!(found.first().unwrap().nation_id, 139);
+        assert_eq!(found.first().unwrap().nation(), Some("England"));
+    }
+
+    #[test]
+    fn an_unconfirmed_nation_has_no_name() {
+        assert_eq!(nation_name(1), None);
     }
 
     #[test]

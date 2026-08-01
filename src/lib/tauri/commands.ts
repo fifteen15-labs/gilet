@@ -17,6 +17,10 @@ export type Player = {
 	is_player: boolean;
 	/** The 54 attributes on FM's 1-20 scale. Empty for staff. */
 	attributes: number[];
+	/** Nation identifier, shared with the club records. */
+	nation_id: number;
+	/** Nation name where the identifier is confirmed, otherwise empty. */
+	nation: string;
 	/** Positions the player is comfortable in, strongest first. Empty for staff. */
 	positions: string[];
 	/** Rating 1-20 for each of the 15 position slots. Empty for staff. */

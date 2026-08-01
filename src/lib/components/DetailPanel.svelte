@@ -35,6 +35,12 @@
 						<dd class="tabular text-sm text-[var(--color-bright)]">{player.born}</dd>
 					</div>
 					<div>
+						<dt class="eyebrow">Nation</dt>
+						<dd class="text-sm text-[var(--color-bright)]" title="Identifier {player.nation_id}">
+							{player.nation || `#${player.nation_id}`}
+						</dd>
+					</div>
+					<div>
 						<dt class="eyebrow">Current ability</dt>
 						<dd class="tabular text-lg text-[var(--color-bright)]">{player.ability ?? '\u2014'}</dd>
 					</div>

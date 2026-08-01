@@ -100,6 +100,21 @@ fn opens_a_real_save_and_finds_people_and_clubs() {
         "Mbappé plays left"
     );
 
+    // Nationality decodes to the right nation, cross-checked against the
+    // nation the club records carry.
+    let nation_of = |name: &str| -> String {
+        summary
+            .players
+            .iter()
+            .find(|p| p.name == name)
+            .map(|p| p.nation.clone())
+            .unwrap_or_default()
+    };
+    assert_eq!(nation_of("Bukayo Ayoyinka Saka"), "England");
+    assert_eq!(nation_of("Erling Braut Haaland"), "Norway");
+    assert_eq!(nation_of("Kylian Mbappé Lottin"), "France");
+    assert_eq!(nation_of("Florian Richard Wirtz"), "Germany");
+
     // Centre-back is the most common position in any database, and sweeper is
     // nobody's position in a modern one.
     let mut counts = std::collections::HashMap::new();

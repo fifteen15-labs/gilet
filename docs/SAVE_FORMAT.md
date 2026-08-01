@@ -98,28 +98,31 @@ Day 203 of a leap year is 21 July; day 123 of 2003 is 3 May. Across all 12,023
 records, 94% of the +2 values fall in 1970–2012, and the distribution peaks at
 1995–2006 — the shape a football database should have.
 
-### Fields after the name — unresolved
+### `+13` is nationality — SOLVED
 
-`+13` is a single byte that survives the obvious sanity filters (99% within
-1–200, few zeros, 173 distinct values) but is **not** confirmed as CA:
+`+13` is a `u16` nation identifier, not an ability value. It was flagged early
+as a CA candidate and rejected on three counts: the population mean of 146 was
+far too high, its maximum of 247 exceeds the 200 ceiling, and it never changed
+between saves. All three are explained by nationality — it is an identifier,
+not a rating, and a player's nation does not change.
 
-| Player | +13 |
-| --- | --- |
-| Haaland | 160 |
-| Wirtz | 145 |
-| Mbappé | 143 |
-| Bellingham | 139 |
-| Saka | 139 |
+Confirmed values, cross-checked against the nation the **club** records carry,
+which uses the same numbering:
 
-Two reasons to doubt it. The population mean is 146 with an p10–p90 band of
-115–175, far too high and too narrow for Current Ability, which should average
-around 70–100 across a full database. And the ordering is wrong — Mbappé below
-Haaland by a wide margin does not match FM's own ratings.
+| ID | Nation | Confirmed from |
+| --- | --- | --- |
+| 139 | England | Saka, Kane, Walker, Grealish, Bellingham; the English clubs |
+| 143 | France | Mbappé |
+| 145 | Germany | Wirtz; Borussia Dortmund |
+| 160 | Norway | Haaland |
+| 162 | Portugal | Rúben Dias and Ronaldo, independently |
+| 187 | Argentina | Messi |
+| 189 | Brazil | Alisson |
 
-Worth noting for whatever this turns out to be: FM stores the 1–20 attributes
-internally on a 1–200 scale and divides by 10 for display, so a byte of 160
-displays as 16. That makes `+13` plausibly a single displayed attribute rather
-than CA.
+The nation **names** are not stored beside the identifier — searching around
+each name string finds no nearby copy of its ID — so only the verified set is
+named. Unconfirmed IDs surface as raw numbers, which still group and filter
+correctly.
 
 ## 4. Club record
 
