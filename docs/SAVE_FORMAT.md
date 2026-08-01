@@ -253,13 +253,23 @@ and the ability values sit immediately in front of it.
 ```
 block-39  u8   Current Ability     1-200
 block-37  u8   Potential Ability   1-200, never below CA
-block+0   54x  attributes          each is the 1-20 value multiplied by 5
+block-15  15x  position ratings    raw 1-20
+block+0   54x  attributes          internal 1-100; display = round(v / 5), floor 1
 ```
 
-The block is exactly **54 bytes**, every one a multiple of 5 in 5..=100, which
-is FM's 1-20 attribute scale stored at 5x (100 displays as 20, 65 as 13). That
-multiple-of-5 property is the signature that finds it; searching for a run of
-raw 1-20 values finds nothing, because they are not stored that way.
+The block is exactly **54 bytes** on an internal 1-100 scale. On a freshly
+started save every value is an exact multiple of 5 — the display value times
+five — and that property was the original search signature. **It does not
+survive play**: training and decline move internals off the multiples, and an
+aged save (2035, ten seasons in) contains *no* multiples-of-5 blocks at all.
+Musiala's Crossing there is stored as 66 and displayed 13; his Penalty Taking
+as 68, displayed 14 — so the display conversion is round-to-nearest, not a
+floor, confirmed against his in-game report on all twenty named attributes.
+
+The durable signature is the whole structure at once: 54 bytes each 1-100,
+the fifteen position bytes each 1-20 immediately before, and CA/PA in range
+with PA >= CA at the fixed offsets in front. Searching for a run of raw 1-20
+values finds nothing, because they are not stored that way.
 
 **The block precedes the person it belongs to**, by a median of about 1,200
 bytes. So the owner is the next person record after the block — not the other
@@ -327,39 +337,54 @@ resolve to ST alone, Saka to AMR/AML, Mbappé to AML/ST/AMR, Bellingham to
 MC/AMC/ML, Messi to AMR/AMC/ST, and Naomi Girma to DC. The population shape is
 right too — centre-back most common, sweeper unused.
 
-## 6c. Attribute names — partly identified
+## 6c. Attribute names — twenty identified, ground truth arrived
 
-Ten of the 54 are named, from two signals that must agree: which well-known
-players top the index, and how the mean shifts by the player's strongest
-position. Crossing, Finishing, Off the Ball, Penalty Taking, Passing,
-Positioning, Technique, Long Throws, Strength, Aggression.
+Two generations of evidence. The first fourteen came statistically, from two
+signals that had to agree: which well-known players top the index, and how
+the mean shifts by the player's strongest position. That method separated
+Heading (3) from Jumping Reach (39) using goalkeepers — keepers jump
+constantly and head almost never — and gave Marking (5) against Tackling (9)
+directionally.
 
-The position data caught a mistake worth recording. Index 6 was first labelled
-Heading because Ronaldo, Haaland and Mitrović top it — but once positions were
-decoded, centre-backs average 8.5 there against strikers' 12.0. Centre-backs
-head the ball constantly, so Heading was wrong; the shape is an attacking
-movement attribute instead.
+The second generation is **ground truth**: the in-game player report for
+Jamal Musiala in an aged save, checked value-by-value against his decoded
+block. Every statistically-named outfield index matched his screen exactly,
+validating the whole first era, and the indices whose displayed value appears
+exactly once on his screen are named outright:
 
-Two matched pairs were later separated using goalkeepers and position groups:
+| Index | Name | His value |
+| --- | --- | --- |
+| 26 | Flair | 19 |
+| 27 | Corners | 10 |
+| 29 | Work Rate | 15 |
+| 34 | **Acceleration** | 14 |
+| 35 | Free Kick Taking | 11 |
+| 38 | **Pace** | 15 |
+| 40 | Leadership | 9 |
 
-- **Heading (3) against Jumping Reach (39)** — decisive. Keepers average 13.12
-  at index 39, as high as centre-backs, but 5.39 at index 3. Keepers jump
-  constantly and head almost never.
-- **Marking (5) against Tackling (9)** — directional. Marking is centre-back
-  specific while tackling is shared with defensive midfielders, and index 5's
-  centre-back-to-defensive-mid gap is +1.08 against index 9's +0.28. If wrong,
-  the two are swapped and both stay within the defensive group.
+The long-stuck 34/38 pair is settled — his screen shows Acceleration 14 and
+Pace 15 and the pair reads {14, 15} — and the Marking/Tackling caveat is
+closed (5 reads his 12, 9 his 11, as labelled). One correction: **index 40
+was labelled Aggression and is Leadership** — his Aggression is 12 but index
+40 reads 9, his exact Leadership. Otamendi, Ronaldo and Freuler topping it
+fits captains as well as it ever fitted aggressors.
 
-**Pace against Acceleration (34 and 38)** still cannot be separated: keepers
-average 9.29 and 9.09, wingers 13.39 and 13.04. That is noise.
+Still ambiguous, because several of his attributes share a displayed value:
+{7, 22} is First Touch / Vision (both 17), {43, 53} is Bravery /
+Concentration (both 13), {24, 45} holds Aggression and a hidden attribute
+(both 12), and the 18/16/14 pools hold Dribbling, Composure, Agility,
+Anticipation, Decisions, Determination, Balance, Long Shots, Teamwork,
+Natural Fitness and Stamina among FM's hidden attributes. **One more in-game
+report of a player with different values breaks most of these ties** — that
+is the cheapest remaining move.
 
-Fourteen names are now assigned, and they read correctly on players whose
-profiles are not in doubt — Haaland has Finishing 18, Off the Ball 18 and
-Marking 6; Rúben Dias has Marking 17, Tackling 17 and Finishing 6; Alisson has
-Crossing 1, Tackling 1, Positioning 18 and Jumping Reach 14.
+Index 25 is not an attribute: it reads exactly 100 in every real block
+observed, fresh or aged — a constant, and a useful sanity check.
 
-Index 25 is an oddity — mean 17.3 with most players at or near 20 — which is
-not the shape of any 1-20 attribute, so it may not be one.
+Earlier mistake worth keeping: index 6 was first labelled Heading because
+Ronaldo, Haaland and Mitrović top it — but centre-backs average 8.5 there
+against strikers' 12.0, and centre-backs head constantly. It is Off the Ball.
+Player-topping evidence alone is never sufficient.
 
 ## 6a. Players vs staff — SOLVED
 
@@ -392,9 +417,12 @@ u32   vice_captain_eid   0xFFFFFFFF when unset
 
 Two properties make the walk trustworthy. A head is only accepted when its
 `(eid, uid)` pair **matches what the club table carries** for the same entity
-id — two independent tables agreeing. And the player list ascends by entity id
-with new signings appended at the tail, which rejects coincidental count
-bytes; the parser requires the first few entries to be nearly all increasing.
+id — two independent tables agreeing. And the list itself must look like a
+squad: on a fresh save it ascends by entity id with new signings appended at
+the tail, but **a decade of transfers destroys that order entirely** — 2035
+Liverpool's list opens 24359, 15005, 10164. What survives ageing is that the
+captain and vice-captain following the list are still members of it, so the
+parser accepts either signal: ascending, or captain-linked.
 
 Verified against reality on the reference save (October 2025, so with the
 2025 summer window applied): Manchester City's 33 include Haaland, Grealish,

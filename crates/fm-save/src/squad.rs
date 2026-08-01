@@ -169,12 +169,22 @@ fn read_list(frame: &[u8], from: usize, end: usize) -> (Vec<u32>, Option<u32>, O
                 _ => break,
             }
         }
-        if eids.len() != count || !mostly_ascending(&eids) {
+        if eids.len() != count {
             at += 1;
             continue;
         }
         let captain = read_u32(frame, list_end).filter(|&v| v != u32::MAX && v != 0);
         let vice = read_u32(frame, list_end + 4).filter(|&v| v != u32::MAX && v != 0);
+        // Two shapes prove the list real. A fresh save writes it ascending
+        // with signings appended; a decade of transfers destroys that order
+        // entirely, but the captain and vice that follow are still members of
+        // the list. Either signal is accepted.
+        let captain_linked = captain.is_some_and(|v| eids.contains(&v))
+            || vice.is_some_and(|v| eids.contains(&v));
+        if !mostly_ascending(&eids) && !captain_linked {
+            at += 1;
+            continue;
+        }
         return (eids, captain, vice);
     }
     (Vec::new(), None, None)
@@ -264,12 +274,25 @@ mod tests {
     }
 
     #[test]
-    fn rejects_a_descending_list_as_noise() {
+    fn rejects_a_shuffled_list_whose_captains_are_strangers() {
+        // Neither ascending nor captain-linked: not a squad list.
         let clubs = [(369u32, 678u32), (370, 679)];
-        let mut buf = record(369, 678, &[900, 700, 500, 300, 100, 50, 20], 900, 700);
+        let mut buf = record(369, 678, &[900, 700, 500, 300, 100, 50, 20], 12345, 54321);
         buf.extend(record(370, 679, &[300, 400], 300, 400));
         let squads = scan_squads(&buf, &clubs);
         assert!(squads.iter().all(|s| s.club_eid != 369));
+    }
+
+    #[test]
+    fn accepts_a_shuffled_list_when_the_captain_is_a_member() {
+        // A decade of transfers destroys the stored order — Liverpool's real
+        // 2035 list starts 24359, 15005, 10164 — but the captain that follows
+        // is still in the list, which is the signal that keeps it.
+        let clubs = [(366u32, 675u32)];
+        let buf = record(366, 675, &[24359, 15005, 10164, 24635, 44162], 10164, 44162);
+        let squads = scan_squads(&buf, &clubs);
+        assert_eq!(squads.len(), 1);
+        assert_eq!(squads.first().unwrap().captain_eid, Some(10164));
     }
 
     #[test]

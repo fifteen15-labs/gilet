@@ -63,9 +63,14 @@ string table — the case that hides van Dijk and ~37,000 others), person and
 club entity ids, **squad membership with captains** via the squad table
 validated against club `(eid, uid)` pairs, and attributes, positions,
 nationality, Current Ability and Potential Ability, verified against real FM
-ratings. From a 44 MB save: 49,217 people, 18,663 clubs, 1,814 squads,
-~1.5 s. Squad resolution is 99.76% of referenced people; every player row now
-carries their club's short name.
+ratings. Twenty attribute indices are named — Pace and Acceleration split,
+Marking/Tackling confirmed, index 40 corrected to Leadership — via ground
+truth from an in-game report (`docs/SAVE_FORMAT.md` §6c). Aged saves parse:
+attribute internals are 1-100 (only initialised to display×5) and squad
+lists shuffle after years of transfers, both handled and locked in by a
+test against a 2035 save. From a 44 MB save: 49,217 people, 18,663 clubs,
+1,814 squads, ~1.5 s. Squad resolution is 99.76% of referenced people; every
+player row carries their club's short name.
 
 Search, shortlists, saving a filtered search as a shortlist, and CSV
 import/export are wired end to end, covered by integration tests in

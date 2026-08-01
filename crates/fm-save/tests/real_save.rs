@@ -5,12 +5,17 @@
 
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-fn load() -> Option<fm_save::Save> {
+fn load_named(name: &str) -> Option<fm_save::Save> {
     let home = std::env::var_os("HOME")?;
     let path = std::path::PathBuf::from(home)
-        .join("Library/Application Support/Sports Interactive/Football Manager 26/games/Career.fm");
+        .join("Library/Application Support/Sports Interactive/Football Manager 26/games")
+        .join(name);
     let bytes = std::fs::read(path).ok()?;
     Some(fm_save::Save::parse(&bytes).unwrap())
+}
+
+fn load() -> Option<fm_save::Save> {
+    load_named("Career.fm")
 }
 
 macro_rules! save_or_skip {
@@ -85,4 +90,69 @@ fn known_entity_ids_read_back_exactly() {
         .unwrap();
     assert_eq!(haaland.eid, Some(10_241));
     assert_eq!(haaland.uid, Some(29_179_241));
+}
+
+/// An aged save is the hard case: a decade of training moves attribute
+/// internals off the multiples of five, and transfers shuffle every squad
+/// list out of entity-id order. The values asserted here are read straight
+/// from the in-game player report for Jamal Musiala on 28 May 2035.
+#[test]
+fn an_aged_save_decodes_against_the_in_game_report() {
+    let Some(save) = load_named("Ongoing.fm") else {
+        eprintln!("skipped: no Ongoing.fm on this machine");
+        return;
+    };
+
+    let musiala = save
+        .people
+        .iter()
+        .find(|p| p.full_name == "Jamal Musiala")
+        .expect("Musiala should be in the database");
+    let ability = musiala.ability.as_ref().expect("Musiala is a player");
+
+    assert_eq!((ability.current, ability.potential), (180, 185));
+
+    // The club link survives the shuffled squad lists.
+    let liverpool = save
+        .clubs
+        .iter()
+        .find(|c| c.name == "Liverpool")
+        .and_then(|c| c.eid)
+        .expect("Liverpool should have an entity id");
+    assert_eq!(musiala.club_eid, Some(liverpool));
+
+    // Every named attribute, exactly as the report screen shows it.
+    let shown = [
+        (0, 13, "Crossing"),
+        (2, 16, "Finishing"),
+        (3, 13, "Heading"),
+        (5, 12, "Marking"),
+        (6, 16, "Off the Ball"),
+        (8, 14, "Penalty Taking"),
+        (9, 11, "Tackling"),
+        (10, 17, "Passing"),
+        (20, 11, "Positioning"),
+        (23, 18, "Technique"),
+        (26, 19, "Flair"),
+        (27, 10, "Corners"),
+        (29, 15, "Work Rate"),
+        (30, 5, "Long Throws"),
+        (34, 14, "Acceleration"),
+        (35, 11, "Free Kick Taking"),
+        (36, 12, "Strength"),
+        (38, 15, "Pace"),
+        (39, 12, "Jumping Reach"),
+        (40, 9, "Leadership"),
+    ];
+    for (index, value, name) in shown {
+        assert_eq!(fm_save::ability::attribute_name(index), Some(name));
+        assert_eq!(
+            ability.attributes.get(index).copied(),
+            Some(value),
+            "{name} should read {value}"
+        );
+    }
+
+    // His position ratings: natural AM(C), accomplished across the AM strip.
+    assert_eq!(ability.natural_positions().first().copied(), Some("AMC"));
 }

@@ -53,40 +53,38 @@ link is a dedicated squad table validated against club `(eid, uid)` pairs.
 
 ---
 
-## 2. Attribute names — 14 of 54 identified
+## 2. Attribute names — 20 of 54 identified, ground truth flowing
 
-**Problem.** The format does not label its attributes. Fourteen are named (see
-`SAVE_FORMAT.md` §6c); the rest show as "Attribute N".
+Solved substantially on 1 August 2026 via ground truth: an in-game player
+report (Jamal Musiala, aged save) checked against his decoded block. All
+fourteen statistical labels verified exactly — **the Marking/Tackling caveat
+is closed** and **Pace (38) against Acceleration (34) is split** — plus six
+new labels (Flair 26, Corners 27, Work Rate 29, Free Kick Taking 35) and one
+correction: index 40 is **Leadership**, not Aggression. Details and the
+per-index table are in `SAVE_FORMAT.md` §6c.
 
-**Method that worked**, for anyone continuing: three independent signals, and an
-index is only named when they agree.
+Same session found that attribute internals are 1-100, only *initialised* to
+display×5 — an aged save has no multiples of 5 left, which had made it parse
+as zero players until the scan learned the structural signature.
 
-- Which well-known players top the index across the database.
-- How the mean shifts by the player's strongest position (needs positions, which
-  are decoded — see `research/byposition.py`).
-- Goalkeepers as a discriminator, which is what finally separated Heading from
-  Jumping Reach: keepers average 13.12 at index 39 but 5.39 at index 3, because
-  they jump constantly and head almost never.
+**Remaining, and the cheap way to finish it.** Several indices tie because
+Musiala shows the same displayed value on each: {7, 22} = First Touch /
+Vision, {43, 53} = Bravery / Concentration, {24, 45} = Aggression + a hidden
+attribute, and the 18/16/14 pools hold Dribbling, Composure, Agility,
+Anticipation, Decisions, Determination, Balance, Long Shots, Teamwork,
+Natural Fitness, Stamina among hidden attributes. **Each further screenshot
+of a player with a different value spread breaks more ties** — ideal is a
+limited player whose visible attributes are all different numbers. The
+`player` example prints any player's full decoded block for comparison:
 
-**Specifically unsolved: Pace against Acceleration (indices 34 and 38).**
-Keepers average 9.29 and 9.09; wingers 13.39 and 13.04; age correlation is
-+0.158 and +0.142. Every signal tried returns noise. These two attributes are
-near-identical in how they distribute across a football database, which may make
-them genuinely inseparable without ground truth. **The cheap fix is the in-game
-editor**: read Pace and Acceleration for three or four players and the pair
-resolves immediately. Same for the remaining 29 outfield attributes.
+```bash
+cargo run --release --example player -- <save.fm> "Player Name"
+```
 
-**A caveat to carry forward.** Marking (5) and Tackling (9) are named on a
-directional signal only — index 5 has a centre-back-to-defensive-mid gap of
-+1.08 against index 9's +0.28. If that reasoning is wrong, the two are swapped.
-Both stay within the defensive group either way, so the damage is bounded, but it
-is the least certain label shipped.
-
-**A mistake worth knowing about.** Index 6 was first labelled Heading because
-Ronaldo, Haaland and Mitrović top it. Once positions were decoded, centre-backs
-averaged 8.5 there against strikers' 12.0 — and centre-backs head the ball
-constantly. It is attacking movement, now Off the Ball. Player-topping evidence
-alone is not sufficient; always cross-check against position.
+**Method notes that still matter.** Player-topping evidence alone is never
+sufficient (index 6 looked like Heading until positions showed centre-backs
+at 8.5 there); and a screenshot only pins an index when its value appears
+exactly once on that screen.
 
 ---
 
@@ -121,7 +119,23 @@ and Handling are most of what Current Ability measures. Index 31 also has the
 lowest mean (8.13) and reaches 1, which fits Eccentricity.
 
 That is enough to label the three tendencies as a group, but not to tell them
-apart. The in-game editor would settle it in minutes.
+apart. **The Musiala method finishes this too**: one in-game report of a
+goalkeeper, compared against their decoded block with
+`cargo run --release --example player`, names every index whose displayed
+value appears once on the screen.
+
+---
+
+## 3b. Staff attributes — not wired
+
+Staff (and players who can coach) show coaching, mental and knowledge
+attributes in-game; none are parsed. The parser's player/staff split is the
+*absence* of the 54-byte block, so staff currently carry no numbers at all.
+Two leads sit unexplored in the person record: a short 1-20 run right after
+the date of birth (eight values — `12 13 0f 0e 10 10 12 04` shapes), and the
+`.. 4f 00 ff`-terminated rows that look like coaching-badge and licence
+entries. A staff member's in-game profile screenshot against those bytes is
+the same trick that cracked the player attributes.
 
 ---
 

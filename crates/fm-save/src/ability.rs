@@ -30,43 +30,38 @@ pub fn is_goalkeeping(index: usize) -> bool {
 
 /// Names inferred for some attribute indices.
 ///
-/// The format does not label its attributes. These were identified from two
-/// independent signals: which well-known players top each index, and how the
-/// mean varies by the player's strongest position once positions were decoded.
-/// An index is only named when both agree.
+/// The format does not label its attributes. Two generations of evidence:
 ///
-/// - 0 — wingers and full-backs high, centre-backs lowest: **Crossing**
-/// - 2 — Kane, Shaw, Ronaldo, Haaland, Mbappé; strikers 12.2 against
-///   centre-backs 6.4: **Finishing**
-/// - 6 — strikers highest, centre-backs lowest: **Off the Ball**
-/// - 8 — Kane, Toney and Ronaldo, the recognised penalty takers
-/// - 10 — Messi, Tielemans, Fernandes; midfielders high
-/// - 20 — centre-backs and defensive mids high, wingers low: **Positioning**
-/// - 23 — Messi, Dybala, Wirtz
-/// - 30 — low everywhere (mean 6.6) and peaking at full-backs, the signature of
-///   **Long Throws**
-/// - 36 — centre-backs and strikers high, wingers low: **Strength**
-/// - 40 — Otamendi, Ronaldo, Freuler; defenders high
+/// **Statistical** (the first fourteen): which well-known players top each
+/// index, and how the mean varies by the player's strongest position — an
+/// index was only named when both agreed. That method separated Heading (3)
+/// from Jumping Reach (39) via goalkeepers, and gave Marking (5) against
+/// Tackling (9) directionally.
 ///
-/// The position data also corrected an earlier mistake: index 6 was first
-/// labelled Heading on the strength of Ronaldo and Haaland topping it, but
-/// centre-backs average 8.5 there against strikers' 12.0. Centre-backs head the
-/// ball constantly, so Heading was wrong.
+/// **Ground truth** (the rest, plus one correction): the in-game player
+/// report for Jamal Musiala in an aged save, checked against his decoded
+/// block. All thirteen statistically-named outfield indices matched his
+/// screen exactly, which validates both eras at once. Indices whose displayed
+/// value appeared exactly once in his block are named outright:
 ///
-/// Two matched pairs were separated once positions were decoded:
+/// - 26 **Flair** (his 19), 27 **Corners** (10), 35 **Free Kick Taking** (11)
+/// - 40 **Leadership** (9) — *correcting* the earlier "Aggression" label;
+///   Otamendi, Ronaldo and Freuler topping it fits captains as well as
+///   aggressors, and the ground truth is unambiguous
+/// - the long-stuck 34/38 pair split: his screen shows Acceleration 14 and
+///   Pace 15, the pair reads {14, 15}, so **34 = Acceleration, 38 = Pace**,
+///   and Work Rate's 15 lands on **29** as the only remaining candidate
 ///
-/// - **Heading (3) against Jumping Reach (39)** — decisive. Goalkeepers average
-///   13.12 at index 39, as high as centre-backs, but only 5.39 at index 3.
-///   Keepers jump constantly and head the ball almost never.
-/// - **Marking (5) against Tackling (9)** — directional rather than decisive.
-///   Marking is centre-back specific while tackling is shared with defensive
-///   midfielders, and index 5 shows a centre-back-to-defensive-mid gap of +1.08
-///   against index 9's +0.28. If this one is wrong the two are swapped, which
-///   keeps both within the defensive group.
+/// Marking (5) at 12 and Tackling (9) at 11 matched his screen too, so the
+/// old "if this is wrong they are swapped" caveat is closed.
 ///
-/// **Pace against Acceleration (34 and 38)** stays unnamed: goalkeepers average
-/// 9.29 and 9.09, wingers 13.39 and 13.04. That is noise, not a signal, and a
-/// coin-flip label is worse than none on a tool used to judge players.
+/// Still ambiguous — several indices share a displayed value on his screen:
+/// {7, 22} is First Touch / Vision, {43, 53} is Bravery / Concentration,
+/// {24, 45} holds Aggression and a hidden attribute, and the 18/16/14 pools
+/// hold Dribbling, Composure, Agility, Anticipation, Decisions,
+/// Determination, Balance, Long Shots, Teamwork, Natural Fitness and Stamina
+/// among hidden attributes. A report for one more player with different
+/// values would break most of those ties.
 ///
 /// These are inferences, not values read from the file.
 #[must_use]
@@ -74,27 +69,40 @@ pub fn attribute_name(index: usize) -> Option<&'static str> {
     match index {
         0 => Some("Crossing"),
         2 => Some("Finishing"),
+        3 => Some("Heading"),
+        5 => Some("Marking"),
         6 => Some("Off the Ball"),
         8 => Some("Penalty Taking"),
+        9 => Some("Tackling"),
         10 => Some("Passing"),
         20 => Some("Positioning"),
         23 => Some("Technique"),
-        3 => Some("Heading"),
-        5 => Some("Marking"),
-        9 => Some("Tackling"),
+        26 => Some("Flair"),
+        27 => Some("Corners"),
+        29 => Some("Work Rate"),
         30 => Some("Long Throws"),
+        34 => Some("Acceleration"),
+        35 => Some("Free Kick Taking"),
         36 => Some("Strength"),
+        38 => Some("Pace"),
         39 => Some("Jumping Reach"),
-        40 => Some("Aggression"),
+        40 => Some("Leadership"),
         _ => None,
     }
 }
 
-/// Attributes are stored on the 1-20 scale times five, so every byte is a
-/// multiple of 5 in 5..=100.
+/// Attributes are stored on an internal 1-100 scale; the displayed 1-20 value
+/// is the internal one divided by five, rounded to nearest. On a freshly
+/// started save every internal value is an exact multiple of five (display
+/// times five), but training and decline move them off the multiples — an
+/// aged save has none left, which is why the byte test cannot require
+/// divisibility.
 const SCALE: u8 = 5;
-const MIN_ATTR: u8 = 5;
+const MIN_ATTR: u8 = 1;
 const MAX_ATTR: u8 = 100;
+
+/// Position ratings stay on the raw 1-20 scale.
+const MAX_POSITION: u8 = 20;
 
 /// Bytes back from the start of the block.
 const CA_BACK: usize = 39;
@@ -166,31 +174,30 @@ impl Ability {
 }
 
 fn is_attribute_byte(b: u8) -> bool {
-    (MIN_ATTR..=MAX_ATTR).contains(&b) && b.is_multiple_of(SCALE)
+    (MIN_ATTR..=MAX_ATTR).contains(&b)
 }
 
 /// Finds every attribute block in a frame and reads the ability values in
 /// front of it.
 ///
-/// A run must be exactly [`ATTRIBUTE_COUNT`] bytes long. Shorter runs occur —
-/// staff carry a smaller set — and accepting them would attach ability values
-/// to the wrong field offsets.
+/// A bare run of 1-100 bytes is no signature at all, so the block is
+/// recognised by its whole surrounding structure at once: fifteen position
+/// bytes each 1-20 immediately before it, Current and Potential Ability at
+/// fixed offsets in front with `1 <= CA <= PA <= 200`, and all 54 attribute
+/// bytes in 1-100. Matches step forward a full block so one block is never
+/// reported twice at overlapping offsets.
 #[must_use]
 pub fn scan_abilities(frame: &[u8]) -> Vec<Ability> {
     let mut out = Vec::new();
-    let mut run_start: Option<usize> = None;
+    let mut at = CA_BACK;
 
-    for (i, &b) in frame.iter().enumerate() {
-        if is_attribute_byte(b) {
-            run_start.get_or_insert(i);
-            continue;
-        }
-        if let Some(start) = run_start.take() {
-            if i - start == ATTRIBUTE_COUNT {
-                if let Some(ability) = read_block(frame, start) {
-                    out.push(ability);
-                }
+    while at + ATTRIBUTE_COUNT <= frame.len() {
+        match read_block(frame, at) {
+            Some(ability) => {
+                out.push(ability);
+                at += ATTRIBUTE_COUNT;
             }
+            None => at += 1,
         }
     }
 
@@ -198,6 +205,14 @@ pub fn scan_abilities(frame: &[u8]) -> Vec<Ability> {
 }
 
 fn read_block(frame: &[u8], start: usize) -> Option<Ability> {
+    // Position ratings come first in the test: the fifteen bytes before the
+    // block are each 1-20, which rejects almost every offset within a byte
+    // or two and keeps the whole-frame scan cheap.
+    let raw_positions = frame.get(start.checked_sub(POSITION_COUNT)?..start)?;
+    if !raw_positions.iter().all(|&b| (1..=MAX_POSITION).contains(&b)) {
+        return None;
+    }
+
     let current = *frame.get(start.checked_sub(CA_BACK)?)?;
     let potential = *frame.get(start.checked_sub(PA_BACK)?)?;
 
@@ -207,17 +222,21 @@ fn read_block(frame: &[u8], start: usize) -> Option<Ability> {
         return None;
     }
 
-    let raw = frame.get(start..start + ATTRIBUTE_COUNT)?;
+    let raw = frame.get(start..start.checked_add(ATTRIBUTE_COUNT)?)?;
+    if !raw.iter().all(|&b| is_attribute_byte(b)) {
+        return None;
+    }
     let mut attributes = [0u8; ATTRIBUTE_COUNT];
     for (slot, &b) in attributes.iter_mut().zip(raw) {
-        *slot = b / SCALE;
+        // Round to nearest: 66 displays as 13, 68 as 14. Exact for the
+        // multiples of five a fresh save holds. The display floor is 1 —
+        // an internal 1 or 2 would otherwise round to a nonexistent 0.
+        *slot = ((b + SCALE / 2) / SCALE).max(1);
     }
 
-    // Positions are already on the 1-20 scale, unlike the attributes.
-    let raw_positions = frame.get(start.checked_sub(POSITION_COUNT)?..start)?;
     let mut positions = [0u8; POSITION_COUNT];
     for (slot, &b) in positions.iter_mut().zip(raw_positions) {
-        *slot = b.min(20);
+        *slot = b;
     }
 
     Some(Ability {
@@ -421,10 +440,45 @@ mod tests {
         // head almost never.
         assert_eq!(attribute_name(3), Some("Heading"));
         assert_eq!(attribute_name(39), Some("Jumping Reach"));
-        // Pace and Acceleration remain indistinguishable and stay unnamed.
-        for ambiguous in [34, 38] {
+        // Ground truth from Musiala's in-game report split the 34/38 pair:
+        // his screen showed Acceleration 14 and Pace 15 and the pair read
+        // {14, 15}.
+        assert_eq!(attribute_name(34), Some("Acceleration"));
+        assert_eq!(attribute_name(38), Some("Pace"));
+        // 40 was "Aggression" until the same report read 9 there, matching
+        // his Leadership exactly.
+        assert_eq!(attribute_name(40), Some("Leadership"));
+        // First Touch and Vision both showed 17, so 7 and 22 stay unnamed.
+        for ambiguous in [7, 22] {
             assert_eq!(attribute_name(ambiguous), None, "index {ambiguous} is not separable");
         }
+    }
+
+    #[test]
+    fn rounds_aged_save_internals_to_the_nearest_display_value() {
+        // Training moves internals off the multiples of five a fresh save
+        // holds: Musiala's Crossing is stored as 66 and displayed 13, his
+        // Penalty Taking as 68 and displayed 14.
+        let mut buf = vec![0u8; 64];
+        let start = buf.len();
+        *buf.get_mut(start - CA_BACK).unwrap() = 180;
+        *buf.get_mut(start - PA_BACK).unwrap() = 185;
+        for i in 0..POSITION_COUNT {
+            *buf.get_mut(start - POSITION_COUNT + i).unwrap() = 1;
+        }
+        let mut attrs = [50u8; ATTRIBUTE_COUNT];
+        attrs[0] = 66;
+        attrs[1] = 68;
+        attrs[2] = 1;
+        buf.extend_from_slice(&attrs);
+        buf.push(0xFF);
+
+        let found = scan_abilities(&buf);
+        assert_eq!(found.len(), 1);
+        let a = found.first().unwrap();
+        assert_eq!(a.attributes[0], 13, "66 rounds down to 13");
+        assert_eq!(a.attributes[1], 14, "68 rounds up to 14");
+        assert_eq!(a.attributes[2], 1, "1 displays as 1, not 0");
     }
 
     #[test]
