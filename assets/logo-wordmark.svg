@@ -2,13 +2,13 @@
 <!--
   Gilet — horizontal wordmark lockup
 
-  Same mark as logo.svg (tapered coat body, hood with a true cut-out
-  drawstring aperture, two ascending data columns seen through the
-  opening), set bare — no backing panel — beside the wordmark, for use
-  directly on the app's own dark background (#0e1419). The aperture is
-  a genuine hole (fill-rule evenodd), so it is real transparency here,
-  not a painted rectangle — it will still look correct on any
-  background, not just the app's.
+  Same mark as logo.svg (sleeveless gilet: armhole scoops, stand-up
+  collar, centre-front zip, quilted baffle rows — see that file for the
+  full description), set bare — no backing plate — beside the wordmark,
+  for use directly on the app's own dark background (#0e1419). The
+  garment's cutouts (zip, quilting) are true holes (fill-rule: evenodd),
+  so this is real transparency, not a painted rectangle — it will still
+  look correct on any background, not just the app's.
 
   Type: IBM Plex Sans Condensed, bold. The project already ships
   @fontsource/ibm-plex-sans-condensed, so it will be available inside
@@ -18,30 +18,34 @@
   outlines in a vector tool (e.g. Illustrator/Inkscape/Figma "Object to
   Path") and drop the font-family entirely — see README.
 -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 240" width="900" height="240" role="img" aria-label="Gilet">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 240" width="600" height="240" role="img" aria-label="Gilet">
   <title>Gilet</title>
 
   <!-- mark, scaled and repositioned from its native 512x512 coordinates -->
-  <g transform="translate(-77.8,-64.2) scale(0.719)">
+  <g transform="translate(-28.402,-15.905) scale(0.520710)">
     <path
       fill-rule="evenodd"
       fill="#ff6a13"
-      d="M136,395 L166,217 Q166,187 196,187 L196,141 Q196,117 220,117 L292,117 Q316,117 316,141 L316,187 Q346,187 346,217 L376,395 Z
-         M232,135 L280,135 Q292,135 292,147 L292,167 Q292,179 280,179 L232,179 Q220,179 220,167 L220,147 Q220,135 232,135 Z"
+      d="M116,140 L196,140 L196,92 L226,92 L256,150 L286,92 L316,92 L316,140 L396,140
+         Q316,175 396,260 L396,430 L116,430 L116,260 Q196,175 116,140 Z
+         M249,150 L263,150 L263,430 L249,430 Z
+         M140,279 L240,279 L240,291 L140,291 Z
+         M272,279 L372,279 L372,291 L272,291 Z
+         M140,339 L240,339 L240,351 L140,351 Z
+         M272,339 L372,339 L372,351 L272,351 Z
+         M140,399 L240,399 L240,411 L140,411 Z
+         M272,399 L372,399 L372,411 L272,411 Z"
     />
-    <rect x="239" y="153" width="12" height="18" fill="#3fbfa8"/>
-    <rect x="261" y="141" width="12" height="30" fill="#3fbfa8"/>
   </g>
 
   <!-- wordmark -->
   <text
-    x="220"
-    y="120"
-    dominant-baseline="central"
+    x="213.8"
+    y="185"
     font-family="'IBM Plex Sans Condensed', 'Arial Narrow', Arial, sans-serif"
     font-weight="700"
-    font-size="150"
-    letter-spacing="1"
+    font-size="178"
+    letter-spacing="2"
     fill="#e8eff4"
   >Gilet</text>
 </svg>

@@ -65,10 +65,40 @@ fn opens_a_real_save_and_finds_people_and_clubs() {
         assert!((1..=200).contains(&ca) && (1..=200).contains(&pa), "{}: out of range", p.name);
     }
 
+    // Every player carries the full attribute set, on FM's 1-20 scale.
+    for p in players.iter().take(500) {
+        assert_eq!(p.attributes.len(), 54, "{}: expected 54 attributes", p.name);
+        assert!(
+            p.attributes.iter().all(|a| (1..=20).contains(a)),
+            "{}: attribute outside 1-20",
+            p.name
+        );
+    }
+
+    // The goalkeeping indices are reported so the UI can group them, and there
+    // are exactly the 11 FM defines.
+    assert_eq!(summary.goalkeeping_indices.len(), 11);
+
+    // Keepers score highly on those; outfielders sit near the floor. This is
+    // the property the player/staff and GK grouping both rest on.
+    let gk_mean = |p: &&&gilet_lib::commands::PlayerRow| -> f64 {
+        let total: u32 = summary
+            .goalkeeping_indices
+            .iter()
+            .filter_map(|&i| p.attributes.get(i))
+            .map(|&v| u32::from(v))
+            .sum();
+        f64::from(total) / 11.0
+    };
+    let keepers = players.iter().filter(|p| gk_mean(p) > 8.0).count();
+    assert!(keepers > 50, "expected goalkeepers, found {keepers}");
+    assert!(keepers * 3 < players.len(), "keepers should be a minority");
+
     // Staff carry no attribute block, which is what separates them.
     let staff: Vec<_> = summary.players.iter().filter(|p| !p.is_player).collect();
     assert!(!staff.is_empty());
     assert!(staff.iter().all(|p| p.ability.is_none()));
+    assert!(staff.iter().all(|p| p.attributes.is_empty()));
 }
 
 #[test]

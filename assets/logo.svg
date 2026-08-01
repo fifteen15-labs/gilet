@@ -2,58 +2,67 @@
 <!--
   Gilet — primary mark (512x512)
 
-  What it depicts: a hooded coat, flat-sketched front-on — a body that
-  flares from the shoulders down to the hem (the way a coat actually
-  hangs, wider at the bottom, not a canister narrowing to a nozzle),
-  short shoulder fillets, and a hood that is a wide, shallow dome
-  (wider than it is tall) rather than a peak. It is a garment first:
-  unmistakably worn clothing, not an abstract badge, a house gable, or
-  a mountain.
+  What it depicts: a sleeveless padded gilet (body-warmer), drawn flat and
+  front-on, the way a kit supplier's product glyph would draw one. It is a
+  literal garment icon, not an abstract badge.
 
-  The hood is not solid. It has a genuine opening cut into it — the
-  drawstring aperture, the single most hood-specific shape there is —
-  and inside that opening, seen through it, sits a small rising bar
-  chart: two columns, the second taller than the first. The opening is
-  simultaneously the hood's face-hole and the chart's plot area. It is
-  one hole in the fabric doing both jobs at once, not a garment with a
-  chart drawn next to it.
+  Three features carry the read, in order of importance:
+    1. Armholes — a deep concave scoop cut into each side at the shoulder,
+       flaring the shoulder out and cinching the torso in below it before
+       the body squares off again at the hip. This is the single feature
+       that says "sleeveless" and rules out a jacket or a t-shirt; it is
+       drawn big and bold on purpose, because a small or fussy armhole is
+       exactly the kind of detail that mushes away at icon size.
+    2. A centre-front zip — a single vertical slit running from the base
+       of the collar to the hem, splitting the garment into two panels.
+    3. A stand-up collar — the top edge is drawn as two flat-topped points
+       either side of a centre V, rather than a plain flat neckline. This
+       is what reads as "coach on the touchline" rather than "generic
+       safety vest."
+  A fourth, lower-priority feature — three rows of horizontal quilted
+  baffle seams — adds the padded/quilted texture real gilets have. It
+  survives at 32px (checked; see below) so it stays in.
 
-  Colour: Accent 1 hi-vis orange (#ff6a13) leads and is the only colour
-  on the garment itself, since orange is the technical-wear colour. The
-  two columns inside the hood opening are Accent 2 teal (#3fbfa8), the
-  data colour — the one place "obsessive spreadsheet stats" gets its
-  own colour, and it is deliberately the thing you'd be looking at if
-  you were peering into the hood.
+  Construction: one single flat-fill path (fill-rule: evenodd). The outer
+  contour is the garment silhouette; the armhole scoops are notches cut
+  directly into that outer contour (open to the edge, like a real
+  armhole), not enclosed holes. The zip and the six quilting-seam segments
+  are true interior cutouts, so on any background — including a flat
+  single-colour re-fill — they show as genuine negative space rather than
+  relying on a second colour to read. That is what makes the mark survive
+  the monochrome-silhouette test: strip the orange and the shape alone
+  (armholes, collar, zip slit, quilting) still reads as "gilet."
 
-  Monochrome check: the aperture is a true cut-out (fill-rule: evenodd
-  on the hood path, not a same-colour rectangle painted over it), so it
-  survives as genuine negative space at any single colour, on any
-  background. Silhouette alone — hood shape, opening, tapered body —
-  reads as "hooded coat" with no colour and no context.
+  Colour: Accent 1 hi-vis orange (#ff6a13) is the only colour on the
+  garment — orange is the technical-wear colour, and a single confident
+  colour on a dark ground reads more like a kit-supplier product mark
+  than a multi-colour illustration. Accent 2 teal is deliberately not
+  used here; it did not earn its place on an icon this simple.
+
+  Checked at 512px, 32px and as a flat single-colour silhouette — the
+  armhole scoops, collar points, centre zip and quilting rows all still
+  read at 32px, and the shape holds with the colour stripped entirely.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Gilet">
   <title>Gilet</title>
 
-  <!-- app background -->
+  <!-- app background, full bleed -->
   <rect width="512" height="512" fill="#0e1419"/>
 
-  <!-- instrument panel: small radius, thin border, matches the app's own panel chrome -->
-  <rect x="64" y="64" width="384" height="384" rx="28" fill="#161e26" stroke="#263340" stroke-width="5"/>
-
-  <!-- coat: a body flaring from shoulder to hem, a short fillet at each
-       shoulder, then a wide, shallow dome (hood) — proportioned so the
-       hood is wider than it is tall, a dome rather than a steeple. One
-       continuous outline, no hard "handle" step. A true cut-out
-       aperture (fill-rule evenodd) stands in for the drawstring
-       opening. -->
+  <!-- the gilet: outer silhouette (shoulders, armhole scoops, stand-up
+       collar points either side of a centre V, straight hem) plus true
+       cutouts for the centre zip and three rows of quilting baffles -->
   <path
     fill-rule="evenodd"
     fill="#ff6a13"
-    d="M136,395 L166,217 Q166,187 196,187 L196,141 Q196,117 220,117 L292,117 Q316,117 316,141 L316,187 Q346,187 346,217 L376,395 Z
-       M232,135 L280,135 Q292,135 292,147 L292,167 Q292,179 280,179 L232,179 Q220,179 220,167 L220,147 Q220,135 232,135 Z"
+    d="M116,140 L196,140 L196,92 L226,92 L256,150 L286,92 L316,92 L316,140 L396,140
+       Q316,175 396,260 L396,430 L116,430 L116,260 Q196,175 116,140 Z
+       M249,150 L263,150 L263,430 L249,430 Z
+       M140,279 L240,279 L240,291 L140,291 Z
+       M272,279 L372,279 L372,291 L272,291 Z
+       M140,339 L240,339 L240,351 L140,351 Z
+       M272,339 L372,339 L372,351 L272,351 Z
+       M140,399 L240,399 L240,411 L140,411 Z
+       M272,399 L372,399 L372,411 L272,411 Z"
   />
-
-  <!-- data seen through the hood opening: two ascending columns -->
-  <rect x="239" y="153" width="12" height="18" fill="#3fbfa8"/>
-  <rect x="261" y="141" width="12" height="30" fill="#3fbfa8"/>
 </svg>

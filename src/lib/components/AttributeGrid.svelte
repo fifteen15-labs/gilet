@@ -22,8 +22,14 @@
 		return 'text-[var(--color-faint)]';
 	}
 
+	const names = $derived(scout.summary?.attribute_names ?? []);
+
 	function label(entry: Entry): string {
-		return `Attribute ${entry.index + 1}`;
+		return names[entry.index] || `Attribute ${entry.index + 1}`;
+	}
+
+	function named(entry: Entry): boolean {
+		return Boolean(names[entry.index]);
 	}
 </script>
 
@@ -34,7 +40,9 @@
 			<div class="grid grid-cols-2 gap-x-4 gap-y-0.5">
 				{#each entries as entry (entry.index)}
 					<div class="flex items-baseline justify-between border-b border-[var(--color-line-soft)] py-0.5">
-						<span class="text-xs text-[var(--color-faint)]">{label(entry)}</span>
+						<span
+							class="text-xs {named(entry) ? 'text-[var(--color-mist)]' : 'text-[var(--color-faint)]'}"
+						>{label(entry)}</span>
 						<span class="tabular text-xs {tone(entry.value)}">{entry.value}</span>
 					</div>
 				{/each}
@@ -52,7 +60,8 @@
 	{@render group('Outfield', outfield)}
 	{@render group('Goalkeeping', goalkeeping)}
 	<p class="text-xs leading-relaxed text-[var(--color-faint)]">
-		Values are on FM's 1&ndash;20 scale. The goalkeeping set is identified from the data; individual
-		attribute names are not mapped yet, so each is shown by its position.
+		Values are on FM's 1&ndash;20 scale. Named attributes are inferred from which players top them,
+		not read from the save, so treat them as strong guesses. The rest are shown by position because
+		the evidence does not separate them &mdash; Marking from Tackling, or Pace from Acceleration.
 	</p>
 {/if}

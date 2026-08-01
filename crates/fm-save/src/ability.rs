@@ -28,6 +28,40 @@ pub fn is_goalkeeping(index: usize) -> bool {
     GOALKEEPING_INDICES.contains(&index)
 }
 
+/// Names inferred for some attribute indices.
+///
+/// The format does not label its attributes, so these were identified by asking
+/// which well-known players top each index across the whole database. Only
+/// indices whose top scorers are unambiguous are named:
+///
+/// - 2 — Kane, Shaw, Ronaldo, Haaland, Mbappé
+/// - 6 — Ronaldo, Vinícius, Haaland, Mitrović
+/// - 8 — Kane, Toney, Ronaldo, the recognised penalty takers
+/// - 10 — Messi, Tielemans, Fernandes, Kane
+/// - 23 — Messi, Dybala, Wirtz
+/// - 26 — Vinícius, Conceição, Templeton
+/// - 34 — Alphonso Davies, Mbappé, Doku, Leão
+/// - 40 — Otamendi, Ronaldo, Freuler
+///
+/// Indices left unnamed are genuinely ambiguous — Marking against Tackling, or
+/// Pace against Acceleration, cannot be told apart from player profiles alone,
+/// and a coin-flip label is worse than none on a tool used to judge players.
+/// These are inferences, not values read from the file.
+#[must_use]
+pub fn attribute_name(index: usize) -> Option<&'static str> {
+    match index {
+        2 => Some("Finishing"),
+        6 => Some("Heading"),
+        8 => Some("Penalty Taking"),
+        10 => Some("Passing"),
+        23 => Some("Technique"),
+        26 => Some("Flair"),
+        34 => Some("Acceleration"),
+        40 => Some("Aggression"),
+        _ => None,
+    }
+}
+
 /// Attributes are stored on the 1-20 scale times five, so every byte is a
 /// multiple of 5 in 5..=100.
 const SCALE: u8 = 5;

@@ -100,6 +100,8 @@ pub struct ClubRow {
 pub struct SaveSummary {
     /// Which attribute indices are goalkeeping ones, so the UI can group them.
     pub goalkeeping_indices: Vec<usize>,
+    /// Inferred name per attribute index, empty string where unknown.
+    pub attribute_names: Vec<String>,
     pub path: String,
     pub players: Vec<PlayerRow>,
     pub clubs: Vec<ClubRow>,
@@ -174,6 +176,9 @@ pub fn open_save(path: String, today: Vec<u16>) -> Result<SaveSummary, CommandEr
 
     Ok(SaveSummary {
         goalkeeping_indices: fm_save::ability::GOALKEEPING_INDICES.to_vec(),
+        attribute_names: (0..fm_save::ability::ATTRIBUTE_COUNT)
+            .map(|i| fm_save::ability::attribute_name(i).unwrap_or_default().to_owned())
+            .collect(),
         path,
         players,
         clubs,

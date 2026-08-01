@@ -33,6 +33,8 @@ export type SaveSummary = {
 	clubs: Club[];
 	/** Attribute indices that belong to the goalkeeping set. */
 	goalkeeping_indices: number[];
+	/** Inferred name per attribute index; empty string where not identified. */
+	attribute_names: string[];
 	/** The save's in-game date. Null when it could not be read, in which case
 	 * ages fall back to the system clock. */
 	game_date: string | null;
