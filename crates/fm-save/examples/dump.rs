@@ -64,7 +64,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let named: Vec<String> = (0..fm_save::ability::ATTRIBUTE_COUNT)
                     .filter_map(|i| {
                         fm_save::ability::attribute_name(i)
-                            .map(|n| format!("{n} {}", a.attributes[i]))
+                            .zip(a.attributes.get(i))
+                            .map(|(n, v)| format!("{n} {v}"))
                     })
                     .collect();
                 println!("\n{who}\n   {}", named.join("  ·  "));
