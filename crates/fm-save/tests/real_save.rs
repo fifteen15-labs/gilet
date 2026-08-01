@@ -265,3 +265,19 @@ fn a_goalkeepers_report_confirms_the_goalkeeping_set() {
         assert!(ability.attributes[index] >= 5, "keeper at goalkeeping index {index}");
     }
 }
+
+/// FM 26.2.0 moved the header date; the main frame's week stamp stands in.
+/// Without it, ages on an aged save compute against the real-world clock and
+/// come out years wrong.
+#[test]
+fn an_aged_save_reads_its_own_date() {
+    let Some(save) = load_named("Ongoing.fm") else {
+        eprintln!("skipped: no Ongoing.fm on this machine");
+        return;
+    };
+    let date = save.game_date.expect("26.2.0 save should read a date");
+    // The stamp tracks the weekly rollover, so it sits within days of the
+    // true 28 May 2035.
+    assert_eq!(date.year, 2035);
+    assert_eq!(date.month, 5);
+}

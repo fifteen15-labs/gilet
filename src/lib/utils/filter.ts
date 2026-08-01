@@ -18,6 +18,11 @@ export type Filters = {
 	nationId: number | null;
 	/** Restrict by gender. 'all' keeps people whose gender is unknown too. */
 	gender: 'all' | 'men' | 'women';
+	/** Contract status: free agents (no club), or contracts expiring soon. */
+	contract: 'any' | 'free' | 'expiring';
+	/** Latest expiry date (YYYY-MM-DD) that still counts as "expiring soon".
+	 * Set alongside `contract: 'expiring'`, from the save's own date. */
+	expiryCutoff: string | null;
 	shortlistedOnly: boolean;
 };
 
@@ -30,6 +35,8 @@ export const emptyFilters: Filters = {
 	position: null,
 	nationId: null,
 	gender: 'all',
+	contract: 'any',
+	expiryCutoff: null,
 	shortlistedOnly: false
 };
 
@@ -55,6 +62,13 @@ export function matches(player: Player, filters: Filters, shortlisted: ReadonlyS
 	// filter is wrong, and this save simply cannot say.
 	if (filters.gender === 'men' && player.female !== false) return false;
 	if (filters.gender === 'women' && player.female !== true) return false;
+	// Free agents are the unattached; "expiring" needs a real date on or
+	// before the cutoff, so unknown contracts never sneak into a bargain hunt.
+	if (filters.contract === 'free' && player.club !== '') return false;
+	if (filters.contract === 'expiring') {
+		if (player.contract_until === '') return false;
+		if (filters.expiryCutoff !== null && player.contract_until > filters.expiryCutoff) return false;
+	}
 	if (filters.maxAge !== null && player.age > filters.maxAge) return false;
 	// Staff have no ability, and an unknown is not a low score — an ability
 	// filter therefore excludes them rather than treating them as zero.
@@ -78,6 +92,8 @@ export function describeFilters(filters: Filters): string {
 	if (filters.kind === 'staff') parts.push('Staff');
 	if (filters.gender === 'men') parts.push('Men');
 	if (filters.gender === 'women') parts.push('Women');
+	if (filters.contract === 'free') parts.push('Free agents');
+	if (filters.contract === 'expiring') parts.push('Expiring contracts');
 	if (filters.position !== null) parts.push(filters.position);
 	if (filters.nationId !== null) parts.push(`nation ${filters.nationId}`);
 	if (filters.maxAge !== null) parts.push(`Under ${filters.maxAge}`);

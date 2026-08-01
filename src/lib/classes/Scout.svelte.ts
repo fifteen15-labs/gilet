@@ -70,6 +70,14 @@ class Scout {
 		this.selectedId = null;
 	}
 
+	/** Jumps to the people table filtered to one club's squad. The query
+	 * matches club names, so the club's short name is the whole filter. */
+	showSquad(shortName: string): void {
+		this.filters = { ...emptyFilters, query: shortName };
+		this.tab = 'people';
+		this.selectedId = null;
+	}
+
 	/** Everything matching the current filters, sorted. Not capped — the count
 	 * shown to the user has to be the true one. */
 	matching(shortlisted: ReadonlySet<string>): Player[] {

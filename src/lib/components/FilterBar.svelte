@@ -6,13 +6,17 @@
 	type Props = { onSaveResults: () => void };
 	const { onSaveResults }: Props = $props();
 
-	/** Age brackets a scout actually uses, rather than a free-form slider. */
-	const AGE_PRESETS = [18, 21, 23];
-
 	const abilityKnown = $derived(hasAbilityData(scout.players));
 	/** Gender derives from the save's own squads; without women's football it
 	 * stays unknown and the filter hides rather than lying. */
 	const genderKnown = $derived(scout.players.some((p) => p.female !== null));
+	/** A contract counts as expiring when it ends within a year of the save's
+	 * own date (falling back to the system clock when the date is unknown). */
+	const expiryCutoff = $derived.by(() => {
+		const base = scout.summary?.game_date ?? new Date().toISOString().slice(0, 10);
+		const year = Number(base.slice(0, 4)) + 1;
+		return `${year}${base.slice(4)}`;
+	});
 	/** Slot order runs back to front, so listing them this way reads like a
 	 * team sheet rather than the file's own ordering. */
 	const POSITIONS = ['GK', 'DL', 'DC', 'DR', 'WBL', 'WBR', 'DM', 'ML', 'MC', 'MR', 'AML', 'AMC', 'AMR', 'ST'];
@@ -25,6 +29,7 @@
 			scout.filters.kind !== 'all' ||
 			scout.filters.position !== null ||
 			scout.filters.gender !== 'all' ||
+			scout.filters.contract !== 'any' ||
 			scout.filters.shortlistedOnly
 	);
 </script>
@@ -88,20 +93,16 @@
 		</select>
 
 		<div class="flex items-center gap-1">
-			<span class="eyebrow mr-1">Under</span>
-			{#each AGE_PRESETS as age (age)}
-				<button
-					type="button"
-					class="tabular rounded-[2px] border px-2 py-1 text-xs transition-colors
-						{scout.filters.maxAge === age
-						? 'border-[var(--color-hivis)] text-[var(--color-hivis)]'
-						: 'border-[var(--color-line)] text-[var(--color-mist)] hover:border-[var(--color-faint)]'}"
-					aria-pressed={scout.filters.maxAge === age}
-					onclick={() => (scout.filters.maxAge = scout.filters.maxAge === age ? null : age)}
-				>
-					{age}
-				</button>
-			{/each}
+			<span class="eyebrow mr-1">Max age</span>
+			<input
+				type="number"
+				min="14"
+				max="60"
+				bind:value={scout.filters.maxAge}
+				aria-label="Maximum age"
+				class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+					focus:border-[var(--color-hivis)] focus:outline-none"
+			/>
 		</div>
 
 		<div
@@ -132,6 +133,41 @@
 			/>
 		</div>
 
+		<div class="flex items-center gap-1">
+			<button
+				type="button"
+				class="rounded-[2px] border px-2 py-1 text-xs transition-colors
+					{scout.filters.contract === 'free'
+					? 'border-[var(--color-hivis)] text-[var(--color-hivis)]'
+					: 'border-[var(--color-line)] text-[var(--color-mist)] hover:border-[var(--color-faint)]'}"
+				aria-pressed={scout.filters.contract === 'free'}
+				title="People with no club"
+				onclick={() => (scout.filters.contract = scout.filters.contract === 'free' ? 'any' : 'free')}
+			>
+				Free agents
+			</button>
+			<button
+				type="button"
+				class="rounded-[2px] border px-2 py-1 text-xs transition-colors
+					{scout.filters.contract === 'expiring'
+					? 'border-[var(--color-hivis)] text-[var(--color-hivis)]'
+					: 'border-[var(--color-line)] text-[var(--color-mist)] hover:border-[var(--color-faint)]'}"
+				aria-pressed={scout.filters.contract === 'expiring'}
+				title="Contract ends within a year of the save's date"
+				onclick={() => {
+					if (scout.filters.contract === 'expiring') {
+						scout.filters.contract = 'any';
+						scout.filters.expiryCutoff = null;
+					} else {
+						scout.filters.contract = 'expiring';
+						scout.filters.expiryCutoff = expiryCutoff;
+					}
+				}}
+			>
+				Expiring
+			</button>
+		</div>
+
 		<button
 			type="button"
 			class="rounded-[2px] border px-2 py-1 text-xs transition-colors
@@ -154,6 +190,19 @@
 			onclick={onSaveResults}
 		>
 			Save {resultCount.toLocaleString()} as shortlist
+		</button>
+
+		<button
+			type="button"
+			class="rounded-[2px] border border-[var(--color-line)] px-2 py-1 text-xs text-[var(--color-mist)]
+				transition-colors hover:border-[var(--color-hivis)] hover:text-[var(--color-hivis)]
+				disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[var(--color-line)]
+				disabled:hover:text-[var(--color-mist)]"
+			disabled={!filtered || resultCount === 0}
+			title={shortlists.active ? `Add every result to ${shortlists.active.name}` : 'Creates a first shortlist'}
+			onclick={() => shortlists.addAll(scout.matching(shortlists.activeMembers).map((p) => p.name))}
+		>
+			Add {resultCount.toLocaleString()} to {shortlists.active?.name ?? 'shortlist'}
 		</button>
 	{/if}
 

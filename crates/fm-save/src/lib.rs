@@ -189,8 +189,14 @@ impl Save {
             }
         }
 
-        // The in-game date lives in the small header frame, not the database.
-        let game_date = frames.first().and_then(|f| gamedate::find_game_date(&f.data));
+        // The in-game date lives in the small header frame on 26.0.0; on
+        // 26.2.0 it moved, and the main frame's week stamp stands in — at
+        // most a week stale, against years wrong from a system-clock
+        // fallback.
+        let game_date = frames
+            .first()
+            .and_then(|f| gamedate::find_game_date(&f.data))
+            .or_else(|| main.and_then(|f| gamedate::find_main_frame_date(&f.data)));
 
         on_stage(Stage::Done);
         Ok(Self {

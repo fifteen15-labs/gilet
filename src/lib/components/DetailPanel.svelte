@@ -118,6 +118,14 @@
 						<dd class="tabular text-sm text-[var(--color-bright)]">{club.nation_id}</dd>
 					</div>
 				</dl>
+				<button
+					type="button"
+					class="mt-5 w-full rounded-[2px] border border-[var(--color-line)] py-1.5 text-xs text-[var(--color-mist)]
+						transition-colors hover:border-[var(--color-hivis)] hover:text-[var(--color-hivis)]"
+					onclick={() => scout.showSquad(club.short_name)}
+				>
+					Show squad
+				</button>
 			{/if}
 		</div>
 	</aside>

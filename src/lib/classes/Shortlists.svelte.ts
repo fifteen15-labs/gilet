@@ -44,6 +44,37 @@ class Shortlists {
 		await this.persist();
 	}
 
+	/** Renames a list, refusing a clash rather than merging two lists. */
+	async rename(from: string, to: string): Promise<boolean> {
+		const trimmed = to.trim();
+		if (trimmed === '' || trimmed === from) return false;
+		if (this.lists.some((l) => l.name === trimmed)) return false;
+		this.lists = this.lists.map((l) => (l.name === from ? { ...l, name: trimmed } : l));
+		if (this.activeName === from) this.activeName = trimmed;
+		await this.persist();
+		return true;
+	}
+
+	/** Adds many players to the active list at once — the "keep everything the
+	 * filter found" flow. Creates a first list when none exists. */
+	async addAll(playerNames: string[]): Promise<void> {
+		if (!this.active) {
+			await this.create('Shortlist');
+		}
+		const list = this.active;
+		if (!list || playerNames.length === 0) return;
+		const merged = [...list.players];
+		const have = new Set(merged);
+		for (const name of playerNames) {
+			if (!have.has(name)) {
+				have.add(name);
+				merged.push(name);
+			}
+		}
+		this.lists = this.lists.map((l) => (l.name === list.name ? { ...l, players: merged } : l));
+		await this.persist();
+	}
+
 	/**
 	 * Saves a set of players as a new shortlist — the "filter, then keep the
 	 * results" flow. Returns the name actually used, which is suffixed if one

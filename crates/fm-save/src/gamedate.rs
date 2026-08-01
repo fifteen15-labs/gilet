@@ -40,6 +40,28 @@ pub fn find_game_date(header_frame: &[u8]) -> Option<Date> {
     found
 }
 
+/// Offset of the week-stamp date pair in the main database frame's header.
+const MAIN_FRAME_DATE_AT: usize = 0x2A;
+
+/// Reads the date stamp at the head of the main database frame.
+///
+/// FM 26.2.0 moved the header-frame date, but the *database* frame carries a
+/// date pair at offset `0x2A` on every version surveyed — nine saves across
+/// 26.0.0 and 26.2.0, all reading within days of the save's true date (it
+/// tracks the last weekly rollover, so it can lag by up to a week). A
+/// days-stale date keeps every age right; falling back to the system clock
+/// on an aged save shifts ages by years, which is how a player born 2012
+/// showed as 14 in a 2035 save.
+#[must_use]
+pub fn find_main_frame_date(main_frame: &[u8]) -> Option<Date> {
+    let doy = read_u16(main_frame, MAIN_FRAME_DATE_AT)?;
+    let year = read_u16(main_frame, MAIN_FRAME_DATE_AT + 2)?;
+    if !(2000..=2100).contains(&year) {
+        return None;
+    }
+    Date::from_day_of_year(doy, year)
+}
+
 fn read_u16(b: &[u8], at: usize) -> Option<u16> {
     let s = b.get(at..at.checked_add(2)?)?;
     Some(u16::from_le_bytes(<[u8; 2]>::try_from(s).ok()?))
