@@ -37,7 +37,8 @@ fn load(path: &str) -> Result<Loaded, Box<dyn std::error::Error>> {
         .into_iter()
         .max_by_key(|f| f.data.len())
         .ok_or("no frames in save")?;
-    let people = fm_save::person::scan_people(&main.data);
+    let strings = fm_save::strings::scan_strings(&main.data).ok_or("no string table in save")?;
+    let people = fm_save::person::scan_people(&main.data, &strings);
     Ok(Loaded { frame: main.data, people })
 }
 

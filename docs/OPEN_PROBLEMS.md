@@ -14,57 +14,42 @@ frame, which `research/unpack.py` produces.
 
 ---
 
-## 1. Squad membership — the big one
+## 1. Squad membership — SOLVED, residuals remain
 
-**Problem.** A club cannot be linked to its players. This blocks "show me this
-club's squad", a club filter, and knowing which team anyone plays for. It is by
-far the most valuable thing still missing.
+Solved on 1 August 2026; the format is documented in `SAVE_FORMAT.md` §2, §3
+and §6d and shipped in `strings.rs`, `person.rs`, `club.rs` and `squad.rs`.
+The two claims that had made it look unreachable were both wrong:
 
-**Four approaches ruled out, with the evidence:**
+- **"Person records carry no unique identifier"** — they do. Every person
+  record contains an identity block `[eid][uid][uid]` (three zero bytes
+  before it), and eids ascend strictly through the person table. The earlier
+  sweeps missed it because they looked for *club* references near players,
+  not for the player's own id being referenced *from elsewhere*.
+- **"The parser sees all the people"** — it saw a third of them. Inline full
+  names exist only when they differ from forename + surname; the other
+  ~37,000 people (van Dijk, Rice, Isak...) have a zero-length name field and
+  resolve through the sectioned string table.
 
-1. **A club identifier inside the person record.** There isn't one. Manchester
-   City's ID (1075) *does* appear in the person region 427 times at a
-   suspiciously consistent 54–60 bytes from a record start — which looks like a
-   field until you check membership. Haaland and Grealish, both City players,
-   have no reference at all within 4,000 bytes; Walker has one at +838; Arsenal's
-   Saka has one at +63. Wrong players, wrong distances. These are almost
-   certainly favourite-club or academy affiliations.
+The eight u32s after the club short name were a red herring — they resolve to
+unrelated small clubs (Badalona, Pittsburgh Riverhounds), not teams. The real
+link is a dedicated squad table validated against club `(eid, uid)` pairs.
 
-2. **A rare value shared between a player and their club.** Haaland and Walker
-   each share ~44 `u32` values with the Manchester City record window, but every
-   single one is a constant appearing hundreds of times across the file (1024,
-   1900, 65536 and similar). Filtering to values used 30 times or fewer leaves
-   nothing at all.
+**Residuals, in order of value:**
 
-3. **An identifier array in the club record body.** There are runs of
-   plausible-looking IDs — 29 values at club body +5339, 22 at +5456, in the
-   14,000–41,000 range, which is squad-sized and encouraging. But the values
-   that also appear near City players (35839, 35584) appear near Arsenal's Saka
-   too, so they are constants, not references.
-
-4. **Same-club agreement.** The sharpest test: sweep every offset in ±4000 of
-   both the attribute block and the person record, looking for one where
-   Haaland, Walker and Grealish all hold the *same* value and Saka, Alisson and
-   Dias hold different ones. **Zero hits on both anchors.** Club membership is
-   not stored anywhere near the player.
-
-**Why it is hard.** Person records carry no unique identifier of their own. They
-hold `first_name_id`, `surname_id` and `common_name_id`, and all three point
-into the string table and are shared between namesakes — so there is nothing for
-a squad list to reference by, and nothing to search for from the club side.
-
-**Where I would go next.** Find the person's real identifier first; the squad
-link is unreachable without it. Two ideas:
-
-- The club record body is only partly understood. After the short name there is
-  `01`, six bytes, `02`, then a count byte (8 for Man City) and eight `u32`s
-  (6610, 6611, 7578, 7579, 8164, 8593, 9265, 15632). Eight is the right size for
-  a club's *teams* — first team, under-21s, under-18s, women's — not a squad.
-  Following those IDs to whatever they point at is the most promising lead in
-  this whole document: a team record is exactly where a player list should live.
-- Diff two saves either side of a transfer. Buy a player in-game, save, and diff:
-  the bytes that change are the membership link. `crates/fm-save/examples/diff.rs`
-  already does name-matched diffing and would need only a smaller window.
+1. **38 of 15,558 squad-referenced eids do not resolve** (0.24%). They are
+   scattered among low eids (1007–1363) plus eid 1 (Maldini — his identity
+   block `[1][45][45]` loses the LIS race because his uid, 45, is unusually
+   small and something noisy precedes him). Affected people show no club.
+   Diagnose with `research/pipeline_v2.py`.
+2. **The squad table stops at club eid 15986** in the walk — clubs above that
+   (≈2,000 of 17,495 with heads) were not checked for squad records. Most are
+   tiny clubs with no employed people, but it has not been proven.
+3. **Common names are not used for display.** People with a `common_name_id`
+   ("Juanito") still display forename + surname or the inline name; the
+   common-name pool is parsed but unused.
+4. **The women's-club ambiguity.** Two club entities can share a short name
+   (both Manchester Citys). The UI labels players with the short name, so a
+   club *filter* built on names conflates them; filter on club eid instead.
 
 ---
 

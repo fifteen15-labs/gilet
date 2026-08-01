@@ -226,6 +226,47 @@ fn decodes_nationality() {
 }
 
 #[test]
+fn links_players_to_their_clubs() {
+    let summary = save_or_skip!();
+
+    let club_of = |name: &str| -> String {
+        summary
+            .players
+            .iter()
+            .find(|p| p.name == name)
+            .map_or_else(|| panic!("{name} should be in the database"), |p| p.club.clone())
+    };
+
+    // The reference save's real squads, including 2025 summer transfers —
+    // Walker left City for Burnley, so he is the negative case.
+    assert_eq!(club_of("Erling Braut Haaland"), "Man City");
+    assert_eq!(club_of("Bukayo Ayoyinka Saka"), "Arsenal");
+    assert_eq!(club_of("Mohamed Salah Ghaly"), "Liverpool");
+    assert_ne!(club_of("Kyle Andrew Walker"), "Man City");
+
+    // People whose full name is exactly "forename surname" are stored with no
+    // inline name at all; they were invisible to the parser before the string
+    // table was decoded. Van Dijk is the canonical case.
+    assert_eq!(club_of("Virgil van Dijk"), "Liverpool");
+    assert_eq!(club_of("Florian Richard Wirtz"), "Liverpool");
+
+    // A club filter needs squads to be squad-sized, not empty or thousands.
+    // "Man City" covers two club entities — the men's squad of 33 and the
+    // women's of 20, separate clubs in FM's database sharing a short name.
+    let city_count = summary.players.iter().filter(|p| p.club == "Man City").count();
+    assert!(
+        (15..=70).contains(&city_count),
+        "City's squads should be squad-sized, got {city_count}"
+    );
+
+    // Most people in a database this size are unattached — retired legends,
+    // newgens not yet placed, national staff. Attached people are a minority.
+    let attached = summary.players.iter().filter(|p| !p.club.is_empty()).count();
+    assert!(attached > 5_000, "expected thousands attached, got {attached}");
+    assert!(attached < summary.players.len(), "not everyone has a club");
+}
+
+#[test]
 fn a_shortlist_survives_export_and_reimport() {
     let Some(path) = save_path() else {
         eprintln!("skipped: no FM26 save on this machine");

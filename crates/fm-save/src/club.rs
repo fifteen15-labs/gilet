@@ -3,11 +3,20 @@
 pub struct Club {
     /// Byte offset of the record within its frame, used as a stable row key.
     pub offset: usize,
-    /// The club's own identifier, e.g. 1075 for Manchester City.
+    /// The club's own identifier, e.g. 1075 for Manchester City. Note this is
+    /// *not* what other tables reference — see [`Club::eid`] — and Manchester
+    /// United carries the same 1075, so it is probably a city or region id.
     pub club_id: u32,
     /// Nation identifier — 139 for the English clubs, 145 for the German ones.
     /// Not yet resolved to a nation name.
     pub nation_id: u32,
+    /// The club's database entity id — what the squad table references.
+    /// Manchester City is 369, Arsenal 293. `None` when the record head does
+    /// not carry the validated `[eid][uid][uid]` shape.
+    pub eid: Option<u32>,
+    /// The club's second identifier, repeated beside the entity id on disk.
+    /// The squad table repeats it, which is how squad records are validated.
+    pub uid: Option<u32>,
     /// Full name, e.g. `"Manchester City"`.
     pub name: String,
     /// Short name as FM displays it in tables, e.g. `"Man City"`.
@@ -27,6 +36,16 @@ const MAX_SHORT: usize = 32;
 /// Offsets back from the name-length field for the header values.
 const CLUB_ID_BACK: usize = 10;
 const NATION_ID_BACK: usize = 14;
+
+/// Offsets back from the name-length field for the entity-id head:
+/// `[eid][uid][uid] 00 [nation] [FFFFFFFF] [nation] [nation] [club_id]`.
+const EID_BACK: usize = 39;
+const UID_BACK: usize = 35;
+const UID2_BACK: usize = 31;
+const HEAD_ZERO_BACK: usize = 27;
+const NATION3_BACK: usize = 26;
+const HEAD_FF_BACK: usize = 22;
+const NATION2_BACK: usize = 18;
 
 /// Scans a decompressed frame for club records.
 ///
@@ -76,13 +95,36 @@ fn parse_at(frame: &[u8], len_at: usize) -> Option<Club> {
         return None;
     }
 
+    let (eid, uid) = parse_head(frame, len_at).unzip();
+
     Some(Club {
         offset: len_at,
         club_id: read_u32(frame, len_at.checked_sub(CLUB_ID_BACK)?)?,
         nation_id: read_u32(frame, len_at.checked_sub(NATION_ID_BACK)?)?,
+        eid,
+        uid,
         name,
         short_name,
     })
+}
+
+/// Reads the `[eid][uid][uid]` entity head, validating the fixed shape around
+/// it: the uid repeated, a zero byte, the nation id three times with
+/// `FFFFFFFF` between the first two copies. A record without that exact shape
+/// gets no entity id rather than a guessed one.
+fn parse_head(frame: &[u8], len_at: usize) -> Option<(u32, u32)> {
+    let nation1 = read_u32(frame, len_at.checked_sub(NATION_ID_BACK)?)?;
+    let nation2 = read_u32(frame, len_at.checked_sub(NATION2_BACK)?)?;
+    let nation3 = read_u32(frame, len_at.checked_sub(NATION3_BACK)?)?;
+    let ff = read_u32(frame, len_at.checked_sub(HEAD_FF_BACK)?)?;
+    let zero = *frame.get(len_at.checked_sub(HEAD_ZERO_BACK)?)?;
+    if nation1 != nation2 || nation2 != nation3 || ff != 0xFFFF_FFFF || zero != 0 {
+        return None;
+    }
+    let uid = read_u32(frame, len_at.checked_sub(UID_BACK)?)?;
+    let uid2 = read_u32(frame, len_at.checked_sub(UID2_BACK)?)?;
+    let eid = read_u32(frame, len_at.checked_sub(EID_BACK)?)?;
+    (uid == uid2 && uid != 0 && uid != u32::MAX).then_some((eid, uid))
 }
 
 fn starts_upper(s: &str) -> bool {
@@ -109,7 +151,16 @@ mod tests {
     use super::*;
 
     fn record(nation: u32, club_id: u32, name: &str, short: &str) -> Vec<u8> {
+        record_with_head(369, 678, nation, club_id, name, short)
+    }
+
+    fn record_with_head(eid: u32, uid: u32, nation: u32, club_id: u32, name: &str, short: &str) -> Vec<u8> {
         let mut v = Vec::new();
+        v.extend_from_slice(&eid.to_le_bytes());
+        v.extend_from_slice(&uid.to_le_bytes());
+        v.extend_from_slice(&uid.to_le_bytes());
+        v.push(0);
+        v.extend_from_slice(&nation.to_le_bytes());
         v.extend_from_slice(&[0xFF; 4]);
         v.extend_from_slice(&nation.to_le_bytes());
         v.extend_from_slice(&nation.to_le_bytes());
@@ -134,6 +185,18 @@ mod tests {
         assert_eq!(c.short_name, "Man City");
         assert_eq!(c.club_id, 1075);
         assert_eq!(c.nation_id, 139);
+        assert_eq!(c.eid, Some(369));
+        assert_eq!(c.uid, Some(678));
+    }
+
+    #[test]
+    fn a_record_without_the_head_shape_gets_no_entity_id() {
+        // Break the repeated-uid invariant; eid must come back None, not junk.
+        let mut buf = record_with_head(369, 678, 139, 1075, "Manchester City", "Man City");
+        *buf.get_mut(4).unwrap() ^= 0xFF;
+        let found = scan_clubs(&buf);
+        assert_eq!(found.first().unwrap().eid, None);
+        assert_eq!(found.first().unwrap().uid, None);
     }
 
     #[test]

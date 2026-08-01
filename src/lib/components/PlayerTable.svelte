@@ -23,6 +23,7 @@
 							Name{scout.sortKey === 'name' ? (scout.sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}
 						</button>
 					</th>
+					<th class="w-28 pr-4 pb-2 text-left"><span class="eyebrow">Club</span></th>
 					<th class="w-32 pr-4 pb-2 text-left"><span class="eyebrow">Position</span></th>
 					<th class="w-20 pr-4 pb-2 text-left"><span class="eyebrow">Nation</span></th>
 					<th class="w-14 pr-4 pb-2 text-left">

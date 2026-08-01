@@ -58,7 +58,9 @@ export function matches(player: Player, filters: Filters, shortlisted: ReadonlyS
 		if (player.potential === null || player.potential < filters.minPotential) return false;
 	}
 	if (filters.query.trim() === '') return true;
-	return normalise(player.name).includes(normalise(filters.query.trim()));
+	// The query matches the club too, so "man city" lists City's squad.
+	const needle = normalise(filters.query.trim());
+	return normalise(player.name).includes(needle) || normalise(player.club).includes(needle);
 }
 
 /** Names a shortlist after the search that produced it, so a saved list says

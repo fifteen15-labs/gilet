@@ -25,6 +25,8 @@ export type Player = {
 	positions: string[];
 	/** Rating 1-20 for each of the 15 position slots. Empty for staff. */
 	position_ratings: number[];
+	/** Short name of the club whose squad lists this person; empty when unattached. */
+	club: string;
 };
 
 export type Club = {

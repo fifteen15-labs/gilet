@@ -93,6 +93,9 @@ pub struct PlayerRow {
     pub positions: Vec<String>,
     /// Rating 1-20 for each of the 15 position slots. Empty for staff.
     pub position_ratings: Vec<u8>,
+    /// Short name of the club whose first-team squad lists this person, empty
+    /// when unattached — free agents, national staff, unresolved records.
+    pub club: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -154,6 +157,13 @@ pub fn open_save(path: String, today: Vec<u16>) -> Result<SaveSummary, CommandEr
     let now = save.game_date.unwrap_or(system_today);
     let dated_from_save = save.game_date.is_some();
 
+    // Club short names by entity id, to label each person with their club.
+    let club_names: std::collections::HashMap<u32, &str> = save
+        .clubs
+        .iter()
+        .filter_map(|c| Some((c.eid?, c.short_name.as_str())))
+        .collect();
+
     let players = save
         .people
         .iter()
@@ -176,6 +186,11 @@ pub fn open_save(path: String, today: Vec<u16>) -> Result<SaveSummary, CommandEr
                     .map(|a| a.natural_positions().iter().map(|s| (*s).to_owned()).collect())
                     .unwrap_or_default(),
                 position_ratings: p.ability.as_ref().map(|a| a.positions.to_vec()).unwrap_or_default(),
+                club: p
+                    .club_eid
+                    .and_then(|eid| club_names.get(&eid).copied())
+                    .unwrap_or_default()
+                    .to_owned(),
             }
         })
         .collect();
@@ -294,17 +309,18 @@ fn split_csv_row(line: &str) -> Vec<String> {
 pub fn export_csv(path: String, rows: Vec<PlayerRow>) -> Result<(), CommandError> {
     use std::fmt::Write as _;
 
-    let mut out = String::from("name,born,age,ability,potential\n");
+    let mut out = String::from("name,born,age,ability,potential,club\n");
     for r in &rows {
         // Writing into a String cannot fail, so the result is discarded.
         let _ = writeln!(
             out,
-            "{},{},{},{},{}",
+            "{},{},{},{},{},{}",
             csv_field(&r.name),
             r.born,
             r.age,
             r.ability.map_or(String::new(), |v| v.to_string()),
             r.potential.map_or(String::new(), |v| v.to_string()),
+            csv_field(&r.club),
         );
     }
     std::fs::write(&path, out).map_err(|e| CommandError::Write {

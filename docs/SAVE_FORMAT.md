@@ -37,9 +37,9 @@ the version string `26.0.0+0`.
 Frame 3 is the main database: 29.7 MB compressed, **105.7 MB decompressed**.
 Everything below lives in frame 3.
 
-## 2. String table
+## 2. String table — SOLVED, sectioned
 
-Names are interned in a table of length-prefixed UTF-8, IDs ascending:
+Names are interned in a table of length-prefixed UTF-8:
 
 ```
 u32  id
@@ -47,32 +47,75 @@ u32  byte length
 [u8] UTF-8 bytes        (not null-terminated)
 ```
 
-Entries are grouped by origin — Norwegian surnames sit together, Spanish
-surnames together, and so on. UTF-8 is genuine multi-byte (`c3 b8` = ø,
+The table is not one id space. It is **sections whose id spaces overlap**,
+each restarting from low ids: forenames first, then surnames, then a stray
+single entry, then common names. In the reference save that is 291,140
+forenames, 595,677 surnames and 92,812 common names, spanning `0x3202d46` to
+`0x4125dfe` of the main frame. A flat id→string map resolves forename ids
+against surname strings and produces names like "Maraga Ødegaard"; the section
+must be known. Section identity is positional — of the sections big enough to
+be name pools, the first is forenames, the second surnames, the third common
+names — verified by Haaland's forename id 217140 resolving to "Erling" only in
+the first and his surname id 434961 to "Haaland" only in the second.
+
+Entries are grouped by origin within a section — Norwegian surnames sit
+together, Spanish surnames together, and the same string can appear several
+times under different ids. UTF-8 is genuine multi-byte (`c3 b8` = ø,
 `c3 a5` = å), so decode properly rather than assuming Latin-1.
 
-## 3. Person record
+The table also fixes where person records start: they begin immediately after
+it, which is what `strings.rs` exposes as `end_offset`.
 
-Located by searching for a surname ID reference. For Haaland the surname
-`"Haaland"` interns as ID `0x0006A311`; that value appears 3 times in frame 3 —
-once in a lookup array, once in the string table itself, once in the person
-record.
+## 3. Person record — SOLVED, both name layouts
 
-Layout, ending with an inline full name:
+The record prefix is three string-table references, each followed by a zero
+byte, then the inline full name — **whose length is zero when the full name is
+exactly "forename surname"** — then the date of birth:
 
 ```
-u32  surname_id           into the string table
-u8   UNKNOWN
+u32  first_name_id        into the forename pool
+u8   00
+u32  surname_id           into the surname pool
+u8   00
 u32  common_name_id       0xFFFFFFFF when the player has no nickname
-u8   UNKNOWN
-u32  full_name_length     bytes, not chars
-[u8] full_name            UTF-8, e.g. "Erling Braut Haaland"
+u8   00
+u32  full_name_length     0 when the name is composed, else 2-64
+[u8] full_name            present only when length > 0
+u16  day_of_year          date of birth
+u16  year
 ```
 
-`common_name_id` is why a naive scan misses players: Lamine Yamal and Vinícius
-Júnior have nicknames, so the field is populated rather than `0xFFFFFFFF`. A
-scanner that hard-codes `ff ff ff ff` silently drops every player with a
-nickname — 12,023 records were found this way while known players were absent.
+The zero-length case is the important one. FM stores an inline name only when
+it differs from forename + surname — "Erling **Braut** Haaland" is stored,
+"Virgil van Dijk" is not. A scanner that requires inline names sees 12,397
+people; the save actually holds **49,217**, and the missing ~37,000 include
+van Dijk, Declan Rice, Alexander Isak and every other plainly-named person.
+The two cases cannot be confused: a length field's high half is zero while a
+date's year half is 1920+, so the same four bytes never parse as both.
+
+`common_name_id` is why a naive scan also misses players: Lamine Yamal and
+Vinícius Júnior have nicknames, so the field is populated rather than
+`0xFFFFFFFF`.
+
+### The identity block — person entity ids, SOLVED
+
+Several hundred bytes past the name, every person record carries an identity
+block — the uid repeated beside the entity id, preceded by three zero bytes:
+
+```
+...  00 00 00
+u32  eid                  entity id — what squad lists reference
+u32  uid
+u32  uid                  (repeated)
+```
+
+Confirmed values: Haaland eid 10241 / uid 29179241, Grealish 6961, Saka 8061,
+van Dijk 11849. Entity ids ascend strictly through the person region — the
+records are written in entity-id order — and that ordering is the acceptance
+test: the same 15-byte shape recurs by chance in contract data, so the true
+blocks are the longest strictly-ascending chain (patience LIS), which noise
+does not survive. The flag byte six bytes before the eid varies (0x40 for most
+people, 0x30/0x00/0x58 for newgens), so it cannot serve as the anchor.
 
 ### Fields after the name — verified
 
@@ -135,12 +178,18 @@ and filter correctly.
 ## 4. Club record
 
 Clubs carry a full name and the short name FM shows in tables. The header ends
-with a three-byte signature immediately before the name length:
+with a three-byte signature immediately before the name length, and starts
+with the club's own entity-id head:
 
 ```
-u32  0xFFFFFFFF
+u32  eid               entity id — what the squad table references
+u32  uid
+u32  uid               (repeated)
+u8   00
 u32  nation_id
-u32  nation_id        (repeated)
+u32  0xFFFFFFFF
+u32  nation_id         (repeated)
+u32  nation_id         (repeated)
 u32  club_id
 3    UNKNOWN
 3    10 FF FF          signature
@@ -150,9 +199,17 @@ u32  short_length
 [u8] short_name        e.g. "Man City"
 ```
 
-Confirmed values: Manchester City `club_id` 1075, Arsenal 1040, Borussia
-Dortmund 541. Nation 139 for the English clubs, 145 for the German, 126 for the
-Albanian. 18,663 clubs parse from the reference save.
+Confirmed entity ids: Arsenal 293, Liverpool 366, Manchester City 369,
+Manchester United 370, Badalona 6610. Nation 139 for the English clubs, 145
+for the German. 18,663 club-shaped records parse from the reference save, of
+which 17,495 carry the validated head.
+
+**`club_id` is not the club's identifier.** Manchester City and Manchester
+United both carry 1075, Arsenal and Chelsea both 1040 — it looks like a city
+or region id. Everything that references a club does so by `eid`. Beware also
+that distinct club entities share display names: the reference save has two
+"Manchester City" clubs, eid 369 (men) and eid 15524 (women), each with its
+own squad.
 
 The `10 FF FF` signature is doing real work. Two consecutive length-prefixed
 strings is not a specific enough shape on its own — the file also contains the
@@ -160,8 +217,14 @@ commentary word lists, which produce thousands of pairs like
 `("admirable", "amazing")` and `("bewitching", "brilliant")`. Requiring the
 signature and an initial capital removes them.
 
-Nation IDs are **not** yet resolved to names, and squad lists are not located,
-so a club cannot yet be linked to its players.
+### The eight u32s after the short name are not teams
+
+Immediately after the short name sits `01`, six bytes, a `01`/`02` flag, a
+count byte and that many u32s — for Manchester City eight values (6610, 6611,
+7578, ...). These were long suspected to be the club's team list. They are
+not: resolving them as club entity ids gives Badalona, Pittsburgh Riverhounds,
+Stockport Georgians — unrelated small clubs worldwide. What that list actually
+is remains open; it is not needed for squads.
 
 ## 5. Players vs staff — a rejected approach (superseded by 6a)
 
@@ -178,9 +241,9 @@ that offset straddles field boundaries rather than landing on one: the section
 before the name is variable-length, so the agreement is luck rather than
 structure, and it would break on the first record shaped differently.
 
-The principled route is the club record's squad list — a player is someone a
-club lists as a player. That needs the club record body parsed, which is not
-done.
+The principled route turned out to be the squad table (section 6d): a player
+is someone a club's squad record lists. The attribute-block rule of 6a ships
+because it agrees with that table wherever both apply.
 
 ## 6. Attributes, Current Ability and Potential Ability — SOLVED
 
@@ -305,38 +368,50 @@ run. That absence is the discriminator, and it is structural rather than the
 statistical guess rejected in section 5. In the reference save: **3,999 players,
 8,398 staff**.
 
-## 6d. Squad membership — not located, three approaches ruled out
+## 6d. Squad membership — SOLVED, a separate table
 
-A club cannot yet be linked to its players. Recording what does *not* work, so
-the next attempt starts further along:
+A club is linked to its players through a dedicated **squad table**, one
+record per club, ordered by club entity id. In the reference save it spans
+`0x1ed2ece` to `0x205b642` of the main frame — 14,047 records, of which 1,814
+have a squad:
 
-1. **A club identifier in the person record.** There isn't one. Manchester
-   City's ID (1075) does appear in the person region 427 times, at a suspiciously
-   consistent 54–60 bytes from a record start — but Haaland and Grealish, both
-   City players, have no reference at all within 4,000 bytes, while Walker has
-   one at +838 and Saka (Arsenal) has one at +63. The distances and the
-   membership are both wrong, so these are favourite-club or academy links, not
-   a squad field.
-2. **A rare value shared between a player and their club.** Haaland and Walker
-   each share ~44 `u32` values with the Manchester City record window, but every
-   one is a common constant appearing hundreds of times in the file. Filtering
-   to values used 30 times or fewer leaves nothing.
-3. **Same-club agreement.** The sharpest test available: sweep every offset in
-   ±4000 of both the attribute block and the person record for one where
-   Haaland, Walker and Grealish hold the same value while Saka, Alisson and Dias
-   hold different ones. **Zero hits on either anchor.**
-4. **An identifier array in the club record body.** There are runs of
-   plausible-looking IDs (29 values at +5339, 22 at +5456), but the values that
-   also appear near City players — 35839, 35584 — appear near Arsenal's Saka
-   too, so they are constants rather than references.
+```
+u32   club_eid           matches the club record's head
+10x   00
+u32   UNKNOWN            (eid + 131 in the observed range)
+u32   club_uid           matches the club record's head
+u32   club_uid           (repeated)
+...   variable fields
+u32   0xFFFFFFFF
+u16   count              squad size, 1-40s
+u32[] person_eids        the squad, matching person identity blocks
+u32   captain_eid        0xFFFFFFFF when unset
+u32   vice_captain_eid   0xFFFFFFFF when unset
+...   trailing fields
+```
 
-Person records also carry no obvious unique identifier of their own. The record
-begins with `first_name_id`, then `surname_id`, then `common_name_id`, all of
-which point into the string table and are shared between namesakes.
+Two properties make the walk trustworthy. A head is only accepted when its
+`(eid, uid)` pair **matches what the club table carries** for the same entity
+id — two independent tables agreeing. And the player list ascends by entity id
+with new signings appended at the tail, which rejects coincidental count
+bytes; the parser requires the first few entries to be nearly all increasing.
 
-The likely answer is a separate contract or squad-relationship table elsewhere
-in the 105 MB frame, which needs structural parsing rather than the offset
-probing used so far.
+Verified against reality on the reference save (October 2025, so with the
+2025 summer window applied): Manchester City's 33 include Haaland, Grealish,
+Foden, Donnarumma, Cherki and Marmoush with Bernardo Silva as captain and
+Rúben Dias vice; Liverpool's 32 include Wirtz, Isak, Ekitiké, Kerkez and
+Mamardashvili with **Virgil van Dijk** captain; Arsenal's captain resolves to
+Martin Ødegaard and Manchester United's to Bruno Fernandes. Kyle Walker —
+sold in 2025 — is correctly absent from City.
+
+Resolution rate: 15,520 of the 15,558 distinct person eids referenced across
+all squads resolve to a person record (99.76%). The 38 misses are recorded in
+`OPEN_PROBLEMS.md`.
+
+The four approaches ruled out on the way (a club id inside the person record,
+rare shared values, same-club agreement sweeps, id arrays in the club body)
+are preserved in the git history of this file; the root mistake was assuming
+person records had no identifier — they do, the identity block of section 3.
 
 ## 7. Prior art
 
@@ -356,5 +431,9 @@ Windows-x64 only.
 - `unpack.py` — splits a `.fm` into `frames/fNNNN.bin`
 - `findplayers.py` — scans frame 3 for person records
 - `findca.py` — column statistics over post-name bytes
+- `clubtable.py`, `clubbody.py` — club entity heads and the eight-u32 dead end
+- `squadhunt.py`, `eidanchor.py`, `validated_walk.py` — finding the squad table
+- `fullscan2.py`, `pipeline_v2.py` — the person scan v2 and its quality
+  measurements, ending at 99.76% squad resolution
 
 They are throwaway spikes kept for provenance, not part of the build.
