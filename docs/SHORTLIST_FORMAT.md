@@ -82,45 +82,75 @@ per member:
 | `_data/details.aom` | 0 | 149 | 111 |
 
 Offsets and stored lengths tile the body exactly: 0+149 = 149, 149+63 = 212,
-212+92 = 304. `_data/details.aom` is named in the manifest tail but sits outside
-the declared count of 2.
+212+92 = 304. `_data/details.aom` sits outside the declared count of 2 because
+the manifest has **two** sections: the declared members, then a second `u32`
+count followed by FM's own internal members. Both samples declare 2 user
+members and 1 internal one, and the manifest ends with `00 00 00 00`.
 
-## 4. Member blocks — encrypted, not compressed
+The "plaintext length" is the length before compression, not the length of the
+bytes stored in the block — see §4.
+
+## 4. Member blocks — a zstd frame, encrypted
 
 Every block:
 
 ```
-u32       16          constant
-u32       16          constant
-45 bytes  header/nonce/tag
-N bytes   ciphertext, N == the manifest's plaintext length
+u32       16          constant — reads as the nonce length
+u32       16          constant — reads as the tag length
+16 bytes  nonce       random per file
+16 bytes  tag         authentication tag
+N bytes   ciphertext, N == stored − 40
 ```
 
-`stored − plaintext` is **exactly 45** for every block in every sample, and the
-ciphertext is byte-for-byte as long as the plaintext. That rules out
-compression: no compressor is exactly length-preserving across a 10-byte and an
-84-byte input alike, and no zstd, zlib, raw-deflate or gzip decode succeeds on
-any block.
+**The overhead is a constant 40 bytes, not 45.** The earlier figure was wrong
+and it took the reasoning with it. The plaintext length in the manifest is the
+length *before* compression, so the ciphertext is not the same size as the
+plaintext, and the difference is not noise — it is exactly zstd framing:
 
-The proof it is encrypted rather than obfuscated is the `.img` member. Both
-sample files carry a 10-byte plaintext `.img` in a 63-byte block — the same
-default thumbnail. Their 63 stored bytes share **nothing** past the 8-byte
-constant prefix, including the 45-byte header. So the nonce is random per file
-and the cipher is keyed, not a fixed pad.
+| file | member | stored | plaintext | payload (stored−40) | payload − plaintext |
+|---|---|---|---|---|---|
+| `Wirtz` | `_data/details.aom` | 146 | 108 | 106 | −2 |
+| `Wirtz` | `image/.img` | 63 | 10 | 23 | **+13** |
+| `Wirtz` | `Wirtz/.slf` | 84 | 31 | 44 | **+13** |
+| `WirtzNew` | `_data/details.aom` | 149 | 111 | 109 | −2 |
+| `WirtzNew` | `image/.img` | 63 | 10 | 23 | **+13** |
+| `WirtzNew` | `WirtzNew/.slf` | 92 | 39 | 52 | **+13** |
+
+A zstd frame that stores its content raw costs exactly 13 bytes — 4 magic, 1
+frame header descriptor, 1 window descriptor, 3 block header, 4 content
+checksum. Three payloads of different sizes (10, 31 and 39 bytes) each land on
++13, which is what an incompressible input does; the two `details.aom` members
+are large enough to actually compress and come in 2 bytes under. So the block
+is `encrypt(zstd(plaintext))` with a fixed 40 bytes of crypto overhead.
+
+This also explains the older container in §4's Genie table, where the
+difference is exactly 40 on all three members including a 21,232-byte JPEG:
+version 07 has the same 40-byte crypto overhead and **no** zstd layer. The
+compression was added in version 08.
+
+**It is still encrypted.** The zstd magic `28 b5 2f fd` appears nowhere in any
+block body, though every payload is now known to begin with a zstd frame — the
+one place a plaintext byte sequence is predicted, it is absent. The `.img`
+member proves the keying: both sample files carry the same 10-byte default
+thumbnail, and their 63 stored bytes share **nothing** past the 8-byte constant
+prefix. The nonce is random per file, so the cipher is keyed rather than a
+fixed pad, and the 16-byte tag means a forged block would fail authentication
+even if the cipher were known.
 
 FM 2023's shortlists carry the identical `afe.` tag, the same `08 00 00` version
 and the same `10 00 00 00 10 00 00 00` block prefix over a high-entropy body, so
 this is not new in FM 26 and there is no older, plainer version of the format to
 target instead.
 
-### The decisive sample: a shortlist FM Genie Scout wrote
+### The version 07 sample, and a claim that did not survive
 
-A shortlist produced by **FM Genie Scout**, not by FM, settles both questions —
-whether a third-party tool can write an importable file, and how.
+A `.fmf` from an older FM, kept off-machine, shows the format one version back.
+It was originally recorded here as "a shortlist FM Genie Scout wrote", and that
+attribution should be treated as unproven — see the correction below.
 
-It can, and it is encrypted the same way. The file declares format version
-`07 00 00` and its manifest is **zlib**, not zstd, but the block framing is
-identical and its members are ciphertext:
+It is encrypted the same way. The file declares format version `07 00 00` and
+its manifest is **zlib**, not zstd, but the block framing is identical and its
+members are ciphertext:
 
 | member | offset | stored | plaintext | difference |
 |---|---|---|---|---|
@@ -128,23 +158,37 @@ identical and its members are ciphertext:
 | `shortlists/.jpg` | 193 | 21,272 | 21,232 | 40 |
 | `_data/details.aom` | 21,465 | 137 | 97 | 40 |
 
-The proof is the `.jpg`. Its manifest declares 21,232 bytes of JPEG, and a JPEG
-must begin `ff d8 ff`. That sequence appears **nowhere** in the block, nor does
-`JFIF` or `Exif`. Combined with a difference of exactly 40 holding across a
-97-byte and a 21,232-byte payload alike, the payloads are length-preserving
-ciphertext.
+The proof it is not plaintext is the `.jpg`. Its manifest declares 21,232 bytes
+of JPEG and a JPEG must begin `ff d8 ff`, which appears **nowhere** in the
+block, nor does `JFIF` or `Exif`. Version 07 has the same 40-byte crypto
+overhead as version 08 and no compression layer, which is why the difference is
+exactly 40 on a 97-byte and a 21,232-byte payload alike.
 
-Two conclusions follow:
+### Correction: "Genie Scout has SI's key" is not supported
 
-- **A third-party tool writing importable shortlists is doing it with SI's key.**
-  Genie Scout's ability to export into FM is not evidence of a keyless route; it
-  is evidence that the key is the route. Do not go looking for the trick Genie
-  supposedly found. There isn't one.
-- **Even Genie targets the older container.** Version 07 with a zlib manifest and
-  40 bytes of block overhead, against FM 26's version 08 with a zstd manifest and
-  53. Its timestamps are real Unix times (April 2019) where FM 26 writes a
-  sentinel. This matches long-standing community reports that Genie shortlists
-  stopped importing when FM moved the format on.
+An earlier draft concluded from this sample that a third-party tool writing
+importable shortlists must be using SI's key. That does not hold up, and the
+sample does not show what it was said to show.
+
+The community position is that **Genie Scout never moved to `.fmf` at all**. It
+still writes bare `.slf` files, and those have not imported into FM since the
+game switched containers — renaming the extension does not help, and the
+documented workaround is to route the list through FMRTE, which does write a
+file FM accepts ([FM Scout: Shortlists .slf or
+.fmf](https://www.fmscout.com/q-23134-Shortlists-slf-or-fmf.html), [Can't open
+GS 22 shortlists in FM
+2022](https://www.fmscout.com/q-24122-Can%C2%B4t-open-GS-22-short-lists-files-in-FM-2022.html),
+[import workaround](https://www.fmscout.com/q-16589-Guide-HOW-TO-IMPORT-SHORTLISTS-WORKAROUND.html)).
+
+So the version 07 archive above is far more likely to be an FM-written file
+from 2019 — its timestamps are real Unix times from April 2019 — than
+Genie output. Two things follow for anyone picking this up:
+
+- **Do not cite Genie as evidence about the key either way.** It is evidence of
+  nothing here; it does not write this container.
+- **The encryption conclusion does not depend on it.** The FM 26 samples carry
+  it on their own: random per-file nonce, 16-byte tag, and a zstd frame that is
+  predicted at a known offset and is not there.
 
 ## 5. Why this stops here
 

@@ -9,7 +9,7 @@
 	import { shortlists } from '$lib/classes/Shortlists.svelte';
 	import { savedFilters } from '$lib/classes/SavedFilters.svelte';
 	import { defaultLocations, exportCsv, importCsv, type Locations } from '$lib/tauri/commands';
-	import { describeFilters } from '$lib/utils/filter';
+	import { describeFilters, nationsIn } from '$lib/utils/filter';
 
 	let exportError = $state<string | null>(null);
 	let notice = $state<string | null>(null);
@@ -28,8 +28,9 @@
 	async function saveResultsAsShortlist() {
 		exportError = null;
 		const rows = scout.matching(shortlists.activeMembers);
+		const nation = nationsIn(scout.players).find((n) => n.id === scout.filters.nationId)?.name;
 		const name = await shortlists.saveAs(
-			describeFilters(scout.filters),
+			describeFilters(scout.filters, nation),
 			rows.map((p) => p.name)
 		);
 		notice = name ? `Saved ${rows.length.toLocaleString()} players as "${name}".` : null;
