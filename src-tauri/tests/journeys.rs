@@ -210,6 +210,9 @@ fn decodes_nationality() {
     assert_eq!(nation_of("Erling Braut Haaland"), "Norway");
     assert_eq!(nation_of("Kylian Mbappé Lottin"), "France");
     assert_eq!(nation_of("Florian Richard Wirtz"), "Germany");
+    // From the 2026 naming pass over the small groups.
+    assert_eq!(nation_of("Serhou Yadaly Guirassy"), "Guinea");
+    assert_eq!(nation_of("Adam Marušić"), "Montenegro");
 
     // A save with the Welsh and English leagues loaded should be dominated by
     // those nations, which checks the mapping as a whole rather than one name.

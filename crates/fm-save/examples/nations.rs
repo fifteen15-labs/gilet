@@ -31,16 +31,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if only_unnamed && fm_save::person::nation_name(id).is_some() {
             continue;
         }
-        if players.len() < 20 {
+        if players.len() < 3 {
             continue;
         }
         players.sort_by_key(|(_, ca)| std::cmp::Reverse(*ca));
         let top: Vec<String> = players
             .iter()
-            .take(6)
+            .take(10)
             .map(|(n, ca)| format!("{n} ({ca})"))
             .collect();
-        println!("{id:>4} [{:>5} players]  {}", players.len(), top.join(", "));
+        let name = fm_save::person::nation_name(id).unwrap_or("?");
+        println!("{id:>4} {name:<24} [{:>5} players]  {}", players.len(), top.join(", "));
     }
     Ok(())
 }

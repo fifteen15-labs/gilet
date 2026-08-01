@@ -239,7 +239,7 @@ mapped. Transfer *value* is probably computed by the game, not stored.
 
 ---
 
-## 5. Nation names — 75 named, the long tail remains
+## 5. Nation names — 150 named, five doubtful groups remain
 
 Every occurrence of "England" in the database frame is the *surname* England;
 the country names live in FM's localisation files, not the save. They are
@@ -247,10 +247,23 @@ named anyway by grouping people by nation identifier and reading the best
 players in each group, which is unmistakable — Courtois, De Bruyne and Lukaku
 fix 131; Kvaratskhelia and Mamardashvili fix 144.
 
-**75 identifiers are named**, covering over 90% of players (asserted in
-`journeys.rs`). What is left is the tail: groups of fewer than twenty people,
-mostly small Caribbean and Pacific nations, where the best players are not
-recognisable enough to be sure. `cargo run --release --example nations --
+**150 identifiers are named.** The 1 August 2026 pass took the tail down to
+groups of three: 73 more nations identified from their best players, each
+cross-checked two ways — the id bands are regionally alphabetical (Africa
+0–50, Asia 51–91, CONCACAF 92–125, UEFA 126–176, with later admissions
+appended at 200+), and every player-based identification landed in its
+alphabetical slot (Cyprus 136 between Croatia 135 and Czech Republic 137,
+Estonia 140 / Faroe Islands 141 between England 139 and Finland 142, Peru 194
+between Paraguay 193 and Uruguay 195). All 73 were then re-checked against a
+second, aged save whose regen names carry the right nationality flavour
+(Azeri diacritics under 130, Sinhalese names under 81, the Buffonge family
+under Montserrat 207).
+
+Five groups stay numeric, deliberately: 204 (Tigrinya names — Eritrea and
+Ethiopia cannot be told apart), 93 (Dutch-Caribbean, probably Aruba on the
+alphabetical slot but only one weak player), 205 and 206 (minor British
+overseas territories, no recognisable player), and 1535 (three players,
+suspicious out-of-band id). `cargo run --release --example nations --
 <save.fm>` prints the unnamed groups with their best players; anything
 identifiable can be added to `nation_name`. A wrong flag is worse than a
 number, so the doubtful ones stay as raw identifiers.

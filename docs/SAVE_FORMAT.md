@@ -167,13 +167,15 @@ The nation **names** are not stored beside the identifier. Every occurrence of
 in the surname table between Boateng and Mullen — the country names are
 probably in FM's localisation files rather than the save.
 
-Twenty nations are named anyway, by grouping every person by nation identifier
-and reading the surnames. A national squad is unmistakable: 143 gives Zidane,
-Henry, Deschamps and Trézéguet; 158 gives Davids, Reiziger and van Nistelrooij;
-33 gives Okocha, Kanu and Amokachi; 120 gives Donovan, Berhalter and
-Cherundolo. Identifiers whose surnames are Spanish-speaking but not
-country-specific are left unnamed and surface as raw numbers, which still group
-and filter correctly.
+150 nations are named anyway, by grouping every person by nation identifier
+and reading the best players. A national squad is unmistakable: 143 gives
+Zidane, Henry, Deschamps and Trézéguet; 158 gives Davids, Reiziger and van
+Nistelrooij; 33 gives Okocha, Kanu and Amokachi; 120 gives Donovan, Berhalter
+and Cherundolo. The identifiers are regionally alphabetical (Africa 0–50,
+Asia 51–91, CONCACAF 92–125, UEFA 126–176, later admissions at 200+), which
+double-checks every identification. Five doubtful groups are left unnamed and
+surface as raw numbers, which still group and filter correctly
+(`OPEN_PROBLEMS.md` §5).
 
 ### The hidden personality run — SOLVED, four slots named
 
