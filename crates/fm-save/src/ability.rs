@@ -28,65 +28,87 @@ pub fn is_goalkeeping(index: usize) -> bool {
     GOALKEEPING_INDICES.contains(&index)
 }
 
-/// Names inferred for some attribute indices.
+/// The name of an attribute index, where it is known.
 ///
-/// The format does not label its attributes. Two generations of evidence:
+/// The format does not label its attributes. These were solved by
+/// intersecting five in-game player reports against their decoded blocks: an
+/// index can only carry a name if every report that shows that name agrees
+/// with the decoded value. One report pins only the values that are unique on
+/// its screen; five reports of different profiles — an attacking midfielder,
+/// a winger, a deep midfielder, a ball-winner and a goalkeeper — leave
+/// **every visible outfield attribute uniquely determined**, all 36 of them.
 ///
-/// **Statistical** (the first fourteen): which well-known players top each
-/// index, and how the mean varies by the player's strongest position — an
-/// index was only named when both agreed. That method separated Heading (3)
-/// from Jumping Reach (39) via goalkeepers, and gave Marking (5) against
-/// Tackling (9) directionally.
+/// The keeper's report is the only way to see the goalkeeping set at all,
+/// since the game hides it for outfielders. One keeper pins four outright
+/// (Kicking, Throwing, One on Ones, Punching Tendency, each unique on his
+/// screen). The rest resolve by combining two further facts: which indices
+/// are goalkeeping ones at all (see [`GOALKEEPING_INDICES`]), and how each
+/// correlates with Current Ability across the keeper population. FM's three
+/// *tendency* attributes say nothing about how good a keeper is, and are
+/// exactly the three weakest correlators — 33 at r=0.245 (confirmed Punching
+/// by ground truth), 31 at r=0.324 and 32 at r=0.459. So 31 is Eccentricity
+/// (also the lowest mean, 8.13, and the only one reaching 1), leaving Command
+/// of Area for 13 at r=0.749, and Rushing Out for 32 by elimination.
 ///
-/// **Ground truth** (the rest, plus one correction): the in-game player
-/// report for Jamal Musiala in an aged save, checked against his decoded
-/// block. All thirteen statistically-named outfield indices matched his
-/// screen exactly, which validates both eras at once. Indices whose displayed
-/// value appeared exactly once in his block are named outright:
+/// **24 and 25 are the feet.** Index 25 looked like a constant — mean 17.3
+/// with most players at 20 — which is exactly what a right-foot rating looks
+/// like in a database of right-footed players. The one left-footer among the
+/// five reports reads 20 at index 24 and 9 at index 25, matching his "Very
+/// Strong" left foot and "Reasonable" right.
 ///
-/// - 26 **Flair** (his 19), 27 **Corners** (10), 35 **Free Kick Taking** (11)
-/// - 40 **Leadership** (9) — *correcting* the earlier "Aggression" label;
-///   Otamendi, Ronaldo and Freuler topping it fits captains as well as
-///   aggressors, and the ground truth is unambiguous
-/// - the long-stuck 34/38 pair split: his screen shows Acceleration 14 and
-///   Pace 15, the pair reads {14, 15}, so **34 = Acceleration, 38 = Pace**,
-///   and Work Rate's 15 lands on **29** as the only remaining candidate
-///
-/// Marking (5) at 12 and Tackling (9) at 11 matched his screen too, so the
-/// old "if this is wrong they are swapped" caveat is closed.
-///
-/// Still ambiguous — several indices share a displayed value on his screen:
-/// {7, 22} is First Touch / Vision, {43, 53} is Bravery / Concentration,
-/// {24, 45} holds Aggression and a hidden attribute, and the 18/16/14 pools
-/// hold Dribbling, Composure, Agility, Anticipation, Decisions,
-/// Determination, Balance, Long Shots, Teamwork, Natural Fitness and Stamina
-/// among hidden attributes. A report for one more player with different
-/// values would break most of those ties.
-///
-/// These are inferences, not values read from the file.
+/// Unnamed: four goalkeeping core skills — 11, 12, 14 and 21 hold Aerial
+/// Reach, Communication, Handling and Reflexes in some order, all reading 15
+/// for the one keeper seen, so a second keeper report separates them — and
+/// five hidden attributes at 41, 44, 47, 48 and 49, which no player screen
+/// ever shows.
 #[must_use]
 pub fn attribute_name(index: usize) -> Option<&'static str> {
     match index {
         0 => Some("Crossing"),
+        1 => Some("Dribbling"),
         2 => Some("Finishing"),
         3 => Some("Heading"),
+        4 => Some("Long Shots"),
         5 => Some("Marking"),
         6 => Some("Off the Ball"),
+        7 => Some("Passing"),
         8 => Some("Penalty Taking"),
         9 => Some("Tackling"),
-        10 => Some("Passing"),
+        10 => Some("Vision"),
+        13 => Some("Command of Area"),
+        15 => Some("Kicking"),
+        16 => Some("Throwing"),
+        17 => Some("Anticipation"),
+        18 => Some("Decisions"),
+        19 => Some("One on Ones"),
         20 => Some("Positioning"),
+        22 => Some("First Touch"),
         23 => Some("Technique"),
+        24 => Some("Left Foot"),
+        25 => Some("Right Foot"),
         26 => Some("Flair"),
         27 => Some("Corners"),
+        28 => Some("Teamwork"),
         29 => Some("Work Rate"),
         30 => Some("Long Throws"),
+        31 => Some("Eccentricity"),
+        32 => Some("Rushing Out Tendency"),
+        33 => Some("Punching Tendency"),
         34 => Some("Acceleration"),
         35 => Some("Free Kick Taking"),
         36 => Some("Strength"),
+        37 => Some("Stamina"),
         38 => Some("Pace"),
         39 => Some("Jumping Reach"),
         40 => Some("Leadership"),
+        42 => Some("Balance"),
+        43 => Some("Bravery"),
+        45 => Some("Aggression"),
+        46 => Some("Agility"),
+        50 => Some("Natural Fitness"),
+        51 => Some("Determination"),
+        52 => Some("Composure"),
+        53 => Some("Concentration"),
         _ => None,
     }
 }
@@ -440,17 +462,59 @@ mod tests {
         // head almost never.
         assert_eq!(attribute_name(3), Some("Heading"));
         assert_eq!(attribute_name(39), Some("Jumping Reach"));
-        // Ground truth from Musiala's in-game report split the 34/38 pair:
-        // his screen showed Acceleration 14 and Pace 15 and the pair read
-        // {14, 15}.
+        // Pairs that only five reports together could separate.
         assert_eq!(attribute_name(34), Some("Acceleration"));
         assert_eq!(attribute_name(38), Some("Pace"));
-        // 40 was "Aggression" until the same report read 9 there, matching
-        // his Leadership exactly.
+        assert_eq!(attribute_name(7), Some("Passing"));
+        assert_eq!(attribute_name(10), Some("Vision"));
+        // 40 was "Aggression" on statistical evidence; ground truth reads it
+        // as Leadership, with Aggression at 45.
         assert_eq!(attribute_name(40), Some("Leadership"));
-        // First Touch and Vision both showed 17, so 7 and 22 stay unnamed.
-        for ambiguous in [7, 22] {
-            assert_eq!(attribute_name(ambiguous), None, "index {ambiguous} is not separable");
+        assert_eq!(attribute_name(45), Some("Aggression"));
+        // The feet, which had looked like a constant because most players
+        // are right-footed and read 20 there.
+        assert_eq!(attribute_name(25), Some("Right Foot"));
+
+        // Every goalkeeping index is either named or explicitly one of the
+        // four the single keeper report could not separate.
+        for index in GOALKEEPING_INDICES {
+            let named = attribute_name(index).is_some();
+            assert_eq!(
+                named,
+                !matches!(index, 11 | 12 | 14 | 21),
+                "goalkeeping index {index}"
+            );
+        }
+    }
+
+    #[test]
+    fn every_visible_outfield_attribute_is_named() {
+        // FM shows 36 attributes on an outfielder's report. All of them are
+        // resolved; a regression here means a label was lost.
+        let named: std::collections::HashSet<&str> =
+            (0..ATTRIBUTE_COUNT).filter_map(attribute_name).collect();
+        for expected in [
+            "Crossing", "Dribbling", "Finishing", "First Touch", "Heading", "Long Shots",
+            "Marking", "Passing", "Tackling", "Technique", "Corners", "Free Kick Taking",
+            "Long Throws", "Penalty Taking", "Aggression", "Anticipation", "Bravery",
+            "Composure", "Concentration", "Decisions", "Determination", "Flair", "Leadership",
+            "Off the Ball", "Positioning", "Teamwork", "Vision", "Work Rate", "Acceleration",
+            "Agility", "Balance", "Jumping Reach", "Natural Fitness", "Pace", "Stamina",
+            "Strength",
+        ] {
+            assert!(named.contains(expected), "{expected} should be named");
+        }
+    }
+
+    #[test]
+    fn no_name_is_used_for_two_indices() {
+        // A duplicate would mean two indices were given the same meaning,
+        // which is always a mistake rather than a real ambiguity.
+        let mut seen = std::collections::HashSet::new();
+        for index in 0..ATTRIBUTE_COUNT {
+            if let Some(name) = attribute_name(index) {
+                assert!(seen.insert(name), "{name} is used twice");
+            }
         }
     }
 

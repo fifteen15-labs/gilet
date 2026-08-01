@@ -337,7 +337,65 @@ resolve to ST alone, Saka to AMR/AML, Mbappé to AML/ST/AMR, Bellingham to
 MC/AMC/ML, Messi to AMR/AMC/ST, and Naomi Girma to DC. The population shape is
 right too — centre-back most common, sweeper unused.
 
-## 6c. Attribute names — twenty identified, ground truth arrived
+## 6c. Attribute names — 45 of 54, every visible outfield one
+
+**Method: intersect in-game player reports.** An index can carry a name only
+if every report showing that name agrees with the decoded value there. One
+report pins only the values unique on its screen; five reports of different
+profiles — attacking midfielder, winger, deep midfielder, ball-winner and
+goalkeeper — leave **all 36 visible outfield attributes uniquely determined**.
+`cargo run --release --example namesolve -- <save.fm>` re-runs the solve and
+prints the candidate set per index.
+
+The keeper's report is the only way to see the goalkeeping set, which the game
+hides for outfielders. One keeper pins four outright (Kicking 15, Throwing 16,
+One on Ones 19, Punching Tendency 33 — each unique on his screen). The rest
+resolve by combining which indices are goalkeeping ones at all with how each
+correlates against Current Ability: FM's three *tendency* attributes say
+nothing about how good a keeper is and are exactly the three weakest
+correlators — 33 at r=0.245 (ground truth confirms Punching), 31 at r=0.324
+and 32 at r=0.459. So 31 is Eccentricity, leaving Command of Area for 13 at
+r=0.749, and Rushing Out for 32 by elimination. The prediction made before
+any ground truth existed — "the low correlators are the tendencies" — held
+exactly.
+
+**24 and 25 are the feet.** Index 25 had been written off as "not an
+attribute" because its mean is 17.3 with most players at 20 — which is
+precisely what a right-foot rating looks like in a database of right-footed
+players. The one left-footer among the five reports reads 20 at index 24 and
+9 at index 25, matching his "Very Strong" left foot and "Reasonable" right.
+
+| Index | Name | Index | Name | Index | Name |
+| --- | --- | --- | --- | --- | --- |
+| 0 | Crossing | 20 | Positioning | 37 | Stamina |
+| 1 | Dribbling | 22 | First Touch | 38 | Pace |
+| 2 | Finishing | 23 | Technique | 39 | Jumping Reach |
+| 3 | Heading | 24 | Left Foot | 40 | Leadership |
+| 4 | Long Shots | 25 | Right Foot | 42 | Balance |
+| 5 | Marking | 26 | Flair | 43 | Bravery |
+| 6 | Off the Ball | 27 | Corners | 45 | Aggression |
+| 7 | Passing | 28 | Teamwork | 46 | Agility |
+| 8 | Penalty Taking | 29 | Work Rate | 50 | Natural Fitness |
+| 9 | Tackling | 30 | Long Throws | 51 | Determination |
+| 10 | Vision | 31 | Eccentricity | 52 | Composure |
+| 13 | Command of Area | 32 | Rushing Out Tendency | 53 | Concentration |
+| 15 | Kicking | 33 | Punching Tendency | | |
+| 16 | Throwing | 34 | Acceleration | | |
+| 17 | Anticipation | 35 | Free Kick Taking | | |
+| 18 | Decisions | 36 | Strength | | |
+| 19 | One on Ones | | | | |
+
+Unnamed: **11, 12, 14, 21** hold Aerial Reach, Communication, Handling and
+Reflexes in some order — all read 15 for the one keeper seen, so a second
+keeper report separates them — and **41, 44, 47, 48, 49** are hidden
+attributes no player screen ever shows.
+
+Two labels the statistical era got wrong, both corrected by ground truth:
+index 40 was "Aggression" and is Leadership (Aggression is 45), and index 10
+was "Passing" and is Vision (Passing is 7). Both were coin flips between two
+attributes the first player happened to have equal.
+
+### The superseded statistical method
 
 Two generations of evidence. The first fourteen came statistically, from two
 signals that had to agree: which well-known players top the index, and how

@@ -46,12 +46,89 @@ pub struct Save {
     pub frame_sizes: Vec<usize>,
 }
 
+/// A stage of parsing, reported so a caller can show progress.
+///
+/// Reading a 190 MB save takes long enough that a UI must say what it is
+/// doing; the variants are in the order they occur.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Stage {
+    Decompressing,
+    ReadingNames,
+    ReadingPeople,
+    ReadingIdentities,
+    ReadingContracts,
+    ReadingClubs,
+    ReadingSquads,
+    ReadingAbility,
+    Done,
+}
+
+impl Stage {
+    /// Every stage, in order.
+    pub const ALL: [Self; 9] = [
+        Self::Decompressing,
+        Self::ReadingNames,
+        Self::ReadingPeople,
+        Self::ReadingIdentities,
+        Self::ReadingContracts,
+        Self::ReadingClubs,
+        Self::ReadingSquads,
+        Self::ReadingAbility,
+        Self::Done,
+    ];
+
+    /// How far through parsing this stage is, 0.0 to 1.0.
+    ///
+    /// Weighted by measured cost rather than spread evenly: decompression and
+    /// the ability scan dominate, and a bar that jumps in even steps for
+    /// wildly uneven work reads as broken.
+    #[must_use]
+    pub fn progress(self) -> f32 {
+        match self {
+            Self::Decompressing => 0.05,
+            Self::ReadingNames => 0.35,
+            Self::ReadingPeople => 0.45,
+            Self::ReadingIdentities => 0.55,
+            Self::ReadingContracts => 0.65,
+            Self::ReadingClubs => 0.70,
+            Self::ReadingSquads => 0.78,
+            Self::ReadingAbility => 0.88,
+            Self::Done => 1.0,
+        }
+    }
+
+    /// What to show the user while this stage runs.
+    #[must_use]
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Decompressing => "Decompressing frames",
+            Self::ReadingNames => "Reading the name table",
+            Self::ReadingPeople => "Reading players and staff",
+            Self::ReadingIdentities => "Matching identities",
+            Self::ReadingContracts => "Reading contracts",
+            Self::ReadingClubs => "Reading clubs",
+            Self::ReadingSquads => "Linking squads",
+            Self::ReadingAbility => "Reading ability and attributes",
+            Self::Done => "Done",
+        }
+    }
+}
+
 impl Save {
     /// Parses a save from its raw bytes.
     ///
     /// # Errors
     /// Propagates [`Error`] when the file is not a save or a frame is corrupt.
     pub fn parse(bytes: &[u8]) -> Result<Self> {
+        Self::parse_with_progress(bytes, |_| {})
+    }
+
+    /// Parses a save, reporting each [`Stage`] as it begins.
+    ///
+    /// # Errors
+    /// Propagates [`Error`] when the file is not a save or a frame is corrupt.
+    pub fn parse_with_progress(bytes: &[u8], mut on_stage: impl FnMut(Stage)) -> Result<Self> {
+        on_stage(Stage::Decompressing);
         let frames = container::read_frames(bytes)?;
         let frame_sizes = frames.iter().map(|f| f.data.len()).collect();
 
@@ -63,26 +140,37 @@ impl Save {
         let mut clubs = Vec::new();
         let mut squads = Vec::new();
         if let Some(frame) = main {
-            clubs = club::scan_clubs(&frame.data);
-
             // People sit after the string table their names reference; both
             // scans need it, so it is parsed once and dropped when done.
-            if let Some(table) = strings::scan_strings(&frame.data) {
-                people = person::scan_people(&frame.data, &table);
-                let chain = person::bind_identities(&frame.data, &mut people, table.end_offset);
-                person::bind_contracts(&frame.data, &mut people);
+            on_stage(Stage::ReadingNames);
+            let table = strings::scan_strings(&frame.data);
 
+            let mut chain = Vec::new();
+            if let Some(table) = &table {
+                on_stage(Stage::ReadingPeople);
+                people = person::scan_people(&frame.data, table);
+                on_stage(Stage::ReadingIdentities);
+                chain = person::bind_identities(&frame.data, &mut people, table.end_offset);
+                on_stage(Stage::ReadingContracts);
+                person::bind_contracts(&frame.data, &mut people);
+            }
+
+            on_stage(Stage::ReadingClubs);
+            clubs = club::scan_clubs(&frame.data);
+
+            if table.is_some() {
+                on_stage(Stage::ReadingSquads);
                 let club_ids: Vec<(u32, u32)> = clubs
                     .iter()
                     .filter_map(|c| Some((c.eid?, c.uid?)))
                     .collect();
                 squads = squad::scan_squads(&frame.data, &club_ids);
-
                 link_members(&mut people, &squads, &chain);
             }
 
             // Attribute blocks sit ahead of the person they belong to, so they
             // are scanned separately and matched on afterwards.
+            on_stage(Stage::ReadingAbility);
             let abilities = ability::scan_abilities(&frame.data);
             let offsets: Vec<usize> = people.iter().map(|p| p.offset).collect();
             for (ability, owner) in abilities
@@ -98,6 +186,7 @@ impl Save {
         // The in-game date lives in the small header frame, not the database.
         let game_date = frames.first().and_then(|f| gamedate::find_game_date(&f.data));
 
+        on_stage(Stage::Done);
         Ok(Self {
             people,
             clubs,

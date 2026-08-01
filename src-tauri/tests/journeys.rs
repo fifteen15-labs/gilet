@@ -5,7 +5,7 @@
 //! skip rather than fail when no save is present, so the suite still passes on
 //! a machine without Football Manager installed.
 
-#![allow(clippy::unwrap_used, clippy::expect_used)]
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::cast_precision_loss)]
 
 use gilet_lib::commands;
 
@@ -24,7 +24,7 @@ fn today() -> Vec<u16> {
 /// no Football Manager install, so the suite still passes there.
 fn load() -> Option<commands::SaveSummary> {
     let path = save_path()?;
-    Some(commands::open_save(path.display().to_string(), today()).unwrap())
+    Some(commands::load_save(path.display().to_string(), &today(), |_| {}).unwrap())
 }
 
 macro_rules! save_or_skip {
@@ -273,7 +273,7 @@ fn a_shortlist_survives_export_and_reimport() {
         return;
     };
 
-    let summary = commands::open_save(path.display().to_string(), today()).unwrap();
+    let summary = commands::load_save(path.display().to_string(), &today(), |_| {}).unwrap();
     let picked: Vec<_> = summary.players.iter().take(25).cloned().collect();
     let names: Vec<String> = picked.iter().map(|p| p.name.clone()).collect();
 
@@ -308,8 +308,34 @@ fn opening_something_that_is_not_a_save_is_an_error_not_a_panic() {
     let out = std::env::temp_dir().join("gilet-not-a-save.fm");
     std::fs::write(&out, b"this is not a Football Manager save file at all").unwrap();
 
-    let err = commands::open_save(out.display().to_string(), today()).unwrap_err();
+    let err = commands::load_save(out.display().to_string(), &today(), |_| {}).unwrap_err();
     assert!(err.to_string().contains("could not parse save"), "got: {err}");
 
     std::fs::remove_file(&out).ok();
+}
+
+#[test]
+fn nationality_covers_the_database_not_just_a_handful() {
+    let summary = save_or_skip!();
+
+    let nation_of = |name: &str| -> String {
+        summary
+            .players
+            .iter()
+            .find(|p| p.name == name)
+            .map_or_else(|| panic!("{name} should be in the database"), |p| p.nation.clone())
+    };
+    // Identified from their national squads rather than from a stored name.
+    assert_eq!(nation_of("Kevin De Bruyne"), "Belgium");
+    assert_eq!(nation_of("Robert Lewandowski"), "Poland");
+    assert_eq!(nation_of("Luka Modrić"), "Croatia");
+    assert_eq!(nation_of("Heung-Min Son"), "South Korea");
+    assert_eq!(nation_of("Khvicha Kvaratskhelia"), "Georgia");
+
+    // The table should cover the overwhelming majority of players, not the
+    // few nations that were named first.
+    let players: Vec<_> = summary.players.iter().filter(|p| p.is_player).collect();
+    let named = players.iter().filter(|p| !p.nation.is_empty()).count();
+    let share = named as f64 / players.len() as f64;
+    assert!(share > 0.9, "only {:.1}% of players have a named nation", share * 100.0);
 }

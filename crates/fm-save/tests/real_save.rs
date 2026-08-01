@@ -18,6 +18,21 @@ fn load() -> Option<fm_save::Save> {
     load_named("Career.fm")
 }
 
+/// The decoded value of a named attribute.
+fn value_of(ability: &fm_save::Ability, name: &str) -> u8 {
+    let index = (0..fm_save::ability::ATTRIBUTE_COUNT)
+        .find(|&i| fm_save::ability::attribute_name(i) == Some(name))
+        .unwrap_or_else(|| panic!("{name} is not a named attribute"));
+    ability.attributes[index]
+}
+
+/// Asserts a whole in-game report screen against a decoded block.
+fn assert_attributes(ability: &fm_save::Ability, shown: &[(&str, u8)]) {
+    for (name, expected) in shown {
+        assert_eq!(value_of(ability, name), *expected, "{name}");
+    }
+}
+
 macro_rules! save_or_skip {
     () => {
         match load() {
@@ -154,37 +169,23 @@ fn an_aged_save_decodes_against_the_in_game_report() {
         .expect("Liverpool should have an entity id");
     assert_eq!(musiala.club_eid, Some(liverpool));
 
-    // Every named attribute, exactly as the report screen shows it.
+    // His whole report screen, attribute by attribute.
     let shown = [
-        (0, 13, "Crossing"),
-        (2, 16, "Finishing"),
-        (3, 13, "Heading"),
-        (5, 12, "Marking"),
-        (6, 16, "Off the Ball"),
-        (8, 14, "Penalty Taking"),
-        (9, 11, "Tackling"),
-        (10, 17, "Passing"),
-        (20, 11, "Positioning"),
-        (23, 18, "Technique"),
-        (26, 19, "Flair"),
-        (27, 10, "Corners"),
-        (29, 15, "Work Rate"),
-        (30, 5, "Long Throws"),
-        (34, 14, "Acceleration"),
-        (35, 11, "Free Kick Taking"),
-        (36, 12, "Strength"),
-        (38, 15, "Pace"),
-        (39, 12, "Jumping Reach"),
-        (40, 9, "Leadership"),
+        ("Crossing", 13), ("Dribbling", 18), ("Finishing", 16), ("First Touch", 17),
+        ("Heading", 13), ("Long Shots", 14), ("Marking", 12), ("Passing", 17),
+        ("Tackling", 11), ("Technique", 18), ("Corners", 10), ("Free Kick Taking", 11),
+        ("Long Throws", 5), ("Penalty Taking", 14), ("Aggression", 12), ("Anticipation", 16),
+        ("Bravery", 13), ("Composure", 18), ("Concentration", 13), ("Decisions", 16),
+        ("Determination", 16), ("Flair", 19), ("Leadership", 9), ("Off the Ball", 16),
+        ("Positioning", 11), ("Teamwork", 14), ("Vision", 17), ("Work Rate", 15),
+        ("Acceleration", 14), ("Agility", 18), ("Balance", 16), ("Jumping Reach", 12),
+        ("Natural Fitness", 14), ("Pace", 15), ("Stamina", 14), ("Strength", 12),
     ];
-    for (index, value, name) in shown {
-        assert_eq!(fm_save::ability::attribute_name(index), Some(name));
-        assert_eq!(
-            ability.attributes.get(index).copied(),
-            Some(value),
-            "{name} should read {value}"
-        );
-    }
+    assert_attributes(ability, &shown);
+
+    // Right-footed, and the game shows his left as "Fairly Strong".
+    assert_eq!(value_of(ability, "Right Foot"), 20);
+    assert_eq!(value_of(ability, "Left Foot"), 12);
 
     // His position ratings: natural AM(C), accomplished across the AM strip.
     assert_eq!(ability.natural_positions().first().copied(), Some("AMC"));
@@ -194,4 +195,73 @@ fn an_aged_save_decodes_against_the_in_game_report() {
     assert_eq!(musiala.wage, Some(392_499));
     let until = musiala.contract_until.expect("contract expiry");
     assert_eq!((until.year, until.month, until.day), (2037, 6, 30));
+}
+
+/// The goalkeeping attributes are invisible on an outfielder's report, so a
+/// keeper is the only way to check them. Values from Lucas Chevalier's
+/// in-game report in the same 2035 save.
+#[test]
+fn a_goalkeepers_report_confirms_the_goalkeeping_set() {
+    let Some(save) = load_named("Ongoing.fm") else {
+        eprintln!("skipped: no Ongoing.fm on this machine");
+        return;
+    };
+
+    let keeper = save
+        .people
+        .iter()
+        .find(|p| p.full_name == "Lucas Chevalier")
+        .expect("Chevalier should be in the database");
+    let ability = keeper.ability.as_ref().expect("Chevalier is a player");
+    assert_eq!(ability.natural_positions(), vec!["GK"]);
+
+    assert_attributes(
+        ability,
+        &[
+            // The goalkeeping set his screen shows in place of the technical one.
+            ("Command of Area", 14),
+            ("Kicking", 13),
+            ("One on Ones", 18),
+            ("Throwing", 16),
+            ("Eccentricity", 14),
+            ("Rushing Out Tendency", 15),
+            ("Punching Tendency", 5),
+            // Shared attributes, which must read the same for a keeper.
+            ("First Touch", 14),
+            ("Passing", 15),
+            ("Free Kick Taking", 4),
+            ("Penalty Taking", 5),
+            ("Technique", 13),
+            ("Anticipation", 16),
+            ("Concentration", 13),
+            ("Determination", 16),
+            ("Leadership", 15),
+            ("Positioning", 14),
+            ("Jumping Reach", 15),
+            ("Acceleration", 11),
+            ("Pace", 12),
+            ("Agility", 15),
+            ("Strength", 12),
+        ],
+    );
+
+    // The four unseparated goalkeeping indices all read 15 on his screen —
+    // Aerial Reach, Communication, Handling and Reflexes in some order.
+    for index in [11, 12, 14, 21] {
+        assert_eq!(fm_save::ability::attribute_name(index), None);
+        assert_eq!(ability.attributes[index], 15, "index {index}");
+    }
+
+    // Outfielders score near nothing on the goalkeeping set — the property
+    // the whole grouping was found by.
+    let musiala = save
+        .people
+        .iter()
+        .find(|p| p.full_name == "Jamal Musiala")
+        .and_then(|p| p.ability.as_ref())
+        .expect("Musiala");
+    for index in fm_save::ability::GOALKEEPING_INDICES {
+        assert!(musiala.attributes[index] <= 4, "outfielder at goalkeeping index {index}");
+        assert!(ability.attributes[index] >= 5, "keeper at goalkeeping index {index}");
+    }
 }

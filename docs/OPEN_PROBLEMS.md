@@ -53,7 +53,24 @@ link is a dedicated squad table validated against club `(eid, uid)` pairs.
 
 ---
 
-## 2. Attribute names — 20 of 54 identified, ground truth flowing
+## 2. Attribute names — 45 of 54, only hidden ones and four keeper skills left
+
+Solved by intersecting five in-game player reports (see `SAVE_FORMAT.md`
+§6c). **All 36 visible outfield attributes are named**, plus seven of the
+eleven goalkeeping ones and both feet.
+
+Remaining, in order of how cheaply they fall:
+
+1. **Indices 11, 12, 14, 21** — Aerial Reach, Communication, Handling,
+   Reflexes in some order. The one keeper seen reads 15 at all four. **One
+   more goalkeeper report where those four differ finishes it**; run
+   `cargo run --release --example namesolve -- <save.fm>` after adding the
+   report to `namesolve.rs`.
+2. **Indices 41, 44, 47, 48, 49** — hidden attributes (Consistency,
+   Important Matches, Injury Proneness, Dirtiness and similar). No player
+   screen shows them, so this needs the in-game editor rather than a report.
+
+### The earlier state of this problem
 
 Solved substantially on 1 August 2026 via ground truth: an in-game player
 report (Jamal Musiala, aged save) checked against his decoded block. All
@@ -147,6 +164,14 @@ entity id, expiry after an 8×FF run. Verified exactly against FM Scout's
 Haaland (£450K to 30/6/2034) and Musiala's in-game report in the 2035 save
 (£392,499 inside the scouted band, to 30/6/2037).
 
+**Transfer value is not stored.** The asking-price range on a player's header
+is computed: Bouaddi's screen shows £73M-£219M and neither 73,000,000 nor
+219,000,000 appears *anywhere* in the 154 MB frame, in any of u32, thousands
+or float32. The 1:3 ratio of every observed range (£23M-£70M, £73M-£219M)
+says the game derives both ends from one internal figure it recomputes from
+ability, age, contract and reputation. Replicating that formula would mean
+inventing a number, so the tool shows wage and contract instead.
+
 Still in the block, unparsed: contract start date, signing date (Haaland's
 holds 17/1/2025 — the real-world date of his extension), and several smaller
 money fields that look like appearance/goal bonuses and clauses (£85,000 and
@@ -160,7 +185,23 @@ mapped. Transfer *value* is probably computed by the game, not stored.
 
 ---
 
-## 5. Nation names — not in the save
+## 5. Nation names — 75 named, the long tail remains
+
+Every occurrence of "England" in the database frame is the *surname* England;
+the country names live in FM's localisation files, not the save. They are
+named anyway by grouping people by nation identifier and reading the best
+players in each group, which is unmistakable — Courtois, De Bruyne and Lukaku
+fix 131; Kvaratskhelia and Mamardashvili fix 144.
+
+**75 identifiers are named**, covering over 90% of players (asserted in
+`journeys.rs`). What is left is the tail: groups of fewer than twenty people,
+mostly small Caribbean and Pacific nations, where the best players are not
+recognisable enough to be sure. `cargo run --release --example nations --
+<save.fm>` prints the unnamed groups with their best players; anything
+identifiable can be added to `nation_name`. A wrong flag is worse than a
+number, so the doubtful ones stay as raw identifiers.
+
+### Original note
 
 Twenty nations are named by grouping people by nation identifier and reading the
 surnames, which makes a national squad unmistakable (143 gives Zidane, Henry and

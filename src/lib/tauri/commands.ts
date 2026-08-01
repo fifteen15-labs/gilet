@@ -3,6 +3,7 @@
  * functions, so the backend can be stubbed in one place for tests.
  */
 import { invoke } from '@tauri-apps/api/core';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 
 export type Player = {
 	id: number;
@@ -77,11 +78,24 @@ export type Shortlist = {
 	players: string[];
 };
 
+/** How far through parsing the backend is, as it reports it. */
+export type ParseProgress = {
+	/** 0 to 1. */
+	fraction: number;
+	/** What the backend is doing, phrased for the user. */
+	label: string;
+};
+
 export function openSave(path: string): Promise<SaveSummary> {
 	const now = new Date();
 	// Ages are computed against the user's clock, not the build machine's.
 	const today = [now.getFullYear(), now.getMonth() + 1, now.getDate()];
 	return invoke<SaveSummary>('open_save', { path, today });
+}
+
+/** Subscribes to parse progress. Resolves to the function that stops listening. */
+export function onParseProgress(handle: (progress: ParseProgress) => void): Promise<UnlistenFn> {
+	return listen<ParseProgress>('parse-progress', (event) => handle(event.payload));
 }
 
 export function exportCsv(path: string, rows: Player[]): Promise<void> {

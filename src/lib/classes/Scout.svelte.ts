@@ -1,4 +1,4 @@
-import { openSave, type Club, type Player, type SaveSummary } from '$lib/tauri/commands';
+import { onParseProgress, openSave, type Club, type Player, type SaveSummary } from '$lib/tauri/commands';
 import {
 	emptyFilters,
 	matches,
@@ -21,6 +21,10 @@ const RENDER_LIMIT = 400;
 class Scout {
 	summary = $state<SaveSummary | null>(null);
 	loading = $state(false);
+	/** How far through parsing the backend is, 0 to 1. */
+	progress = $state(0);
+	/** What the backend is doing right now. */
+	progressLabel = $state('');
 	error = $state<string | null>(null);
 
 	filters = $state<Filters>({ ...emptyFilters });
@@ -84,12 +88,21 @@ class Scout {
 	async open(path: string): Promise<void> {
 		this.loading = true;
 		this.error = null;
+		this.progress = 0;
+		this.progressLabel = 'Opening the file';
+		// The backend parses on a worker thread and reports each stage, so
+		// this stays live rather than freezing on a spinner.
+		const stop = await onParseProgress(({ fraction, label }) => {
+			this.progress = fraction;
+			this.progressLabel = label;
+		});
 		try {
 			this.summary = await openSave(path);
 		} catch (e) {
 			this.error = e instanceof Error ? e.message : String(e);
 			this.summary = null;
 		} finally {
+			stop();
 			this.loading = false;
 		}
 	}

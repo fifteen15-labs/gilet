@@ -58,41 +58,101 @@ impl Person {
 
 /// Nation names for identifiers confirmed against known players.
 ///
-/// The file does not store the name beside the identifier, so these were
-/// verified two ways. Directly, from players whose nationality is not in doubt,
-/// cross-checked against the nation the club records carry — German clubs and
-/// Florian Wirtz both report 145, English clubs and Saka both report 139. And
-/// by grouping every person by nation and reading the surnames.
-/// A national squad's names are unmistakable — Zidane, Henry and Deschamps
-/// fix 143; Davids, Reiziger and van Nistelrooij fix 158; Okocha, Kanu and
-/// Amokachi fix 33; Donovan, Berhalter and Cherundolo fix 120.
+/// The file does not store the name beside the identifier — every occurrence
+/// of "England" in the database frame is the *surname* England — so these were
+/// derived by grouping every person by nation identifier and reading the best
+/// players in each group. A national squad is unmistakable: Courtois, De
+/// Bruyne, Lukaku and Tielemans fix 131; Modrić, Gvardiol and Kovačić fix 135;
+/// Kvaratskhelia and Mamardashvili fix 144; Son, Kim Min-Jae and Lee Kang-In
+/// fix 80. Cross-checked against the nation the club records carry, which uses
+/// the same numbering — German clubs and Wirtz both report 145, English clubs
+/// and Saka both report 139.
 ///
-/// Left unnamed where the surnames are Spanish-speaking but the specific
-/// country is not clear from names alone — several identifiers share that
-/// problem and a wrong flag is worse than a number.
+/// Identifiers are left unnamed rather than guessed wherever the best players
+/// in the group do not settle the country — mostly small groups of fewer than
+/// twenty people. A wrong flag is worse than a number.
+///
+/// Note 0 is a real identifier (Algeria: Mahrez, Bennacer, Bensebaïni), not a
+/// missing value.
 #[must_use]
 pub fn nation_name(id: u16) -> Option<&'static str> {
     match id {
+        0 => Some("Algeria"),
+        1 => Some("Angola"),
+        6 => Some("Cameroon"),
+        7 => Some("Cape Verde"),
+        15 => Some("Gambia"),
+        16 => Some("Ghana"),
+        18 => Some("Guinea-Bissau"),
+        19 => Some("Ivory Coast"),
+        26 => Some("Mali"),
+        29 => Some("Morocco"),
         33 => Some("Nigeria"),
+        36 => Some("Senegal"),
+        38 => Some("Sierra Leone"),
+        40 => Some("South Africa"),
+        46 => Some("Tunisia"),
+        48 => Some("DR Congo"),
+        50 => Some("Zimbabwe"),
+        61 => Some("Japan"),
+        80 => Some("South Korea"),
+        92 => Some("Antigua and Barbuda"),
+        96 => Some("Bermuda"),
+        97 => Some("Canada"),
+        103 => Some("Grenada"),
+        105 => Some("Guyana"),
         108 => Some("Jamaica"),
+        109 => Some("Mexico"),
+        115 => Some("Saint Kitts and Nevis"),
         120 => Some("United States"),
+        126 => Some("Albania"),
+        129 => Some("Austria"),
+        131 => Some("Belgium"),
+        133 => Some("Bosnia and Herzegovina"),
+        134 => Some("Bulgaria"),
+        135 => Some("Croatia"),
+        137 => Some("Czech Republic"),
         138 => Some("Denmark"),
         139 => Some("England"),
+        142 => Some("Finland"),
         143 => Some("France"),
+        144 => Some("Georgia"),
         145 => Some("Germany"),
+        146 => Some("Greece"),
+        147 => Some("Hungary"),
+        148 => Some("Iceland"),
+        149 => Some("Israel"),
+        150 => Some("Italy"),
         158 => Some("Netherlands"),
         159 => Some("Northern Ireland"),
         160 => Some("Norway"),
+        161 => Some("Poland"),
         162 => Some("Portugal"),
         163 => Some("Republic of Ireland"),
+        164 => Some("Romania"),
+        165 => Some("Russia"),
         167 => Some("Scotland"),
+        168 => Some("Slovakia"),
+        169 => Some("Slovenia"),
         170 => Some("Spain"),
         171 => Some("Sweden"),
+        172 => Some("Switzerland"),
+        173 => Some("Turkey"),
+        174 => Some("Ukraine"),
         175 => Some("Wales"),
+        176 => Some("Serbia"),
         177 => Some("Australia"),
+        180 => Some("New Zealand"),
         187 => Some("Argentina"),
         189 => Some("Brazil"),
         190 => Some("Chile"),
+        191 => Some("Colombia"),
+        192 => Some("Ecuador"),
+        193 => Some("Paraguay"),
+        195 => Some("Uruguay"),
+        196 => Some("Venezuela"),
+        216 => Some("Gibraltar"),
+        219 => Some("Kosovo"),
         _ => None,
     }
 }

@@ -131,7 +131,26 @@ pub struct SaveSummary {
     pub parse_millis: u64,
 }
 
-/// Reads and parses a save, returning every person in it.
+/// How far through parsing the backend is, emitted as it goes.
+#[derive(Debug, Clone, Serialize)]
+pub struct ParseProgress {
+    /// 0.0 to 1.0.
+    pub fraction: f32,
+    /// What the backend is doing, for the user to read.
+    pub label: String,
+}
+
+/// The event a parse emits as each stage begins.
+pub const PARSE_PROGRESS_EVENT: &str = "parse-progress";
+
+/// Reads and parses a save on a worker thread, returning every person in it.
+///
+/// Parsing a 190 MB save takes seconds, and a synchronous Tauri command runs
+/// on the main thread — which freezes the window and shows the macOS spinning
+/// wheel, indistinguishable from a crash. The work therefore happens inside
+/// `spawn_blocking`, and each [`fm_save::Stage`] is emitted as a
+/// `parse-progress` event so the UI can show real progress rather than a
+/// spinner that might mean anything.
 ///
 /// `today` is `[year, month, day]` from the frontend so ages match the user's
 /// clock rather than the build machine's.
@@ -142,14 +161,46 @@ pub struct SaveSummary {
 // borrowing here is not an option.
 #[allow(clippy::needless_pass_by_value)]
 #[tauri::command]
-pub fn open_save(path: String, today: Vec<u16>) -> Result<SaveSummary, CommandError> {
+pub async fn open_save(
+    app: tauri::AppHandle,
+    path: String,
+    today: Vec<u16>,
+) -> Result<SaveSummary, CommandError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        use tauri::Emitter as _;
+        load_save(path, &today, |stage| {
+            // A dropped progress event is not worth failing a parse over.
+            let _ = app.emit(
+                PARSE_PROGRESS_EVENT,
+                ParseProgress {
+                    fraction: stage.progress(),
+                    label: stage.label().to_owned(),
+                },
+            );
+        })
+    })
+    .await
+    .map_err(|e| CommandError::Parse(format!("parsing did not finish: {e}")))?
+}
+
+/// The body of [`open_save`], without the Tauri handle, so the whole
+/// open → decode → summarise path is testable outside an app.
+///
+/// # Errors
+/// Fails if the file cannot be read or is not a Football Manager save.
+pub fn load_save(
+    path: String,
+    today: &[u16],
+    on_stage: impl FnMut(fm_save::Stage),
+) -> Result<SaveSummary, CommandError> {
     let bytes = std::fs::read(&path).map_err(|e| CommandError::Read {
         path: path.clone(),
         message: e.to_string(),
     })?;
 
     let started = std::time::Instant::now();
-    let save = fm_save::Save::parse(&bytes).map_err(|e| CommandError::Parse(e.to_string()))?;
+    let save = fm_save::Save::parse_with_progress(&bytes, on_stage)
+        .map_err(|e| CommandError::Parse(e.to_string()))?;
     let parse_millis = started.elapsed().as_millis() as u64;
 
     // Ages are relative to the save's own date. Using the system clock instead

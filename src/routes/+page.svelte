@@ -138,8 +138,19 @@
 
 		<main class="flex min-w-0 flex-1 flex-col">
 			{#if scout.loading}
-				<div class="flex flex-1 items-center justify-center">
-					<p class="eyebrow">Reading save</p>
+				<div class="flex flex-1 items-center justify-center px-8">
+					<div class="w-full max-w-sm">
+						<p class="eyebrow mb-3">{scout.progressLabel || 'Reading save'}</p>
+						<div class="h-[3px] w-full overflow-hidden bg-[var(--color-raised)]">
+							<div
+								class="h-full bg-[var(--color-signal)] transition-[width] duration-300 ease-out"
+								style:width="{Math.round(scout.progress * 100)}%"
+							></div>
+						</div>
+						<p class="tabular mt-2 text-xs text-[var(--color-faint)]">
+							{Math.round(scout.progress * 100)}%
+						</p>
+					</div>
 				</div>
 			{:else if scout.error}
 				<div class="flex flex-1 items-center justify-center px-8">

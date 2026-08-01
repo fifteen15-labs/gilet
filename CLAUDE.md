@@ -63,9 +63,10 @@ string table — the case that hides van Dijk and ~37,000 others), person and
 club entity ids, **squad membership with captains** via the squad table
 validated against club `(eid, uid)` pairs, and attributes, positions,
 nationality, Current Ability and Potential Ability, verified against real FM
-ratings. Twenty attribute indices are named — Pace and Acceleration split,
-Marking/Tackling confirmed, index 40 corrected to Leadership — via ground
-truth from an in-game report (`docs/SAVE_FORMAT.md` §6c). Aged saves parse:
+ratings. **45 of 54 attribute indices are named**, including every attribute
+FM shows on an outfielder's report, seven goalkeeping ones and both feet —
+solved by intersecting five in-game player reports (`docs/SAVE_FORMAT.md`
+§6c). 75 nations are named from their squads. Aged saves parse:
 attribute internals are 1-100 (only initialised to display×5) and squad
 lists shuffle after years of transfers, both handled and locked in by a
 test against a 2035 save. From a 44 MB save: 49,217 people, 18,663 clubs,
