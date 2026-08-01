@@ -49,8 +49,26 @@ fn opens_a_real_save_and_finds_people_and_clubs() {
     assert_eq!(city.short_name, "Man City");
     assert_eq!(city.club_id, 1075);
 
-    // Ability is deliberately absent until it is located in the format.
-    assert!(haaland.ability.is_none());
+    // Ability is decoded from the attribute block; these are FM's real ratings.
+    assert_eq!(haaland.ability, Some(184), "Haaland's Current Ability");
+    assert_eq!(haaland.potential, Some(195), "Haaland's Potential Ability");
+    assert!(haaland.is_player);
+
+    // Potential Ability is never below Current Ability, for every player.
+    let players: Vec<_> = summary.players.iter().filter(|p| p.is_player).collect();
+    assert!(players.len() > 1_000, "expected players, got {}", players.len());
+    for p in &players {
+        let (Some(ca), Some(pa)) = (p.ability, p.potential) else {
+            panic!("a player must have both ability values: {}", p.name);
+        };
+        assert!(pa >= ca, "{}: PA {pa} below CA {ca}", p.name);
+        assert!((1..=200).contains(&ca) && (1..=200).contains(&pa), "{}: out of range", p.name);
+    }
+
+    // Staff carry no attribute block, which is what separates them.
+    let staff: Vec<_> = summary.players.iter().filter(|p| !p.is_player).collect();
+    assert!(!staff.is_empty());
+    assert!(staff.iter().all(|p| p.ability.is_none()));
 }
 
 #[test]

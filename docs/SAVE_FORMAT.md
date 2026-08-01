@@ -152,7 +152,7 @@ signature and an initial capital removes them.
 Nation IDs are **not** yet resolved to names, and squad lists are not located,
 so a club cannot yet be linked to its players.
 
-## 5. Players vs staff — not reliably separable
+## 5. Players vs staff — a rejected approach (superseded by 6a)
 
 Players and staff share the same record layout; Maldini and Davids parse
 identically in shape to Haaland and Saka. There is a real difference — staff
@@ -171,34 +171,63 @@ The principled route is the club record's squad list — a player is someone a
 club lists as a player. That needs the club record body parsed, which is not
 done.
 
-## 6. CA/PA — not yet located
+## 6. Attributes, Current Ability and Potential Ability — SOLVED
 
-The record body past roughly +14 is **variable length**: it contains repeated
-~16-byte sub-blocks (visible as recurring `xx xx 00 03 01 32 4f 00 ff` style
-rows). Fixed offsets from the name therefore stop being meaningful, which is why
-a column-wise scan for a CA/PA pair over the first 160 bytes found nothing.
+None of this is in the person record. FM stores a separate **attribute block**
+and the ability values sit immediately in front of it.
 
-The structural test to apply once the sub-blocks are parsed: **PA ≥ CA for every
-player**, both within 1–200. Across ~12k records that constraint is strong
-enough to identify the pair on its own, with no ground truth needed.
+```
+block-39  u8   Current Ability     1-200
+block-37  u8   Potential Ability   1-200, never below CA
+block+0   54x  attributes          each is the 1-20 value multiplied by 5
+```
 
-What the record body past the name actually contains, established since: an
-8-value run of 1–20 numbers at +21 (FM's personality block — Adaptability,
-Ambition, Loyalty, Professionalism and so on), then from +48 a repeating
-16-byte key/value structure whose values are far too large to be attributes
-(13961, 11004, 3136), so contracts, wages or valuations rather than ability.
+The block is exactly **54 bytes**, every one a multiple of 5 in 5..=100, which
+is FM's 1-20 attribute scale stored at 5x (100 displays as 20, 65 as 13). That
+multiple-of-5 property is the signature that finds it; searching for a run of
+raw 1-20 values finds nothing, because they are not stored that way.
 
-The technical attribute block is not in the first 320 bytes after the name.
+**The block precedes the person it belongs to**, by a median of about 1,200
+bytes. So the owner is the next person record after the block — not the other
+way round. Pairing a block to the *preceding* name attributes ability to the
+wrong player and produces plausible-looking nonsense (Haaland at CA 105).
 
-Approaches not yet tried:
+Verified against real ratings:
 
-- Follow the 16-byte key/value list to its end and see what follows it; the
-  attributes are likely past it rather than at a fixed offset.
-- Diff two saves of the same career a few in-game months apart. CA moves for
-  developing players while DOB, height and IDs stay fixed, so the diff narrows
-  the search enormously.
-- Cross-check against in-game values via the FM26 in-game editor for a handful
-  of players to confirm a candidate offset.
+| Player | CA | PA |
+| --- | --- | --- |
+| Kylian Mbappé | 191 | 197 |
+| Erling Braut Haaland | 184 | 195 |
+| Jude Bellingham | 181 | 188 |
+| Bukayo Saka | 181 | 188 |
+| Florian Wirtz | 170 | 188 |
+| Lionel Messi (39) | 172 | 200 |
+| Cristiano Ronaldo (41) | 155 | 195 |
+
+Messi at PA 200 with CA well below it, and Ronaldo down to 155 at 41, are
+exactly what a declining great looks like. Across 5,847 blocks: CA averages
+102.7 (median 105, max 191), PA averages 121.0 and tops out at exactly 200, and
+**PA >= CA holds for 99.98%**.
+
+How it was found, since the method generalises: CA is a weighted function of the
+attributes, so once the block gave a reliable anchor, sweeping every nearby
+offset and correlating against the attribute mean identified CA at r = **0.938**.
+No ground truth was needed. Anchoring on the name instead never works — the
+section between name and block is variable length.
+
+Two traps worth recording. Distances from block to owner are far more variable
+than they first look: median ~1,200 bytes but the 99th percentile is ~29,000, so
+a tight cap silently drops thousands of players. And several blocks can resolve
+to the same person because the person scan misses records; the nearest block
+must win, or a distant one overwrites a correct match and quietly moves ability
+between players.
+
+## 6a. Players vs staff — SOLVED
+
+Only players have a 54-byte attribute block. Staff either have none or a shorter
+run. That absence is the discriminator, and it is structural rather than the
+statistical guess rejected in section 5. In the reference save: **3,999 players,
+8,398 staff**.
 
 ## 7. Prior art
 

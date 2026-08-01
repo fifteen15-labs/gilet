@@ -6,12 +6,12 @@ export type SortDirection = 'asc' | 'desc';
 export type Filters = {
 	query: string;
 	maxAge: number | null;
-	/** Minimum Current Ability. Has no effect until CA is decoded from the save
-	 * format — every player's `ability` is null, so applying it would hide
-	 * everyone. The UI keeps the control disabled until then. */
+	/** Minimum Current Ability, 1-200. Excludes staff, who have no ability. */
 	minAbility: number | null;
-	/** Minimum Potential Ability. Same caveat as `minAbility`. */
+	/** Minimum Potential Ability, 1-200. Excludes staff. */
 	minPotential: number | null;
+	/** Restrict to players or to staff. Players are the ones with ability data. */
+	kind: 'all' | 'players' | 'staff';
 	shortlistedOnly: boolean;
 };
 
@@ -20,6 +20,7 @@ export const emptyFilters: Filters = {
 	maxAge: null,
 	minAbility: null,
 	minPotential: null,
+	kind: 'all',
 	shortlistedOnly: false
 };
 
@@ -37,9 +38,11 @@ export function normalise(value: string): string {
 
 export function matches(player: Player, filters: Filters, shortlisted: ReadonlySet<string>): boolean {
 	if (filters.shortlistedOnly && !shortlisted.has(player.name)) return false;
+	if (filters.kind === 'players' && !player.is_player) return false;
+	if (filters.kind === 'staff' && player.is_player) return false;
 	if (filters.maxAge !== null && player.age > filters.maxAge) return false;
-	// An unknown ability is not a low one. Until CA/PA are decoded these are
-	// null for everyone, so an ability filter excludes rather than includes.
+	// Staff have no ability, and an unknown is not a low score — an ability
+	// filter therefore excludes them rather than treating them as zero.
 	if (filters.minAbility !== null) {
 		if (player.ability === null || player.ability < filters.minAbility) return false;
 	}
@@ -54,6 +57,8 @@ export function matches(player: Player, filters: Filters, shortlisted: ReadonlyS
  * what it was rather than "Shortlist 3". */
 export function describeFilters(filters: Filters): string {
 	const parts: string[] = [];
+	if (filters.kind === 'players') parts.push('Players');
+	if (filters.kind === 'staff') parts.push('Staff');
 	if (filters.maxAge !== null) parts.push(`Under ${filters.maxAge}`);
 	if (filters.minAbility !== null) parts.push(`CA ${filters.minAbility}+`);
 	if (filters.minPotential !== null) parts.push(`PA ${filters.minPotential}+`);

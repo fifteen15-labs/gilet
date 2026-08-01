@@ -2,32 +2,34 @@
 <!--
   Anorak — primary mark (512x512)
 
-  What it depicts: a hooded anorak, flat-sketched front-on the way a
-  technical outerwear spec sheet would draw it — peaked hood, flared
-  shoulders, stub sleeves with an armhole notch, a boxy pull-over body,
-  straight hem. It is a coat first; nothing about it should read as an
-  abstract badge.
+  What it depicts: a hooded coat, flat-sketched front-on — a body that
+  flares from the shoulders down to the hem (the way a coat actually
+  hangs, wider at the bottom, not a canister narrowing to a nozzle),
+  short shoulder fillets, and a hood that is a wide, shallow dome
+  (wider than it is tall) rather than a peak. It is a garment first:
+  unmistakably worn clothing, not an abstract badge, a house gable, or
+  a mountain.
 
-  The one deliberate break in an otherwise calm outline is the hood's
-  crown: instead of a smooth peak, the left side climbs in steps while
-  the right side falls in a single clean diagonal. Read left to right,
-  those steps are a bar chart climbing to its highest value — the
-  tallest "bar" IS the point of the hood. Same shape, both readings, at
-  the one place on a garment (the hood) the brief singles out as the
-  strongest candidate.
+  The hood is not solid. It has a genuine opening cut into it — the
+  drawstring aperture, the single most hood-specific shape there is —
+  and inside that opening, seen through it, sits a small rising bar
+  chart: two columns, the second taller than the first. The opening is
+  simultaneously the hood's face-hole and the chart's plot area. It is
+  one hole in the fabric doing both jobs at once, not a garment with a
+  chart drawn next to it.
 
-  A single punched grommet at the hem stands in for the drawstring
-  toggle and, at the same time, for a highlighted data point / scouting
-  reticle — hardware that would exist on the real jacket regardless.
+  Colour: Accent 1 hi-vis orange (#ff6a13) leads and is the only colour
+  on the garment itself, since orange is the technical-wear colour. The
+  two columns inside the hood opening are Accent 2 teal (#3fbfa8), the
+  data colour — the one place "obsessive spreadsheet stats" gets its
+  own colour, and it is deliberately the thing you'd be looking at if
+  you were peering into the hood.
 
-  Colour: Accent 1 hi-vis orange (#ff6a13) leads, since orange is the
-  garment/technical-wear colour. The toggle's core is Accent 2 teal
-  (#3fbfa8), the data colour, the one spot where "obsessive spreadsheet
-  stats" gets its own dot of colour inside the coat.
-
-  Monochrome check: strip all colour and the shape still reads — the
-  grommet is a true cut-out (fill-rule: evenodd), not a colour trick,
-  so the silhouette survives as flat black/white line art.
+  Monochrome check: the aperture is a true cut-out (fill-rule: evenodd
+  on the hood path, not a same-colour rectangle painted over it), so it
+  survives as genuine negative space at any single colour, on any
+  background. Silhouette alone — hood shape, opening, tapered body —
+  reads as "hooded coat" with no colour and no context.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Anorak">
   <title>Anorak</title>
@@ -38,17 +40,20 @@
   <!-- instrument panel: small radius, thin border, matches the app's own panel chrome -->
   <rect x="64" y="64" width="384" height="384" rx="28" fill="#161e26" stroke="#263340" stroke-width="5"/>
 
-  <!-- anorak silhouette: stepped hood peak, shoulders, stub sleeves, boxy body, hem -->
-  <!-- punched grommet (evenodd hole) near the hem doubles as toggle / data point -->
+  <!-- coat: a body flaring from shoulder to hem, a short fillet at each
+       shoulder, then a wide, shallow dome (hood) — proportioned so the
+       hood is wider than it is tall, a dome rather than a steeple. One
+       continuous outline, no hard "handle" step. A true cut-out
+       aperture (fill-rule evenodd) stands in for the drawstring
+       opening. -->
   <path
     fill-rule="evenodd"
     fill="#ff6a13"
-    d="M256,104 L256,132 L228,132 L228,161 L200,161 L200,190
-       L108,238 L108,278 L152,278 L184,232 L184,408
-       L328,408 L328,232 L360,278 L404,278 L404,238 L312,190 Z
-       M278,376 A22,22 0 1,0 234,376 A22,22 0 1,0 278,376 Z"
+    d="M136,395 L166,217 Q166,187 196,187 L196,141 Q196,117 220,117 L292,117 Q316,117 316,141 L316,187 Q346,187 346,217 L376,395 Z
+       M232,135 L280,135 Q292,135 292,147 L292,167 Q292,179 280,179 L232,179 Q220,179 220,167 L220,147 Q220,135 232,135 Z"
   />
 
-  <!-- toggle / data-point core -->
-  <circle cx="256" cy="376" r="9" fill="#3fbfa8"/>
+  <!-- data seen through the hood opening: two ascending columns -->
+  <rect x="239" y="153" width="12" height="18" fill="#3fbfa8"/>
+  <rect x="261" y="141" width="12" height="30" fill="#3fbfa8"/>
 </svg>

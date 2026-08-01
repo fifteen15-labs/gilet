@@ -2,11 +2,13 @@
 <!--
   Anorak — horizontal wordmark lockup
 
-  Same mark as logo.svg (hood crown built from ascending bar-chart
-  steps, falling away in one clean diagonal, punched grommet doubling
-  as drawstring toggle / data-point), set bare — no backing panel —
-  beside the wordmark, for use directly on the app's own dark
-  background (#0e1419).
+  Same mark as logo.svg (tapered coat body, hood with a true cut-out
+  drawstring aperture, two ascending data columns seen through the
+  opening), set bare — no backing panel — beside the wordmark, for use
+  directly on the app's own dark background (#0e1419). The aperture is
+  a genuine hole (fill-rule evenodd), so it is real transparency here,
+  not a painted rectangle — it will still look correct on any
+  background, not just the app's.
 
   Type: IBM Plex Sans Condensed, bold. The project already ships
   @fontsource/ibm-plex-sans-condensed, so it will be available inside
@@ -20,19 +22,20 @@
   <title>Anorak</title>
 
   <!-- mark, scaled and repositioned from its native 512x512 coordinates -->
-  <g transform="translate(-58.95,-48.42) scale(0.658)">
+  <g transform="translate(-77.8,-64.2) scale(0.719)">
     <path
       fill-rule="evenodd"
       fill="#ff6a13"
-      d="M120,408 L120,348 L168,348 L168,278 L216,278 L216,198 L256,198 L256,104 L392,408 Z
-         M272,370 A22,22 0 1,0 228,370 A22,22 0 1,0 272,370 Z"
+      d="M136,395 L166,217 Q166,187 196,187 L196,141 Q196,117 220,117 L292,117 Q316,117 316,141 L316,187 Q346,187 346,217 L376,395 Z
+         M232,135 L280,135 Q292,135 292,147 L292,167 Q292,179 280,179 L232,179 Q220,179 220,167 L220,147 Q220,135 232,135 Z"
     />
-    <circle cx="250" cy="370" r="9" fill="#3fbfa8"/>
+    <rect x="239" y="153" width="12" height="18" fill="#3fbfa8"/>
+    <rect x="261" y="141" width="12" height="30" fill="#3fbfa8"/>
   </g>
 
   <!-- wordmark -->
   <text
-    x="240"
+    x="220"
     y="120"
     dominant-baseline="central"
     font-family="'IBM Plex Sans Condensed', 'Arial Narrow', Arial, sans-serif"

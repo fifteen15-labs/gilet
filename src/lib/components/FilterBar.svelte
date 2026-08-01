@@ -16,6 +16,7 @@
 			scout.filters.maxAge !== null ||
 			scout.filters.minAbility !== null ||
 			scout.filters.minPotential !== null ||
+			scout.filters.kind !== 'all' ||
 			scout.filters.shortlistedOnly
 	);
 </script>
@@ -31,6 +32,22 @@
 	/>
 
 	{#if scout.tab === 'people'}
+		<div class="flex items-center gap-1">
+			{#each [{ k: 'all', label: 'All' }, { k: 'players', label: 'Players' }, { k: 'staff', label: 'Staff' }] as opt (opt.k)}
+				<button
+					type="button"
+					class="rounded-[2px] border px-2 py-1 text-xs transition-colors
+						{scout.filters.kind === opt.k
+						? 'border-[var(--color-hivis)] text-[var(--color-hivis)]'
+						: 'border-[var(--color-line)] text-[var(--color-mist)] hover:border-[var(--color-faint)]'}"
+					aria-pressed={scout.filters.kind === opt.k}
+					onclick={() => (scout.filters.kind = opt.k === 'players' ? 'players' : opt.k === 'staff' ? 'staff' : 'all')}
+				>
+					{opt.label}
+				</button>
+			{/each}
+		</div>
+
 		<div class="flex items-center gap-1">
 			<span class="eyebrow mr-1">Under</span>
 			{#each AGE_PRESETS as age (age)}
@@ -48,11 +65,9 @@
 			{/each}
 		</div>
 
-		<!-- Ability filters stay disabled until CA/PA are decoded; with every
-			value null they would match nobody. -->
 		<div
 			class="flex items-center gap-1"
-			title={abilityKnown ? '' : 'Ability is not decoded from the save format yet'}
+			title={abilityKnown ? '' : 'This save has no ability data'}
 		>
 			<span class="eyebrow mr-1">CA over</span>
 			<input

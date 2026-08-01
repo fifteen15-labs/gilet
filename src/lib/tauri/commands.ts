@@ -9,10 +9,12 @@ export type Player = {
 	name: string;
 	born: string;
 	age: number;
-	/** null until Current Ability is located in the save format. */
+	/** Current Ability, 1-200. Null for staff, who have no attribute block. */
 	ability: number | null;
-	/** null until Potential Ability is located in the save format. */
+	/** Potential Ability, 1-200. Null for staff. */
 	potential: number | null;
+	/** True for players; false for staff. */
+	is_player: boolean;
 };
 
 export type Club = {

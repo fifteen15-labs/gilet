@@ -37,6 +37,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
     }
 
+    println!();
     for probe in [
         "Erling Braut Haaland",
         "Jude Victor William Bellingham",
@@ -47,14 +48,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         match save.people.iter().find(|p| p.full_name == probe) {
             Some(p) => {
                 let d = p.date_of_birth;
-                println!("  found {:<32} {:04}-{:02}-{:02}", p.full_name, d.year, d.month, d.day);
+                let ability = p.ability.as_ref().map_or_else(
+                    || "staff (no attribute block)".to_owned(),
+                    |a| format!("CA {} / PA {}", a.current, a.potential),
+                );
+                println!("  {:<32} {:04}-{:02}-{:02}  {ability}", p.full_name, d.year, d.month, d.day);
             }
             None => println!("  MISSING {probe}"),
         }
     }
 
-    let nicknamed = save.people.iter().filter(|p| p.common_name_id.is_some()).count();
-    println!("\nwith a nickname: {nicknamed}");
+    let players = save.people.iter().filter(|p| p.is_player()).count();
+    println!("\nplayers with ability: {players}   staff: {}", save.people.len() - players);
+
+    let mut best: Vec<_> = save.people.iter().filter_map(|p| p.ability.as_ref().map(|a| (a, p))).collect();
+    best.sort_by_key(|(a, _)| std::cmp::Reverse(a.potential));
+    println!("\nhighest potential in the save:");
+    for (a, p) in best.iter().take(8) {
+        println!("  PA {:>3}  CA {:>3}  age {:>2}  {}", a.potential, a.current, p.date_of_birth.age_on(today), p.full_name);
+    }
 
     println!("\nclubs      {}", save.clubs.len());
     for c in save.clubs.iter().take(8) {

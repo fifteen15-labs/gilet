@@ -8,12 +8,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::CommandError;
 
-/// A player as the table renders them.
+/// A person as the table renders them.
 ///
-/// `ability` and `potential` are `Option` because Current and Potential Ability
-/// are not yet located in the save format — see `docs/SAVE_FORMAT.md`. They
-/// serialise as `null` so the UI can show an undecoded state rather than a
-/// fabricated number.
+/// `ability` and `potential` are `Option` because only players carry an
+/// attribute block; staff have none, which is what distinguishes the two.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayerRow {
     /// Byte offset of the record, stable within one save and used as the row key.
@@ -23,6 +21,8 @@ pub struct PlayerRow {
     pub age: u16,
     pub ability: Option<u8>,
     pub potential: Option<u8>,
+    /// True when this person has ability data, i.e. is a player not staff.
+    pub is_player: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -88,8 +88,9 @@ pub fn open_save(path: String, today: Vec<u16>) -> Result<SaveSummary, CommandEr
                 name: p.full_name.clone(),
                 born: format!("{:04}-{:02}-{:02}", d.year, d.month, d.day),
                 age: d.age_on(now),
-                ability: None,
-                potential: None,
+                ability: p.ability.as_ref().map(|a| a.current),
+                potential: p.ability.as_ref().map(|a| a.potential),
+                is_player: p.is_player(),
             }
         })
         .collect();

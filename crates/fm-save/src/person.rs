@@ -17,6 +17,17 @@ pub struct Person {
     /// Full name as stored inline, e.g. `"Erling Braut Haaland"`.
     pub full_name: String,
     pub date_of_birth: Date,
+    /// Ability and attributes, when this person has an attribute block.
+    /// `None` means staff: only players carry one.
+    pub ability: Option<crate::ability::Ability>,
+}
+
+impl Person {
+    /// Whether this person is a player. Staff have no attribute block.
+    #[must_use]
+    pub fn is_player(&self) -> bool {
+        self.ability.is_some()
+    }
 }
 
 const NO_COMMON_NAME: u32 = 0xFFFF_FFFF;
@@ -94,6 +105,9 @@ fn parse_at(frame: &[u8], at: usize) -> Option<Person> {
         common_name_id: (common_raw != NO_COMMON_NAME).then_some(common_raw),
         full_name: full_name.to_owned(),
         date_of_birth,
+        // Filled in by `Save::parse`, which matches blocks to people once both
+        // scans have run.
+        ability: None,
     })
 }
 
