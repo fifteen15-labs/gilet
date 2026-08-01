@@ -79,7 +79,10 @@ parse from the block before each person record (Haaland £450K/30-6-2034
 exact vs FM Scout), shown as a table column and exported in CSV.
 
 Search, shortlists, saving a filtered search as a shortlist, and CSV
-import/export are wired end to end, covered by integration tests in
+import/export are wired end to end. **Scoring profiles** let the user weight
+attributes themselves and rank players by the weighted average; Gilet ships no
+role weights, because FM's own are unpublished and a guessed table would be an
+invented number wearing a familiar name. Covered by integration tests in
 `src-tauri/tests/journeys.rs` and `crates/fm-save/tests/real_save.rs` that run
 against a real save (Liverpool's captain must be Virgil van Dijk).
 

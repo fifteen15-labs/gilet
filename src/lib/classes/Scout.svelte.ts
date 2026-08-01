@@ -1,4 +1,6 @@
+import { profiles } from '$lib/classes/Profiles.svelte';
 import { shortlists } from '$lib/classes/Shortlists.svelte';
+import { scoreAll } from '$lib/utils/score';
 import { onParseProgress, openSave, type Club, type Player, type SaveSummary } from '$lib/tauri/commands';
 import {
 	emptyFilters,
@@ -98,13 +100,17 @@ class Scout {
 	 * the table body all want the same answer. As a method it ran three times
 	 * per keystroke and the UI stopped keeping up with typing.
 	 */
+	/** Every player's score under the active profile, or empty when none is
+	 * selected. Computed once per profile change rather than per row. */
+	readonly scores: ReadonlyMap<number, number> = $derived(scoreAll(this.players, profiles.active));
+
 	readonly results: Player[] = $derived.by(() => {
 		// Only read the shortlist when a filter actually consults it. Reading it
 		// unconditionally made ticking one player re-filter and re-sort all
 		// 49,000, because the membership set had changed.
 		const shortlisted = this.filters.shortlistedOnly ? shortlists.activeMembers : NO_MEMBERS;
-		const found = this.players.filter((p) => matches(p, this.filters, shortlisted));
-		return sortPlayers(found, this.sortKey, this.sortDirection);
+		const found = this.players.filter((p) => matches(p, this.filters, shortlisted, this.scores));
+		return sortPlayers(found, this.sortKey, this.sortDirection, this.scores);
 	});
 
 	readonly visibleResults: Player[] = $derived(this.results.slice(0, RENDER_LIMIT));

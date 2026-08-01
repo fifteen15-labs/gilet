@@ -28,6 +28,19 @@ pub struct SavedFilter {
     pub filters: serde_json::Value,
 }
 
+/// A user-defined weighting over attribute indices, used to rank players by
+/// what the user is actually looking for.
+///
+/// The weights are the user's own. Gilet ships none: FM's role ratings are
+/// computed from weights SI does not publish, and inventing a table of them
+/// would be inventing numbers. Keyed by attribute index as a string, because
+/// that is what JSON object keys are.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScoringProfile {
+    pub name: String,
+    pub weights: std::collections::BTreeMap<String, f64>,
+}
+
 /// Gilet's files live in Football Manager's own `shortlists` folder, next to
 /// the `.slf` files FM writes there, because that is where someone already
 /// looks for a shortlist. Ours stay readable JSON rather than FM's proprietary
@@ -83,6 +96,11 @@ fn filters_path(app: &tauri::AppHandle) -> Option<PathBuf> {
     store_dir(app).map(|d| d.join("filters.json"))
 }
 
+fn profiles_path(app: &tauri::AppHandle) -> Option<PathBuf> {
+    migrate(app, "profiles.json");
+    store_dir(app).map(|d| d.join("profiles.json"))
+}
+
 fn read_json<T: serde::de::DeserializeOwned>(path: Option<PathBuf>) -> Result<Vec<T>, CommandError> {
     let Some(path) = path else { return Ok(Vec::new()) };
     if !path.exists() {
@@ -128,6 +146,29 @@ pub fn load_filters(app: tauri::AppHandle) -> Result<Vec<SavedFilter>, CommandEr
 #[tauri::command]
 pub fn save_filters(app: tauri::AppHandle, filters: Vec<SavedFilter>) -> Result<(), CommandError> {
     write_json(filters_path(&app), &filters)
+}
+
+/// Reads saved scoring profiles, empty when none exist yet.
+///
+/// # Errors
+/// Fails only if the file exists but cannot be read or parsed.
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command]
+pub fn load_profiles(app: tauri::AppHandle) -> Result<Vec<ScoringProfile>, CommandError> {
+    read_json(profiles_path(&app))
+}
+
+/// Writes scoring profiles to disk.
+///
+/// # Errors
+/// Fails if the directory or file cannot be written.
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command]
+pub fn save_profiles(
+    app: tauri::AppHandle,
+    profiles: Vec<ScoringProfile>,
+) -> Result<(), CommandError> {
+    write_json(profiles_path(&app), &profiles)
 }
 
 /// Reads saved shortlists, returning an empty list when none exist yet.

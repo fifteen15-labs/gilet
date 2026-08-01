@@ -4,15 +4,20 @@
 	import DetailPanel from '$lib/components/DetailPanel.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import PlayerTable from '$lib/components/PlayerTable.svelte';
+	import ProfileEditor from '$lib/components/ProfileEditor.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { shortlists } from '$lib/classes/Shortlists.svelte';
 	import { savedFilters } from '$lib/classes/SavedFilters.svelte';
+	import { profiles } from '$lib/classes/Profiles.svelte';
 	import { defaultLocations, exportCsv, importCsv, type Locations } from '$lib/tauri/commands';
 	import { describeFilters, nationsIn } from '$lib/utils/filter';
 
 	let exportError = $state<string | null>(null);
 	let notice = $state<string | null>(null);
+	/** The profile editor replaces the detail panel while it is open — both are
+	 * the same right-hand column and only one is useful at a time. */
+	let editingProfile = $state(false);
 	/** Dialogs open where macOS users expect: saves in FM's own folder, CSVs in
 	 * Documents. Resolved in Rust so the paths follow platform convention. */
 	let locations = $state<Locations>({ saves: null, documents: null });
@@ -20,6 +25,7 @@
 	$effect(() => {
 		void shortlists.load();
 		void savedFilters.load();
+		void profiles.load();
 		void defaultLocations().then((l) => (locations = l));
 	});
 
@@ -139,6 +145,7 @@
 		<Sidebar
 			onExport={exportVisible}
 			onImport={importIntoShortlist}
+			onEditProfile={() => (editingProfile = true)}
 			exportDisabled={!scout.loaded}
 		/>
 
@@ -217,6 +224,12 @@
 			{/if}
 		</main>
 
-		<DetailPanel />
+		{#if editingProfile}
+			<aside class="w-72 shrink-0 border-l border-[var(--color-line)] bg-[var(--color-panel)]">
+				<ProfileEditor onClose={() => (editingProfile = false)} />
+			</aside>
+		{:else}
+			<DetailPanel />
+		{/if}
 	</div>
 </div>

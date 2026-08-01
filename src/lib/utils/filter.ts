@@ -1,6 +1,6 @@
 import type { Club, Player } from '$lib/tauri/commands';
 
-export type SortKey = 'name' | 'age' | 'ability' | 'potential';
+export type SortKey = 'name' | 'age' | 'ability' | 'potential' | 'score';
 export type SortDirection = 'asc' | 'desc';
 
 export type Filters = {
@@ -24,6 +24,9 @@ export type Filters = {
 	gender: 'all' | 'men' | 'women';
 	/** Contract status: free agents (no club), or contracts expiring soon. */
 	contract: 'any' | 'free' | 'expiring';
+	/** Minimum score under the active scoring profile, on the 1-20 attribute
+	 * scale. Null for any; ignored when no profile is active. */
+	minScore: number | null;
 	/** Latest expiry date (YYYY-MM-DD) that still counts as "expiring soon".
 	 * Set alongside `contract: 'expiring'`, from the save's own date. */
 	expiryCutoff: string | null;
@@ -42,6 +45,7 @@ export const emptyFilters: Filters = {
 	nationId: null,
 	gender: 'all',
 	contract: 'any',
+	minScore: null,
 	expiryCutoff: null,
 	shortlistedOnly: false
 };
@@ -58,7 +62,18 @@ export function normalise(value: string): string {
 		.toLowerCase();
 }
 
-export function matches(player: Player, filters: Filters, shortlisted: ReadonlySet<string>): boolean {
+export function matches(
+	player: Player,
+	filters: Filters,
+	shortlisted: ReadonlySet<string>,
+	scores: ReadonlyMap<number, number> = new Map()
+): boolean {
+	// An unscoreable player is not a low score, so a minimum excludes them
+	// rather than treating them as zero — the same rule the ability bounds use.
+	if (filters.minScore !== null) {
+		const value = scores.get(player.id);
+		if (value === undefined || value < filters.minScore) return false;
+	}
 	if (filters.shortlistedOnly && !shortlisted.has(player.name)) return false;
 	if (filters.kind === 'players' && !player.is_player) return false;
 	if (filters.kind === 'staff' && player.is_player) return false;
@@ -139,6 +154,7 @@ export function describeFilters(filters: Filters, nationName?: string): string {
 	if (filters.contract === 'expiring') parts.push('Expiring contracts');
 	if (filters.position !== null) parts.push(filters.position);
 	if (filters.nationId !== null) parts.push(nationName ?? `nation ${filters.nationId}`);
+	if (filters.minScore !== null) parts.push(`score ${filters.minScore}+`);
 	if (filters.maxAge !== null) parts.push(`Under ${filters.maxAge}`);
 	const ca = describeRange('CA', filters.minAbility, filters.maxAbility);
 	if (ca !== null) parts.push(ca);
@@ -176,13 +192,18 @@ const byName = new Intl.Collator(undefined, { sensitivity: 'base' });
  * of direction — an unknown is not a low score, and burying them keeps the
  * top of the table meaningful once abilities are decoded.
  */
-export function sortPlayers(players: Player[], key: SortKey, direction: SortDirection): Player[] {
+export function sortPlayers(
+	players: Player[],
+	key: SortKey,
+	direction: SortDirection,
+	scores: ReadonlyMap<number, number> = new Map()
+): Player[] {
 	const factor = direction === 'asc' ? 1 : -1;
 	return [...players].sort((a, b) => {
 		if (key === 'name') return byName.compare(a.name, b.name) * factor;
 		if (key === 'age') return (a.age - b.age) * factor;
-		const left = a[key];
-		const right = b[key];
+		const left = key === 'score' ? (scores.get(a.id) ?? null) : a[key];
+		const right = key === 'score' ? (scores.get(b.id) ?? null) : b[key];
 		if (left === null && right === null) return byName.compare(a.name, b.name);
 		if (left === null) return 1;
 		if (right === null) return -1;

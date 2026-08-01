@@ -38,6 +38,8 @@ pub fn run() {
             shortlist::save_shortlists,
             shortlist::load_filters,
             shortlist::save_filters,
+            shortlist::load_profiles,
+            shortlist::save_profiles,
         ])
         .run(tauri::generate_context!());
 

@@ -6,10 +6,13 @@
 	type Props = {
 		player: Player;
 		shortlisted: boolean;
+		/** Score under the active profile; null when this person cannot be
+		 * scored, undefined when no profile is active and the column is absent. */
+		score?: number | null;
 		onToggle: (name: string) => void;
 	};
 
-	const { player, shortlisted, onToggle }: Props = $props();
+	const { player, shortlisted, score, onToggle }: Props = $props();
 
 	/** Compact weekly wage: £450K, £8.5K, £400 — or nothing when out of contract. */
 	function formatWage(wage: number | null): string {
@@ -58,6 +61,9 @@
 	</td>
 	<td class="tabular pr-4 text-sm text-[var(--color-bright)]">{player.ability ?? ''}</td>
 	<td class="tabular pr-4 text-sm text-[var(--color-signal)]">{player.potential ?? ''}</td>
+	{#if score !== undefined}
+		<td class="tabular pr-4 text-sm text-[var(--color-bright)]">{score ?? ''}</td>
+	{/if}
 	<td class="pr-3">
 		<AbilityBar ability={player.ability} potential={player.potential} />
 	</td>

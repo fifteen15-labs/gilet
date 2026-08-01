@@ -2,6 +2,7 @@
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { shortlists } from '$lib/classes/Shortlists.svelte';
 	import { savedFilters } from '$lib/classes/SavedFilters.svelte';
+	import { profiles } from '$lib/classes/Profiles.svelte';
 	import { describeFilters, hasAbilityData, nationsIn } from '$lib/utils/filter';
 
 	let savingPreset = $state(false);
@@ -44,6 +45,7 @@
 			scout.filters.kind !== 'all' ||
 			scout.filters.position !== null ||
 			scout.filters.nationId !== null ||
+			scout.filters.minScore !== null ||
 			scout.filters.gender !== 'all' ||
 			scout.filters.contract !== 'any' ||
 			scout.filters.shortlistedOnly
@@ -190,6 +192,25 @@
 					disabled:cursor-not-allowed disabled:opacity-40"
 			/>
 		</div>
+
+		{#if profiles.active}
+			<div class="flex items-center gap-1">
+				<span class="eyebrow mr-1" title="Your weighted average, not an FM figure">
+					{profiles.active.name}
+				</span>
+				<input
+					type="number"
+					min="1"
+					max="20"
+					step="0.5"
+					placeholder="min"
+					bind:value={scout.filters.minScore}
+					aria-label="Minimum score"
+					class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+						placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none"
+				/>
+			</div>
+		{/if}
 
 		<div class="flex items-center gap-1">
 			<button

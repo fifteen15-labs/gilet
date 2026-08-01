@@ -2,8 +2,10 @@
 	import PlayerRow from './PlayerRow.svelte';
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { shortlists } from '$lib/classes/Shortlists.svelte';
+	import { profiles } from '$lib/classes/Profiles.svelte';
 
 	const members = $derived(shortlists.activeMembers);
+	const profile = $derived(profiles.active);
 	const total = $derived(scout.results.length);
 	const rows = $derived(scout.visibleResults);
 
@@ -42,12 +44,32 @@
 							PA{scout.sortKey === 'potential' ? (scout.sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}
 						</button>
 					</th>
+					{#if profile}
+						<th class="w-16 pr-4 pb-2 text-left">
+							<button
+								class="eyebrow hover:text-[var(--color-mist)]"
+								title="Your weighted average of {profile.name}. Your weights, not an FM figure."
+								onclick={() => scout.sortBy('score')}
+							>
+								{profile.name.slice(0, 8)}{scout.sortKey === 'score'
+									? scout.sortDirection === 'asc'
+										? ' ↑'
+										: ' ↓'
+									: ''}
+							</button>
+						</th>
+					{/if}
 					<th class="w-40 pr-3 pb-2 text-left"><span class="eyebrow">Ability / max</span></th>
 				</tr>
 			</thead>
 			<tbody>
 				{#each rows as player (player.id)}
-					<PlayerRow {player} shortlisted={members.has(player.name)} onToggle={toggle} />
+					<PlayerRow
+						{player}
+						shortlisted={members.has(player.name)}
+						score={profile ? (scout.scores.get(player.id) ?? null) : undefined}
+						onToggle={toggle}
+					/>
 				{/each}
 			</tbody>
 		</table>

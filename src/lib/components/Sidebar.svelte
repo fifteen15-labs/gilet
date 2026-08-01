@@ -1,9 +1,15 @@
 <script lang="ts">
 	import { shortlists } from '$lib/classes/Shortlists.svelte';
 	import { scout } from '$lib/classes/Scout.svelte';
+	import { profiles } from '$lib/classes/Profiles.svelte';
 
-	type Props = { onExport: () => void; onImport: () => void; exportDisabled: boolean };
-	const { onExport, onImport, exportDisabled }: Props = $props();
+	type Props = {
+		onExport: () => void;
+		onImport: () => void;
+		onEditProfile: () => void;
+		exportDisabled: boolean;
+	};
+	const { onExport, onImport, onEditProfile, exportDisabled }: Props = $props();
 
 	/** Members listed under the active shortlist before it is summarised. A list
 	 * saved from a broad search can hold thousands of names. */
@@ -160,6 +166,41 @@
 		</nav>
 
 		<div class="space-y-2 border-t border-[var(--color-line)] p-3">
+			<div>
+				<h2 class="eyebrow mb-1.5">Score by</h2>
+				<div class="flex items-center gap-1">
+					<select
+						value={profiles.activeName}
+						aria-label="Scoring profile"
+						class="min-w-0 flex-1 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+							text-[var(--color-mist)] focus:border-[var(--color-hivis)] focus:outline-none"
+						onchange={(event) => (profiles.activeName = event.currentTarget.value || null)}
+					>
+						<option value="">No score</option>
+						{#each profiles.list as profile (profile.name)}
+							<option value={profile.name}>{profile.name}</option>
+						{/each}
+					</select>
+					<button
+						type="button"
+						class="rounded-[2px] border border-[var(--color-line)] px-2 py-1 text-xs text-[var(--color-mist)]
+							transition-colors hover:border-[var(--color-hivis)] hover:text-[var(--color-hivis)]"
+						title={profiles.active ? `Edit ${profiles.active.name}` : 'Build a scoring profile'}
+						onclick={onEditProfile}
+					>
+						{profiles.active ? 'Edit' : 'New'}
+					</button>
+					{#if profiles.active}
+						<button
+							type="button"
+							class="px-1 text-xs text-[var(--color-faint)] hover:text-[var(--color-hivis)]"
+							aria-label="Delete {profiles.active.name}"
+							onclick={() => profiles.active && profiles.remove(profiles.active.name)}>×</button
+						>
+					{/if}
+				</div>
+			</div>
+
 			<button
 				type="button"
 				class="w-full rounded-[2px] border border-[var(--color-line)] py-1.5 text-xs text-[var(--color-mist)]

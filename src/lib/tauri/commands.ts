@@ -102,6 +102,18 @@ export type SavedFilter = {
 	filters: unknown;
 };
 
+/**
+ * A user-defined weighting over attribute indices, used to rank players by
+ * what the user is looking for. The weights are the user's: Gilet ships no
+ * role table, because FM's own role weights are not published and guessing
+ * them would be inventing numbers.
+ */
+export type ScoringProfile = {
+	name: string;
+	/** Attribute index (as a string key) to weight. */
+	weights: Record<string, number>;
+};
+
 /** How far through parsing the backend is, as it reports it. */
 export type ParseProgress = {
 	/** 0 to 1. */
@@ -150,4 +162,12 @@ export function loadFilters(): Promise<SavedFilter[]> {
 
 export function saveFilters(filters: SavedFilter[]): Promise<void> {
 	return invoke('save_filters', { filters });
+}
+
+export function loadProfiles(): Promise<ScoringProfile[]> {
+	return invoke<ScoringProfile[]>('load_profiles');
+}
+
+export function saveProfiles(profiles: ScoringProfile[]): Promise<void> {
+	return invoke('save_profiles', { profiles });
 }
