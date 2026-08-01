@@ -154,9 +154,46 @@ What remains is mapping row *ids* to attribute names, which one in-game
 editor screen of a staff member would settle.
 
 The reputation-candidate triple after the second identity block (`02 [u16
-×3] [u16 pair]`) stays unresolved: Chevalier and Soulé (both Worldwide) read
-5892/6257 while Musiala (also Worldwide) reads 2690, so the badge is not a
-simple threshold on any of the five values. Do not ship it as reputation.
+×3] [u16 pair]`) stays unresolved. Do not ship it as reputation — but the
+reason has changed, and the earlier rejection should not be trusted either.
+
+**The way that field was being read is unsound.** `cargo run --release
+--example reputation -- <save.fm>` reproduces it. Locating the second entity
+object by searching forward for `[eid+1][uid][uid]` is contaminated by
+construction: people are written in ascending eid order, so `eid+1` is
+usually *the next person*, and an unbounded forward search finds their
+identity block rather than a second one belonging to this person. Every
+number read that way may be the neighbour's.
+
+Three things the probe established:
+
+1. **The run is real and reputation-shaped where it is found.** Haaland,
+   Saka and van Dijk read `02 [A][B][C][D][E]` with A and B equal or one
+   apart, all three on a 1-10000 scale, and `D == A / 50` exactly — the
+   "pair ≈ triple/50" noted before. That matches FM's editor, which holds
+   three reputations (current, home, world) per person.
+2. **Attribution is the problem, not the shape.** Requiring that shape
+   (A ≈ B, `D == A/50`, all ≤ 10000) lifts the top-200 mean CA from 67 to
+   131 and the share of players from 33/200 to 179/200, so the field tracks
+   quality. But the top of the table is dominated by one cohort of women's
+   players, which is what reading a neighbouring record looks like: the file
+   groups related records together.
+3. **Bounding the search to the record's own extent finds almost nothing** —
+   26 of 49,217. The second block sits 1,287 to 1,562 bytes past the record
+   start for the three probes, which is further than the typical gap to the
+   next person. So the second entity object is not inside the person record
+   as bounded that way, and where it actually lives is still unknown.
+
+The earlier ground truth (Chevalier and Soulé at 5892/6257 against Musiala at
+2690, all three badged Worldwide) is exactly the pattern neighbour
+contamination produces, so it is not evidence against the field. Re-run that
+comparison only once the second object can be tied to its person.
+
+**Where to go next:** find the second entity object by structure rather than
+by arithmetic on the eid — the `[eid+1]` search cannot distinguish "this
+person's second object" from "the next person's first". A record-length or
+terminator rule would settle it, and would also let §3b's staff row lists be
+attributed safely.
 
 ### The earlier dead ends
 
