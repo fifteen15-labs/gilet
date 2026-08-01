@@ -30,33 +30,48 @@ pub fn is_goalkeeping(index: usize) -> bool {
 
 /// Names inferred for some attribute indices.
 ///
-/// The format does not label its attributes, so these were identified by asking
-/// which well-known players top each index across the whole database. Only
-/// indices whose top scorers are unambiguous are named:
+/// The format does not label its attributes. These were identified from two
+/// independent signals: which well-known players top each index, and how the
+/// mean varies by the player's strongest position once positions were decoded.
+/// An index is only named when both agree.
 ///
-/// - 2 — Kane, Shaw, Ronaldo, Haaland, Mbappé
-/// - 6 — Ronaldo, Vinícius, Haaland, Mitrović
-/// - 8 — Kane, Toney, Ronaldo, the recognised penalty takers
-/// - 10 — Messi, Tielemans, Fernandes, Kane
+/// - 0 — wingers and full-backs high, centre-backs lowest: **Crossing**
+/// - 2 — Kane, Shaw, Ronaldo, Haaland, Mbappé; strikers 12.2 against
+///   centre-backs 6.4: **Finishing**
+/// - 6 — strikers highest, centre-backs lowest: **Off the Ball**
+/// - 8 — Kane, Toney and Ronaldo, the recognised penalty takers
+/// - 10 — Messi, Tielemans, Fernandes; midfielders high
+/// - 20 — centre-backs and defensive mids high, wingers low: **Positioning**
 /// - 23 — Messi, Dybala, Wirtz
-/// - 26 — Vinícius, Conceição, Templeton
-/// - 34 — Alphonso Davies, Mbappé, Doku, Leão
-/// - 40 — Otamendi, Ronaldo, Freuler
+/// - 30 — low everywhere (mean 6.6) and peaking at full-backs, the signature of
+///   **Long Throws**
+/// - 36 — centre-backs and strikers high, wingers low: **Strength**
+/// - 40 — Otamendi, Ronaldo, Freuler; defenders high
 ///
-/// Indices left unnamed are genuinely ambiguous — Marking against Tackling, or
-/// Pace against Acceleration, cannot be told apart from player profiles alone,
-/// and a coin-flip label is worse than none on a tool used to judge players.
+/// The position data also corrected an earlier mistake: index 6 was first
+/// labelled Heading on the strength of Ronaldo and Haaland topping it, but
+/// centre-backs average 8.5 there against strikers' 12.0. Centre-backs head the
+/// ball constantly, so Heading was wrong.
+///
+/// Indices left unnamed are genuinely ambiguous. Marking against Tackling
+/// (indices 5 and 9), Pace against Acceleration (34 and 38), and Heading
+/// against Jumping Reach (3 and 39) each produce a matched pair with the same
+/// positional signature, and nothing available separates them. A coin-flip
+/// label is worse than none on a tool used to judge players.
+///
 /// These are inferences, not values read from the file.
 #[must_use]
 pub fn attribute_name(index: usize) -> Option<&'static str> {
     match index {
+        0 => Some("Crossing"),
         2 => Some("Finishing"),
-        6 => Some("Heading"),
+        6 => Some("Off the Ball"),
         8 => Some("Penalty Taking"),
         10 => Some("Passing"),
+        20 => Some("Positioning"),
         23 => Some("Technique"),
-        26 => Some("Flair"),
-        34 => Some("Acceleration"),
+        30 => Some("Long Throws"),
+        36 => Some("Strength"),
         40 => Some("Aggression"),
         _ => None,
     }
@@ -383,6 +398,25 @@ mod tests {
     fn a_player_with_no_strong_position_lists_none() {
         let found = scan_abilities(&block(100, 120, flat(10)));
         assert!(found.first().unwrap().natural_positions().is_empty());
+    }
+
+    #[test]
+    fn names_only_the_attributes_the_evidence_supports() {
+        assert_eq!(attribute_name(2), Some("Finishing"));
+        assert_eq!(attribute_name(30), Some("Long Throws"));
+        // Matched pairs share a positional signature and stay unnamed rather
+        // than being guessed: Marking/Tackling, Pace/Acceleration,
+        // Heading/Jumping Reach.
+        for ambiguous in [3, 5, 9, 34, 38, 39] {
+            assert_eq!(attribute_name(ambiguous), None, "index {ambiguous} is not separable");
+        }
+    }
+
+    #[test]
+    fn index_six_is_not_heading() {
+        // Guards a corrected mistake: centre-backs score 8.5 here against
+        // strikers' 12.0, which rules Heading out.
+        assert_ne!(attribute_name(6), Some("Heading"));
     }
 
     #[test]

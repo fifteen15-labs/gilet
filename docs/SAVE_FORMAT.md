@@ -253,6 +253,26 @@ resolve to ST alone, Saka to AMR/AML, Mbappé to AML/ST/AMR, Bellingham to
 MC/AMC/ML, Messi to AMR/AMC/ST, and Naomi Girma to DC. The population shape is
 right too — centre-back most common, sweeper unused.
 
+## 6c. Attribute names — partly identified
+
+Ten of the 54 are named, from two signals that must agree: which well-known
+players top the index, and how the mean shifts by the player's strongest
+position. Crossing, Finishing, Off the Ball, Penalty Taking, Passing,
+Positioning, Technique, Long Throws, Strength, Aggression.
+
+The position data caught a mistake worth recording. Index 6 was first labelled
+Heading because Ronaldo, Haaland and Mitrović top it — but once positions were
+decoded, centre-backs average 8.5 there against strikers' 12.0. Centre-backs
+head the ball constantly, so Heading was wrong; the shape is an attacking
+movement attribute instead.
+
+Some indices form matched pairs with identical positional signatures and cannot
+be separated: Marking against Tackling (5 and 9), Pace against Acceleration
+(34 and 38), Heading against Jumping Reach (3 and 39). These stay unnamed.
+
+Index 25 is an oddity — mean 17.3 with most players at or near 20 — which is
+not the shape of any 1-20 attribute, so it may not be one.
+
 ## 6a. Players vs staff — SOLVED
 
 Only players have a 54-byte attribute block. Staff either have none or a shorter
