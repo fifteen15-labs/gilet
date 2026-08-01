@@ -12,6 +12,8 @@ export type Filters = {
 	minPotential: number | null;
 	/** Restrict to players or to staff. Players are the ones with ability data. */
 	kind: 'all' | 'players' | 'staff';
+	/** Only players comfortable in this position, e.g. "ST". Null for any. */
+	position: string | null;
 	shortlistedOnly: boolean;
 };
 
@@ -21,6 +23,7 @@ export const emptyFilters: Filters = {
 	minAbility: null,
 	minPotential: null,
 	kind: 'all',
+	position: null,
 	shortlistedOnly: false
 };
 
@@ -40,6 +43,7 @@ export function matches(player: Player, filters: Filters, shortlisted: ReadonlyS
 	if (filters.shortlistedOnly && !shortlisted.has(player.name)) return false;
 	if (filters.kind === 'players' && !player.is_player) return false;
 	if (filters.kind === 'staff' && player.is_player) return false;
+	if (filters.position !== null && !player.positions.includes(filters.position)) return false;
 	if (filters.maxAge !== null && player.age > filters.maxAge) return false;
 	// Staff have no ability, and an unknown is not a low score — an ability
 	// filter therefore excludes them rather than treating them as zero.
@@ -59,6 +63,7 @@ export function describeFilters(filters: Filters): string {
 	const parts: string[] = [];
 	if (filters.kind === 'players') parts.push('Players');
 	if (filters.kind === 'staff') parts.push('Staff');
+	if (filters.position !== null) parts.push(filters.position);
 	if (filters.maxAge !== null) parts.push(`Under ${filters.maxAge}`);
 	if (filters.minAbility !== null) parts.push(`CA ${filters.minAbility}+`);
 	if (filters.minPotential !== null) parts.push(`PA ${filters.minPotential}+`);

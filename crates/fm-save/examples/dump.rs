@@ -50,7 +50,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let d = p.date_of_birth;
                 let ability = p.ability.as_ref().map_or_else(
                     || "staff (no attribute block)".to_owned(),
-                    |a| format!("CA {} / PA {}", a.current, a.potential),
+                    |a| format!("CA {} / PA {}  {}", a.current, a.potential, a.natural_positions().join(", ")),
                 );
                 println!("  {:<32} {:04}-{:02}-{:02}  {ability}", p.full_name, d.year, d.month, d.day);
             }
@@ -65,7 +65,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     best.sort_by_key(|(a, _)| std::cmp::Reverse(a.potential));
     println!("\nhighest potential in the save:");
     for (a, p) in best.iter().take(8) {
-        println!("  PA {:>3}  CA {:>3}  age {:>2}  {}", a.potential, a.current, p.date_of_birth.age_on(today), p.full_name);
+        println!(
+            "  PA {:>3}  CA {:>3}  age {:>2}  {:<12} {}",
+            a.potential, a.current, p.date_of_birth.age_on(today),
+            a.natural_positions().join(","), p.full_name
+        );
     }
 
     println!("\nclubs      {}", save.clubs.len());

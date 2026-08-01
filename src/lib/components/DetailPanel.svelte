@@ -46,6 +46,20 @@
 
 				<div class="mb-4"><AbilityBar ability={player.ability} potential={player.potential} /></div>
 
+				{#if player.positions.length > 0}
+					<div class="mb-4">
+						<h4 class="eyebrow mb-1.5">Positions</h4>
+						<div class="flex flex-wrap gap-1">
+							{#each player.positions as pos (pos)}
+								<span
+									class="rounded-[2px] border border-[var(--color-hivis-dim)] px-1.5 py-0.5 text-xs
+										text-[var(--color-hivis)]">{pos}</span
+								>
+							{/each}
+						</div>
+					</div>
+				{/if}
+
 				<AttributeGrid attributes={player.attributes} />
 
 				<button

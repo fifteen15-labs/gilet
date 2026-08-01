@@ -10,6 +10,9 @@
 	const AGE_PRESETS = [18, 21, 23];
 
 	const abilityKnown = $derived(hasAbilityData(scout.players));
+	/** Slot order runs back to front, so listing them this way reads like a
+	 * team sheet rather than the file's own ordering. */
+	const POSITIONS = ['GK', 'DL', 'DC', 'DR', 'WBL', 'WBR', 'DM', 'ML', 'MC', 'MR', 'AML', 'AMC', 'AMR', 'ST'];
 	const resultCount = $derived(scout.matching(shortlists.activeMembers).length);
 	const filtered = $derived(
 		scout.filters.query.trim() !== '' ||
@@ -17,6 +20,7 @@
 			scout.filters.minAbility !== null ||
 			scout.filters.minPotential !== null ||
 			scout.filters.kind !== 'all' ||
+			scout.filters.position !== null ||
 			scout.filters.shortlistedOnly
 	);
 </script>
@@ -47,6 +51,18 @@
 				</button>
 			{/each}
 		</div>
+
+		<select
+			bind:value={scout.filters.position}
+			aria-label="Filter by position"
+			class="rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+				text-[var(--color-mist)] focus:border-[var(--color-hivis)] focus:outline-none"
+		>
+			<option value={null}>Any position</option>
+			{#each POSITIONS as p (p)}
+				<option value={p}>{p}</option>
+			{/each}
+		</select>
 
 		<div class="flex items-center gap-1">
 			<span class="eyebrow mr-1">Under</span>

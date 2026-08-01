@@ -17,6 +17,10 @@ export type Player = {
 	is_player: boolean;
 	/** The 54 attributes on FM's 1-20 scale. Empty for staff. */
 	attributes: number[];
+	/** Positions the player is comfortable in, strongest first. Empty for staff. */
+	positions: string[];
+	/** Rating 1-20 for each of the 15 position slots. Empty for staff. */
+	position_ratings: number[];
 };
 
 export type Club = {
@@ -35,6 +39,8 @@ export type SaveSummary = {
 	goalkeeping_indices: number[];
 	/** Inferred name per attribute index; empty string where not identified. */
 	attribute_names: string[];
+	/** The 15 position slot names, in slot order. */
+	position_names: string[];
 	/** The save's in-game date. Null when it could not be read, in which case
 	 * ages fall back to the system clock. */
 	game_date: string | null;

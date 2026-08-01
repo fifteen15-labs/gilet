@@ -78,6 +78,39 @@ fn opens_a_real_save_and_finds_people_and_clubs() {
     // The goalkeeping indices are reported so the UI can group them, and there
     // are exactly the 11 FM defines.
     assert_eq!(summary.goalkeeping_indices.len(), 11);
+    assert_eq!(summary.position_names.len(), 15);
+
+    // Positions decode to the real thing. These are the checks that would fail
+    // first if the slot order were wrong.
+    let position_of = |name: &str| -> Vec<String> {
+        summary
+            .players
+            .iter()
+            .find(|p| p.name == name)
+            .map(|p| p.positions.clone())
+            .unwrap_or_default()
+    };
+    assert_eq!(position_of("Erling Braut Haaland"), vec!["ST"], "Haaland is a striker");
+    assert!(
+        position_of("Bukayo Ayoyinka Saka").contains(&"AMR".to_owned()),
+        "Saka plays right"
+    );
+    assert!(
+        position_of("Kylian Mbappé Lottin").contains(&"AML".to_owned()),
+        "Mbappé plays left"
+    );
+
+    // Centre-back is the most common position in any database, and sweeper is
+    // nobody's position in a modern one.
+    let mut counts = std::collections::HashMap::new();
+    for p in summary.players.iter().filter(|p| p.is_player) {
+        if let Some(first) = p.positions.first() {
+            *counts.entry(first.clone()).or_insert(0usize) += 1;
+        }
+    }
+    let dc = counts.get("DC").copied().unwrap_or(0);
+    assert!(dc > 200, "expected plenty of centre-backs, got {dc}");
+    assert_eq!(counts.get("SW").copied().unwrap_or(0), 0, "sweeper should be unused");
 
     // Keepers score highly on those; outfielders sit near the floor. This is
     // the property the player/staff and GK grouping both rest on.

@@ -72,6 +72,26 @@ const MAX_ATTR: u8 = 100;
 const CA_BACK: usize = 39;
 const PA_BACK: usize = 37;
 
+/// Position ratings sit in the 15 bytes immediately before the attribute
+/// block, each 1-20 for how naturally the player plays there.
+pub const POSITION_COUNT: usize = 15;
+
+/// Slot order, established from players whose real position is unambiguous:
+/// Alisson tops slot 0, Rúben Dias slot 3, Kyle Walker slot 4 (and 14),
+/// Bruno Fernandes slot 10, Saka slot 11, Haaland and Kane slot 12.
+///
+/// The population backs it up — slot 3 is the most common strongest position
+/// at 19.7% (centre-backs), then striker at 16.4% and centre-mid at 14.3%,
+/// while sweeper is nobody's best position, as it should be in a modern
+/// database.
+pub const POSITION_NAMES: [&str; POSITION_COUNT] = [
+    "GK", "SW", "DL", "DC", "DR", "DM", "ML", "MC", "MR", "AML", "AMC", "AMR", "ST", "WBL", "WBR",
+];
+
+/// A rating of 15 or better is a position the player is genuinely comfortable
+/// in, which is the threshold used to describe them.
+const NATURAL: u8 = 15;
+
 /// The furthest a block sits before the person it belongs to.
 ///
 /// A block always precedes its owner, so the owner is simply the next person
@@ -96,6 +116,25 @@ pub struct Ability {
     pub potential: u8,
     /// The 54 attributes, converted back to the 1-20 scale FM displays.
     pub attributes: [u8; ATTRIBUTE_COUNT],
+    /// How well the player plays each of the 15 positions, 1-20.
+    pub positions: [u8; POSITION_COUNT],
+}
+
+impl Ability {
+    /// Positions the player is genuinely comfortable in, strongest first.
+    /// Empty when they have no natural position.
+    #[must_use]
+    pub fn natural_positions(&self) -> Vec<&'static str> {
+        let mut rated: Vec<(u8, &'static str)> = self
+            .positions
+            .iter()
+            .zip(POSITION_NAMES)
+            .filter(|(v, _)| **v >= NATURAL)
+            .map(|(v, name)| (*v, name))
+            .collect();
+        rated.sort_by_key(|(v, _)| std::cmp::Reverse(*v));
+        rated.into_iter().map(|(_, name)| name).collect()
+    }
 }
 
 fn is_attribute_byte(b: u8) -> bool {
@@ -146,11 +185,19 @@ fn read_block(frame: &[u8], start: usize) -> Option<Ability> {
         *slot = b / SCALE;
     }
 
+    // Positions are already on the 1-20 scale, unlike the attributes.
+    let raw_positions = frame.get(start.checked_sub(POSITION_COUNT)?..start)?;
+    let mut positions = [0u8; POSITION_COUNT];
+    for (slot, &b) in positions.iter_mut().zip(raw_positions) {
+        *slot = b.min(20);
+    }
+
     Some(Ability {
         block_offset: start,
         current,
         potential,
         attributes,
+        positions,
     })
 }
 
@@ -202,10 +249,23 @@ mod tests {
     /// Builds a block with the ability bytes in front of it, matching the
     /// on-disk layout.
     fn block(current: u8, potential: u8, attrs: [u8; ATTRIBUTE_COUNT]) -> Vec<u8> {
+        block_at(current, potential, attrs, [1u8; POSITION_COUNT])
+    }
+
+    fn block_at(
+        current: u8,
+        potential: u8,
+        attrs: [u8; ATTRIBUTE_COUNT],
+        positions: [u8; POSITION_COUNT],
+    ) -> Vec<u8> {
         let mut v = vec![0u8; 64];
         let start = v.len();
         *v.get_mut(start - CA_BACK).unwrap() = current;
         *v.get_mut(start - PA_BACK).unwrap() = potential;
+        // Positions sit immediately before the attribute block.
+        for (i, p) in positions.iter().enumerate() {
+            *v.get_mut(start - POSITION_COUNT + i).unwrap() = *p;
+        }
         v.extend(attrs.iter().map(|a| a * SCALE));
         // Terminate the run so the scanner sees its end.
         v.push(0xFF);
@@ -294,6 +354,35 @@ mod tests {
         let person = near + 900;
         let matched = match_to_people(&abilities, &[person]);
         assert_eq!(matched, vec![None, Some(0)], "the closer block should own the person");
+    }
+
+    #[test]
+    fn reads_position_ratings() {
+        // A keeper: 20 in slot 0, nothing anywhere else.
+        let mut keeper = [1u8; POSITION_COUNT];
+        keeper[0] = 20;
+        let found = scan_abilities(&block_at(180, 182, flat(11), keeper));
+        let a = found.first().unwrap();
+        assert_eq!(a.positions[0], 20);
+        assert_eq!(a.natural_positions(), vec!["GK"]);
+    }
+
+    #[test]
+    fn lists_natural_positions_strongest_first() {
+        // Walker's shape: right-back first, then centre-back and wing-back.
+        let mut walker = [1u8; POSITION_COUNT];
+        walker[4] = 20;
+        walker[3] = 18;
+        walker[14] = 16;
+        walker[2] = 10; // below the threshold, so not "natural"
+        let found = scan_abilities(&block_at(147, 164, flat(12), walker));
+        assert_eq!(found.first().unwrap().natural_positions(), vec!["DR", "DC", "WBR"]);
+    }
+
+    #[test]
+    fn a_player_with_no_strong_position_lists_none() {
+        let found = scan_abilities(&block(100, 120, flat(10)));
+        assert!(found.first().unwrap().natural_positions().is_empty());
     }
 
     #[test]

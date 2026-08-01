@@ -222,6 +222,37 @@ to the same person because the person scan misses records; the nearest block
 must win, or a distant one overwrites a correct match and quietly moves ability
 between players.
 
+## 6b. Positions — SOLVED
+
+The 15 bytes immediately **before** the attribute block are position ratings,
+each 1-20 for how naturally the player plays there. Unlike the attributes these
+are not scaled, so they read directly.
+
+Slot order, established from players whose real position is unambiguous:
+
+| Slot | Position | Evidence |
+| --- | --- | --- |
+| 0 | GK | Alisson 20, everything else 1 |
+| 1 | SW | nobody's strongest position, as expected in a modern database |
+| 2 | DL | |
+| 3 | DC | Rúben Dias 20; the most common strongest position at 19.7% |
+| 4 | DR | Kyle Walker 20 |
+| 5 | DM | |
+| 6 | ML | Grealish 18 |
+| 7 | MC | Bruno Fernandes 18; 14.3% of players |
+| 8 | MR | |
+| 9 | AML | Grealish 20, Mbappé 20 |
+| 10 | AMC | Bruno Fernandes 20, Grealish 20 |
+| 11 | AMR | Saka 20, Messi |
+| 12 | ST | Haaland 20, Kane 20, Ronaldo |
+| 13 | WBL | |
+| 14 | WBR | Walker 16, matching his wing-back role |
+
+Cross-checks that would have failed on a wrong ordering: Haaland and Ronaldo
+resolve to ST alone, Saka to AMR/AML, Mbappé to AML/ST/AMR, Bellingham to
+MC/AMC/ML, Messi to AMR/AMC/ST, and Naomi Girma to DC. The population shape is
+right too — centre-back most common, sweeper unused.
+
 ## 6a. Players vs staff — SOLVED
 
 Only players have a 54-byte attribute block. Staff either have none or a shorter

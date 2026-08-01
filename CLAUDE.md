@@ -58,16 +58,16 @@ backend can be stubbed in one place. Components split at 300 lines.
 
 Working: container decompression, string table, person records (name, date of
 birth, age), club records (name, short name, club ID, nation ID), and
-**attributes, Current Ability and Potential Ability**, verified against real FM
-ratings. Players and staff are separable — only players carry an attribute
+**attributes, positions, Current Ability and Potential Ability**, verified
+against real FM ratings and real player positions. Players and staff are separable — only players carry an attribute
 block. From a 44 MB save: 12,397 people (3,999 players), 18,663 clubs, ~450 ms.
 
 Search, shortlists, saving a filtered search as a shortlist, and CSV
 import/export are wired end to end, covered by integration tests in
 `src-tauri/tests/journeys.rs` that run against a real save.
 
-Not yet located: positions, squad lists (so no club-to-player link), nation
-names, and the in-game date on FM 26.2.0 saves.
+Not yet located: squad lists (so no club-to-player link), nation names, most
+individual attribute names, and the in-game date on FM 26.2.0 saves.
 
 ## Design philosophy
 

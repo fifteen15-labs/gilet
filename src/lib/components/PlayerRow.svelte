@@ -39,6 +39,7 @@
 		</button>
 	</td>
 	<td class="py-1.5 pr-4 text-sm text-[var(--color-bright)]">{player.name}</td>
+	<td class="pr-4 text-xs text-[var(--color-mist)]">{player.positions.slice(0, 3).join(', ')}</td>
 	<td class="tabular pr-4 text-sm text-[var(--color-mist)]">{player.age}</td>
 	<td class="tabular pr-4 text-sm text-[var(--color-bright)]">{player.ability ?? ''}</td>
 	<td class="tabular pr-4 text-sm text-[var(--color-signal)]">{player.potential ?? ''}</td>

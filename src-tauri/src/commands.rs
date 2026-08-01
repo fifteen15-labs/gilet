@@ -85,6 +85,10 @@ pub struct PlayerRow {
     pub is_player: bool,
     /// The 54 attributes on FM's 1-20 scale. Empty for staff.
     pub attributes: Vec<u8>,
+    /// Positions the player is comfortable in, strongest first. Empty for staff.
+    pub positions: Vec<String>,
+    /// Rating 1-20 for each of the 15 position slots. Empty for staff.
+    pub position_ratings: Vec<u8>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -102,6 +106,8 @@ pub struct SaveSummary {
     pub goalkeeping_indices: Vec<usize>,
     /// Inferred name per attribute index, empty string where unknown.
     pub attribute_names: Vec<String>,
+    /// The 15 position slot names, in slot order.
+    pub position_names: Vec<String>,
     pub path: String,
     pub players: Vec<PlayerRow>,
     pub clubs: Vec<ClubRow>,
@@ -158,6 +164,12 @@ pub fn open_save(path: String, today: Vec<u16>) -> Result<SaveSummary, CommandEr
                 potential: p.ability.as_ref().map(|a| a.potential),
                 is_player: p.is_player(),
                 attributes: p.ability.as_ref().map(|a| a.attributes.to_vec()).unwrap_or_default(),
+                positions: p
+                    .ability
+                    .as_ref()
+                    .map(|a| a.natural_positions().iter().map(|s| (*s).to_owned()).collect())
+                    .unwrap_or_default(),
+                position_ratings: p.ability.as_ref().map(|a| a.positions.to_vec()).unwrap_or_default(),
             }
         })
         .collect();
@@ -176,6 +188,10 @@ pub fn open_save(path: String, today: Vec<u16>) -> Result<SaveSummary, CommandEr
 
     Ok(SaveSummary {
         goalkeeping_indices: fm_save::ability::GOALKEEPING_INDICES.to_vec(),
+        position_names: fm_save::ability::POSITION_NAMES
+            .iter()
+            .map(|s| (*s).to_owned())
+            .collect(),
         attribute_names: (0..fm_save::ability::ATTRIBUTE_COUNT)
             .map(|i| fm_save::ability::attribute_name(i).unwrap_or_default().to_owned())
             .collect(),
