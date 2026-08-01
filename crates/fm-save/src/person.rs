@@ -2,13 +2,19 @@ use crate::date::Date;
 
 /// A person record: a player or member of staff.
 ///
-/// Only fields confirmed against real data are modelled. See
-/// `docs/SAVE_FORMAT.md` — Current and Potential Ability are not located yet
-/// and are deliberately absent rather than guessed.
+/// Only fields confirmed against real data are modelled — see
+/// `docs/SAVE_FORMAT.md`. Club membership is absent because it is not located:
+/// three separate approaches failed to find it, and a guess would be worse
+/// than the gap.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Person {
     /// Byte offset of the record within its frame, for tracing back to disk.
+    /// This points at `surname_id`; the record itself begins 5 bytes earlier,
+    /// at `first_name_id`.
     pub offset: usize,
+    /// String-table ID of the forename. Confirmed by lookup: Haaland's value,
+    /// 217140, resolves to "Erling" in the string table.
+    pub first_name_id: Option<u32>,
     /// String-table ID of the surname.
     pub surname_id: u32,
     /// String-table ID of the nickname, `None` when the player has none.
@@ -41,13 +47,11 @@ impl Person {
 
 /// Nation names for identifiers confirmed against known players.
 ///
-/// The file does not store the name beside the identifier, so this is only the
-/// set verified directly: each was read from players whose nationality is not
-/// in doubt, and cross-checked against the nation the club records carry —
-/// German clubs and Florian Wirtz both report 145, English clubs and Saka both
-/// report 139. Unconfirmed identifiers return `None` and the raw number is
-/// shown, which still groups and filters correctly.
-/// Identified by grouping every person by nation and reading the surnames.
+/// The file does not store the name beside the identifier, so these were
+/// verified two ways. Directly, from players whose nationality is not in doubt,
+/// cross-checked against the nation the club records carry — German clubs and
+/// Florian Wirtz both report 145, English clubs and Saka both report 139. And
+/// by grouping every person by nation and reading the surnames.
 /// A national squad's names are unmistakable — Zidane, Henry and Deschamps
 /// fix 143; Davids, Reiziger and van Nistelrooij fix 158; Okocha, Kanu and
 /// Amokachi fix 33; Donovan, Berhalter and Cherundolo fix 120.
@@ -132,6 +136,9 @@ pub fn scan_people(frame: &[u8]) -> Vec<Person> {
 
 fn parse_at(frame: &[u8], at: usize) -> Option<Person> {
     let surname_id = read_u32(frame, at)?;
+    // The forename identifier sits 5 bytes before the surname one. Absent at
+    // the very start of a frame, which is not a reason to reject the record.
+    let first_name_id = at.checked_sub(5).and_then(|p| read_u32(frame, p));
     let common_raw = read_u32(frame, at + 5)?;
     let name_len = read_u32(frame, at + 4 + MIDDLE_LEN)? as usize;
 
@@ -160,6 +167,7 @@ fn parse_at(frame: &[u8], at: usize) -> Option<Person> {
 
     Some(Person {
         offset: at,
+        first_name_id,
         surname_id,
         common_name_id: (common_raw != NO_COMMON_NAME).then_some(common_raw),
         full_name: full_name.to_owned(),

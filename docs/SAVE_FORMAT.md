@@ -291,6 +291,35 @@ run. That absence is the discriminator, and it is structural rather than the
 statistical guess rejected in section 5. In the reference save: **3,999 players,
 8,398 staff**.
 
+## 6d. Squad membership — not located, three approaches ruled out
+
+A club cannot yet be linked to its players. Recording what does *not* work, so
+the next attempt starts further along:
+
+1. **A club identifier in the person record.** There isn't one. Manchester
+   City's ID (1075) does appear in the person region 427 times, at a suspiciously
+   consistent 54–60 bytes from a record start — but Haaland and Grealish, both
+   City players, have no reference at all within 4,000 bytes, while Walker has
+   one at +838 and Saka (Arsenal) has one at +63. The distances and the
+   membership are both wrong, so these are favourite-club or academy links, not
+   a squad field.
+2. **A rare value shared between a player and their club.** Haaland and Walker
+   each share ~44 `u32` values with the Manchester City record window, but every
+   one is a common constant appearing hundreds of times in the file. Filtering
+   to values used 30 times or fewer leaves nothing.
+3. **An identifier array in the club record body.** There are runs of
+   plausible-looking IDs (29 values at +5339, 22 at +5456), but the values that
+   also appear near City players — 35839, 35584 — appear near Arsenal's Saka
+   too, so they are constants rather than references.
+
+Person records also carry no obvious unique identifier of their own. The record
+begins with `first_name_id`, then `surname_id`, then `common_name_id`, all of
+which point into the string table and are shared between namesakes.
+
+The likely answer is a separate contract or squad-relationship table elsewhere
+in the 105 MB frame, which needs structural parsing rather than the offset
+probing used so far.
+
 ## 7. Prior art
 
 FM Scouting Tool 26 (the Electron app on fmscout.com) does **not** parse saves.
