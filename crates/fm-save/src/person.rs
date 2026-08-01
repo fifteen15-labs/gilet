@@ -47,16 +47,37 @@ impl Person {
 /// German clubs and Florian Wirtz both report 145, English clubs and Saka both
 /// report 139. Unconfirmed identifiers return `None` and the raw number is
 /// shown, which still groups and filters correctly.
+/// Identified by grouping every person by nation and reading the surnames.
+/// A national squad's names are unmistakable — Zidane, Henry and Deschamps
+/// fix 143; Davids, Reiziger and van Nistelrooij fix 158; Okocha, Kanu and
+/// Amokachi fix 33; Donovan, Berhalter and Cherundolo fix 120.
+///
+/// Left unnamed where the surnames are Spanish-speaking but the specific
+/// country is not clear from names alone — several identifiers share that
+/// problem and a wrong flag is worse than a number.
 #[must_use]
 pub fn nation_name(id: u16) -> Option<&'static str> {
     match id {
+        33 => Some("Nigeria"),
+        108 => Some("Jamaica"),
+        120 => Some("United States"),
+        138 => Some("Denmark"),
         139 => Some("England"),
         143 => Some("France"),
         145 => Some("Germany"),
+        158 => Some("Netherlands"),
+        159 => Some("Northern Ireland"),
         160 => Some("Norway"),
         162 => Some("Portugal"),
+        163 => Some("Republic of Ireland"),
+        167 => Some("Scotland"),
+        170 => Some("Spain"),
+        171 => Some("Sweden"),
+        175 => Some("Wales"),
+        177 => Some("Australia"),
         187 => Some("Argentina"),
         189 => Some("Brazil"),
+        190 => Some("Chile"),
         _ => None,
     }
 }

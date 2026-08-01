@@ -119,10 +119,18 @@ which uses the same numbering:
 | 187 | Argentina | Messi |
 | 189 | Brazil | Alisson |
 
-The nation **names** are not stored beside the identifier — searching around
-each name string finds no nearby copy of its ID — so only the verified set is
-named. Unconfirmed IDs surface as raw numbers, which still group and filter
-correctly.
+The nation **names** are not stored beside the identifier. Every occurrence of
+"England" in the database frame turns out to be the *surname* England, sitting
+in the surname table between Boateng and Mullen — the country names are
+probably in FM's localisation files rather than the save.
+
+Twenty nations are named anyway, by grouping every person by nation identifier
+and reading the surnames. A national squad is unmistakable: 143 gives Zidane,
+Henry, Deschamps and Trézéguet; 158 gives Davids, Reiziger and van Nistelrooij;
+33 gives Okocha, Kanu and Amokachi; 120 gives Donovan, Berhalter and
+Cherundolo. Identifiers whose surnames are Spanish-speaking but not
+country-specific are left unnamed and surface as raw numbers, which still group
+and filter correctly.
 
 ## 4. Club record
 
