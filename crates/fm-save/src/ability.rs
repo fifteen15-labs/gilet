@@ -53,11 +53,20 @@ pub fn is_goalkeeping(index: usize) -> bool {
 /// centre-backs average 8.5 there against strikers' 12.0. Centre-backs head the
 /// ball constantly, so Heading was wrong.
 ///
-/// Indices left unnamed are genuinely ambiguous. Marking against Tackling
-/// (indices 5 and 9), Pace against Acceleration (34 and 38), and Heading
-/// against Jumping Reach (3 and 39) each produce a matched pair with the same
-/// positional signature, and nothing available separates them. A coin-flip
-/// label is worse than none on a tool used to judge players.
+/// Two matched pairs were separated once positions were decoded:
+///
+/// - **Heading (3) against Jumping Reach (39)** — decisive. Goalkeepers average
+///   13.12 at index 39, as high as centre-backs, but only 5.39 at index 3.
+///   Keepers jump constantly and head the ball almost never.
+/// - **Marking (5) against Tackling (9)** — directional rather than decisive.
+///   Marking is centre-back specific while tackling is shared with defensive
+///   midfielders, and index 5 shows a centre-back-to-defensive-mid gap of +1.08
+///   against index 9's +0.28. If this one is wrong the two are swapped, which
+///   keeps both within the defensive group.
+///
+/// **Pace against Acceleration (34 and 38)** stays unnamed: goalkeepers average
+/// 9.29 and 9.09, wingers 13.39 and 13.04. That is noise, not a signal, and a
+/// coin-flip label is worse than none on a tool used to judge players.
 ///
 /// These are inferences, not values read from the file.
 #[must_use]
@@ -70,8 +79,12 @@ pub fn attribute_name(index: usize) -> Option<&'static str> {
         10 => Some("Passing"),
         20 => Some("Positioning"),
         23 => Some("Technique"),
+        3 => Some("Heading"),
+        5 => Some("Marking"),
+        9 => Some("Tackling"),
         30 => Some("Long Throws"),
         36 => Some("Strength"),
+        39 => Some("Jumping Reach"),
         40 => Some("Aggression"),
         _ => None,
     }
@@ -404,10 +417,12 @@ mod tests {
     fn names_only_the_attributes_the_evidence_supports() {
         assert_eq!(attribute_name(2), Some("Finishing"));
         assert_eq!(attribute_name(30), Some("Long Throws"));
-        // Matched pairs share a positional signature and stay unnamed rather
-        // than being guessed: Marking/Tackling, Pace/Acceleration,
-        // Heading/Jumping Reach.
-        for ambiguous in [3, 5, 9, 34, 38, 39] {
+        // Goalkeepers separate heading from jumping: they jump constantly and
+        // head almost never.
+        assert_eq!(attribute_name(3), Some("Heading"));
+        assert_eq!(attribute_name(39), Some("Jumping Reach"));
+        // Pace and Acceleration remain indistinguishable and stay unnamed.
+        for ambiguous in [34, 38] {
             assert_eq!(attribute_name(ambiguous), None, "index {ambiguous} is not separable");
         }
     }

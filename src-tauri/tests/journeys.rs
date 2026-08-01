@@ -128,6 +128,42 @@ fn decodes_attributes_and_the_goalkeeping_set() {
 }
 
 #[test]
+fn named_attributes_match_the_players_they_describe() {
+    let summary = save_or_skip!();
+
+    let value = |name: &str, attribute: &str| -> u8 {
+        let index = summary
+            .attribute_names
+            .iter()
+            .position(|n| n == attribute)
+            .unwrap_or_else(|| panic!("{attribute} is not a named attribute"));
+        summary
+            .players
+            .iter()
+            .find(|p| p.name == name)
+            .and_then(|p| p.attributes.get(index).copied())
+            .unwrap_or_else(|| panic!("{name} has no attributes"))
+    };
+
+    // A striker finishes and does not mark.
+    assert!(value("Erling Braut Haaland", "Finishing") >= 15);
+    assert!(value("Erling Braut Haaland", "Marking") <= 8);
+
+    // A centre-back marks and tackles but does not finish.
+    assert!(value("Rúben Santos Gato Alves Dias", "Marking") >= 15);
+    assert!(value("Rúben Santos Gato Alves Dias", "Tackling") >= 15);
+    assert!(value("Rúben Santos Gato Alves Dias", "Finishing") <= 9);
+
+    // A goalkeeper does none of the outfield skills, but reads high on
+    // positioning and jumping — the split that separated Heading from
+    // Jumping Reach in the first place.
+    assert!(value("Alisson Ramsés Becker", "Crossing") <= 3);
+    assert!(value("Alisson Ramsés Becker", "Tackling") <= 3);
+    assert!(value("Alisson Ramsés Becker", "Jumping Reach") >= 12);
+    assert!(value("Alisson Ramsés Becker", "Heading") <= 9);
+}
+
+#[test]
 fn decodes_positions() {
     let summary = save_or_skip!();
     assert_eq!(summary.position_names.len(), 15);

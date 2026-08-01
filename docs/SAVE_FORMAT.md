@@ -277,9 +277,23 @@ decoded, centre-backs average 8.5 there against strikers' 12.0. Centre-backs
 head the ball constantly, so Heading was wrong; the shape is an attacking
 movement attribute instead.
 
-Some indices form matched pairs with identical positional signatures and cannot
-be separated: Marking against Tackling (5 and 9), Pace against Acceleration
-(34 and 38), Heading against Jumping Reach (3 and 39). These stay unnamed.
+Two matched pairs were later separated using goalkeepers and position groups:
+
+- **Heading (3) against Jumping Reach (39)** — decisive. Keepers average 13.12
+  at index 39, as high as centre-backs, but 5.39 at index 3. Keepers jump
+  constantly and head almost never.
+- **Marking (5) against Tackling (9)** — directional. Marking is centre-back
+  specific while tackling is shared with defensive midfielders, and index 5's
+  centre-back-to-defensive-mid gap is +1.08 against index 9's +0.28. If wrong,
+  the two are swapped and both stay within the defensive group.
+
+**Pace against Acceleration (34 and 38)** still cannot be separated: keepers
+average 9.29 and 9.09, wingers 13.39 and 13.04. That is noise.
+
+Fourteen names are now assigned, and they read correctly on players whose
+profiles are not in doubt — Haaland has Finishing 18, Off the Ball 18 and
+Marking 6; Rúben Dias has Marking 17, Tackling 17 and Finishing 6; Alisson has
+Crossing 1, Tackling 1, Positioning 18 and Jumping Reach 14.
 
 Index 25 is an oddity — mean 17.3 with most players at or near 20 — which is
 not the shape of any 1-20 attribute, so it may not be one.

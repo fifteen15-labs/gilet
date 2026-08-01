@@ -58,6 +58,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    for who in ["Erling Braut Haaland", "Alisson Ramsés Becker", "Rúben Santos Gato Alves Dias"] {
+        if let Some(p) = save.people.iter().find(|p| p.full_name == who) {
+            if let Some(a) = p.ability.as_ref() {
+                let named: Vec<String> = (0..fm_save::ability::ATTRIBUTE_COUNT)
+                    .filter_map(|i| {
+                        fm_save::ability::attribute_name(i)
+                            .map(|n| format!("{n} {}", a.attributes[i]))
+                    })
+                    .collect();
+                println!("\n{who}\n   {}", named.join("  ·  "));
+            }
+        }
+    }
+
     let players = save.people.iter().filter(|p| p.is_player()).count();
     println!("\nplayers with ability: {players}   staff: {}", save.people.len() - players);
 
