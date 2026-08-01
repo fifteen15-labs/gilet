@@ -36,6 +36,12 @@ pub struct Person {
     /// `None` when the save gives no basis for the split — see
     /// [`female_forename_boundary`].
     pub female: Option<bool>,
+    /// The eight hidden personality attributes, 1-20, in storage order.
+    /// Slot 0 is Adaptability, 1 Loyalty, 4 Professionalism, 7 Controversy —
+    /// confirmed against in-game staff screens and personality labels. Slots
+    /// 2, 3, 5 and 6 hold Ambition, Pressure, Sportsmanship and Temperament
+    /// in an order not yet pinned. `None` when the run does not parse.
+    pub personality: Option<[u8; 8]>,
     /// Weekly wage in the save's display currency, from the contract block.
     /// `None` when no contract parses — the unemployed and the retired.
     pub wage: Option<u32>,
@@ -51,6 +57,33 @@ impl Person {
     #[must_use]
     pub fn is_player(&self) -> bool {
         self.ability.is_some()
+    }
+
+    /// Hidden Adaptability, 1-20. Verified against staff report screens,
+    /// where the attribute is visible: Elite reads 20, Outstanding 19,
+    /// Good 13.
+    #[must_use]
+    pub fn adaptability(&self) -> Option<u8> {
+        self.personality.as_ref().map(|p| p[0])
+    }
+
+    /// Hidden Loyalty, 1-20. A "Fairly Loyal" personality reads 20 here.
+    #[must_use]
+    pub fn loyalty(&self) -> Option<u8> {
+        self.personality.as_ref().map(|p| p[1])
+    }
+
+    /// Hidden Professionalism, 1-20 — the attribute that drives development.
+    /// A "Model Professional" reads 20 here, a "Model Citizen" 16.
+    #[must_use]
+    pub fn professionalism(&self) -> Option<u8> {
+        self.personality.as_ref().map(|p| p[4])
+    }
+
+    /// Hidden Controversy, 1-20; almost everyone is low.
+    #[must_use]
+    pub fn controversy(&self) -> Option<u8> {
+        self.personality.as_ref().map(|p| p[7])
     }
 
     /// The nation's name, for the identifiers confirmed so far.
@@ -251,6 +284,7 @@ fn parse_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<(Person, u
     // Nationality sits further out, so a record truncated at the end of the
     // frame still parses — it is descriptive, not part of the acceptance test.
     let nation_id = read_u16(frame, body + NATION_OFFSET).unwrap_or_default();
+    let personality = find_personality(frame, body, nation_id);
 
     Some((
         Person {
@@ -265,6 +299,7 @@ fn parse_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<(Person, u
             uid: None,
             club_eid: None,
             female: None,
+            personality,
             wage: None,
             contract_until: None,
             // Filled in by `Save::parse`, which matches blocks to people once
@@ -273,6 +308,35 @@ fn parse_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<(Person, u
         },
         body + 4,
     ))
+}
+
+/// How far past the date of birth the personality marker can sit.
+const PERSONALITY_WINDOW: usize = 160;
+
+/// Finds the eight hidden personality attributes.
+///
+/// They follow a repeat of the nation identifier as a `u16` and six zero
+/// bytes; the eight bytes after that are each 1-20. (A one-byte count —
+/// citizenships, by the look of it — precedes the repeated nation, but it
+/// varies and is not part of the match.) Repeating the record's own nation
+/// is what makes the match safe: a chance window is never this record's
+/// nation, six zeros and eight in-range bytes at once. Absent on some
+/// records (human-manager avatars use a different layout), which yields
+/// `None` rather than a guess.
+fn find_personality(frame: &[u8], body: usize, nation_id: u16) -> Option<[u8; 8]> {
+    for at in body..body + PERSONALITY_WINDOW {
+        if read_u16(frame, at) != Some(nation_id) {
+            continue;
+        }
+        if frame.get(at + 2..at + 8) != Some(&[0u8; 6][..]) {
+            continue;
+        }
+        let run = frame.get(at + 8..at + 16)?;
+        if run.iter().all(|&b| (1..=20).contains(&b)) {
+            return <[u8; 8]>::try_from(run).ok();
+        }
+    }
+    None
 }
 
 /// An identity block: `[eid u32][uid u32][uid u32]`, the uid repeated.
@@ -607,6 +671,33 @@ mod tests {
         let found = scan_people(&buf, &table());
         assert_eq!(found.first().unwrap().nation_id, 139);
         assert_eq!(found.first().unwrap().nation(), Some("England"));
+    }
+
+    #[test]
+    fn reads_the_hidden_personality_run() {
+        // Emery's real shape: nation, then the 03-nation-zeros marker, then
+        // eight 1-20 values with Professionalism 20 at slot 4.
+        let mut buf = record(100, 200, NO_COMMON_NAME, Some("Unai Emery Etxegoien"), 307, 1971);
+        buf.extend_from_slice(&[0u8; 9]);
+        buf.extend_from_slice(&170u16.to_le_bytes());
+        buf.extend_from_slice(&[0x01, 0x06, 0x00, 0x00, 0x00]);
+        buf.push(0x03);
+        buf.extend_from_slice(&170u16.to_le_bytes());
+        buf.extend_from_slice(&[0u8; 6]);
+        buf.extend_from_slice(&[13, 15, 18, 12, 20, 16, 10, 8]);
+        let found = scan_people(&buf, &table());
+        let p = found.first().unwrap();
+        assert_eq!(p.personality, Some([13, 15, 18, 12, 20, 16, 10, 8]));
+        assert_eq!(p.adaptability(), Some(13));
+        assert_eq!(p.loyalty(), Some(15));
+        assert_eq!(p.professionalism(), Some(20));
+        assert_eq!(p.controversy(), Some(8));
+    }
+
+    #[test]
+    fn a_record_without_the_marker_has_no_personality() {
+        let buf = record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000);
+        assert_eq!(scan_people(&buf, &table()).first().unwrap().personality, None);
     }
 
     #[test]

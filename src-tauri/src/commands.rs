@@ -113,6 +113,14 @@ pub struct PlayerRow {
     pub wage: Option<u32>,
     /// Contract expiry as `YYYY-MM-DD`, empty when unknown.
     pub contract_until: String,
+    /// Hidden Adaptability, 1-20. `None` when the personality run is absent.
+    pub adaptability: Option<u8>,
+    /// Hidden Loyalty, 1-20.
+    pub loyalty: Option<u8>,
+    /// Hidden Professionalism, 1-20 — the development driver.
+    pub professionalism: Option<u8>,
+    /// Hidden Controversy, 1-20.
+    pub controversy: Option<u8>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -293,6 +301,10 @@ pub fn load_save(
                     .contract_until
                     .map(|d| format!("{:04}-{:02}-{:02}", d.year, d.month, d.day))
                     .unwrap_or_default(),
+                adaptability: p.adaptability(),
+                loyalty: p.loyalty(),
+                professionalism: p.professionalism(),
+                controversy: p.controversy(),
             }
         })
         .collect();

@@ -281,3 +281,47 @@ fn an_aged_save_reads_its_own_date() {
     assert_eq!(date.year, 2035);
     assert_eq!(date.month, 5);
 }
+
+/// The eight-byte run after the nation marker is the hidden personality set.
+/// Slot names verified where a screen shows the value or the personality
+/// label pins it: Adaptability is visible on staff reports, and the
+/// Model Professional / Model Citizen labels constrain Professionalism.
+#[test]
+fn hidden_personality_matches_the_in_game_labels() {
+    let Some(save) = load_named("Ongoing.fm") else {
+        eprintln!("skipped: no Ongoing.fm on this machine");
+        return;
+    };
+    let person = |name: &str| {
+        save.people
+            .iter()
+            .find(|p| p.full_name.contains(name))
+            .unwrap_or_else(|| panic!("{name} missing"))
+    };
+
+    // Adaptability is visible on staff screens: Leckie Elite, Ottley
+    // Outstanding, Emery Good.
+    assert_eq!(person("Isaac Leckie").adaptability(), Some(20));
+    assert_eq!(person("Reece Thomas Ottley").adaptability(), Some(19));
+    assert_eq!(person("Unai Emery").adaptability(), Some(13));
+
+    // Emery is a Model Professional; Musiala a Model Citizen.
+    assert_eq!(person("Unai Emery").professionalism(), Some(20));
+    assert_eq!(person("Jamal Musiala").professionalism(), Some(16));
+    assert_eq!(person("Jamal Musiala").personality, Some([18, 19, 15, 14, 16, 16, 18, 4]));
+
+    // The run parses for nearly every adult. The misses are the simulated
+    // children an aged save accumulates (born in-game, a different record
+    // layout, junk nation ids) plus human-manager avatars.
+    let adults: Vec<_> = save
+        .people
+        .iter()
+        .filter(|p| p.nation_id <= 250 && p.date_of_birth.year < 2020)
+        .collect();
+    let with = adults.iter().filter(|p| p.personality.is_some()).count();
+    assert!(
+        with * 10 > adults.len() * 9,
+        "only {with} of {} adults have personality",
+        adults.len()
+    );
+}

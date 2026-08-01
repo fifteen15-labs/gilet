@@ -175,6 +175,46 @@ Cherundolo. Identifiers whose surnames are Spanish-speaking but not
 country-specific are left unnamed and surface as raw numbers, which still group
 and filter correctly.
 
+### The hidden personality run — SOLVED, four slots named
+
+Between the date of birth and the identity block, every adult record repeats
+its nation identifier and follows it with the eight hidden personality
+attributes:
+
+```
+u8   citizenship count (varies; not part of the match)
+u16  nation_id           repeated — this is the match's anchor
+6x   00
+8x   personality         each 1-20
+```
+
+Slot names, each from ground truth: **0 Adaptability** (visible on staff
+reports — Elite reads 20, Outstanding 19, Good 13, three independent
+screens), **1 Loyalty** (a "Fairly Loyal" manager reads 20), **4
+Professionalism** (a "Model Professional" reads 20, a "Model Citizen" 16),
+**7 Controversy** (near-universally low). Slots 2, 3, 5 and 6 hold Ambition,
+Pressure, Sportsmanship and Temperament in an unpinned order.
+
+Coverage is every adult with a real nation; the misses are the *children*
+an aged save simulates into existence (different layout, junk nation ids)
+and human-manager avatars.
+
+### The second object — where staff data lives
+
+A person record contains **two** entity objects, with consecutive entity
+ids: the person object (what squads reference) and a non-player object. The
+second identity block is followed by `01/02`, three u16s, a pair, and — laid
+out exactly like a player's — **a second 54-byte attribute block** on the
+1-100 scale, index 25 = 100, with its own 15 position bytes. The scanner
+never saw these because the CA/PA offsets in front land in an `FF` run,
+which the block test rejects.
+
+For pure staff (Emery), the record instead carries an id→value row list
+(`[u32 id] … [value 1-100] [4f|00] ff` rows) holding coaching badges and
+nation knowledge — Emery's England and Spain rows read 100, matching his
+"Complete" knowledge — with the coaching attributes presumed among the rows.
+Mapping row ids to attribute names is open; see `OPEN_PROBLEMS.md` §3b.
+
 ## 4. Club record
 
 Clubs carry a full name and the short name FM shows in tables. The header ends

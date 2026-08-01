@@ -34,6 +34,14 @@ export type Player = {
 	wage: number | null;
 	/** Contract expiry as YYYY-MM-DD; empty when unknown. */
 	contract_until: string;
+	/** Hidden Adaptability, 1-20; null when the personality run is absent. */
+	adaptability: number | null;
+	/** Hidden Loyalty, 1-20. */
+	loyalty: number | null;
+	/** Hidden Professionalism, 1-20 — the development driver. */
+	professionalism: number | null;
+	/** Hidden Controversy, 1-20. */
+	controversy: number | null;
 };
 
 export type Club = {

@@ -143,7 +143,22 @@ value appears once on the screen.
 
 ---
 
-## 3b. Staff attributes — not located, and harder than the player ones
+## 3b. Staff attributes — structure found, ids unmapped
+
+Superseded in part: the person record holds a **second entity object** (see
+`SAVE_FORMAT.md` §3), and for player-people it carries a full second 54-byte
+attribute block — their non-player attributes. For pure staff the coaching
+data is an id→value row list instead; the values are 1-100 and Emery's
+nation-knowledge rows read exactly 100 where his screen says "Complete".
+What remains is mapping row *ids* to attribute names, which one in-game
+editor screen of a staff member would settle.
+
+The reputation-candidate triple after the second identity block (`02 [u16
+×3] [u16 pair]`) stays unresolved: Chevalier and Soulé (both Worldwide) read
+5892/6257 while Musiala (also Worldwide) reads 2690, so the badge is not a
+simple threshold on any of the five values. Do not ship it as reputation.
+
+### The earlier dead ends
 
 Staff show 19 attributes in-game: nine coaching (Attacking, Defending,
 Fitness, Goalkeeping, Possession, Set Pieces, Tactical, Technical, Working
@@ -274,6 +289,33 @@ with most players at or near 20, against a typical attribute mean of 9–12. No
 1–20 attribute distributes that way. It may be a flag or a scaling factor that
 happens to sit inside the block. Currently displayed as an attribute, which is
 probably wrong.
+
+---
+
+## 8. Writing a shortlist FM can import — CLOSED BY POLICY, not unsolved
+
+Worked on 1 August 2026 against two shortlists exported from FM 26. The
+container, the archive manifest and the per-member block framing are **solved**
+and written up in `SHORTLIST_FORMAT.md`. A shortlist is an `afe.` archive whose
+members are a `.slf`, a thumbnail and a `_data/details.aom`; the manifest is a
+single zstd frame in an inner `fmf.` container at the tail.
+
+The member payloads are **encrypted** — length-preserving ciphertext with a
+random per-file nonce and 45 bytes of framing, proven by two files whose
+identical 10-byte `.img` plaintext shares no byte of its 63-byte block. FM 2023
+shortlists are the same, so there is no plainer legacy format to target.
+
+Do not pick this up looking for a decoding trick. There isn't one: it needs
+SI's key, and taking that from `GameAssembly.dylib` is ruled out by
+`LEGAL_NOTES.md:73` and §8.4, which make encryption the explicit stop condition
+for this project. The route back in is asking SI for the format, not the binary.
+If that ever happens, only the cipher is missing — everything around it is done.
+
+**FM Genie Scout does export importable shortlists, and that is not a
+counter-example.** A Genie-written file was examined: its members are encrypted
+too, proven by a declared 21,232-byte JPEG member containing no `ff d8 ff`
+anywhere. Genie holds SI's key. Its export capability is evidence that the key
+*is* the route, not that another one exists — see `SHORTLIST_FORMAT.md` §4.
 
 ---
 

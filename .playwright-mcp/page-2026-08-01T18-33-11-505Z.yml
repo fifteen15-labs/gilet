@@ -1,0 +1,22 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - heading "Gilet" [level=1] [ref=e5]
+    - button "Open save" [ref=e6]
+  - generic [ref=e7]:
+    - complementary [ref=e55]:
+      - generic [ref=e56]:
+        - heading "Shortlists" [level=2] [ref=e57]
+        - generic [ref=e58]:
+          - button "New shortlist" [ref=e59]: +
+          - button "Collapse shortlists" [ref=e60]: «
+      - navigation [ref=e61]:
+        - paragraph [ref=e62]: No shortlists yet. Create one, then tick players to add them.
+      - generic [ref=e63]:
+        - button "Import CSV" [disabled] [ref=e64]
+        - button "Export CSV" [disabled] [ref=e65]
+        - paragraph [ref=e66]: Cannot read properties of undefined (reading 'invoke')
+    - main [ref=e20]:
+      - generic [ref=e22]:
+        - heading "Open a save to begin" [level=2] [ref=e23]
+        - paragraph [ref=e24]: Saves live in Library → Application Support → Sports Interactive → Football Manager 26 → games.
+        - button "Open save" [ref=e25]

@@ -82,6 +82,30 @@
 					</div>
 				{/if}
 
+				{#if player.professionalism !== null}
+					<div class="mb-4">
+						<h4 class="eyebrow mb-1.5">Hidden personality</h4>
+						<dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+							<div class="flex justify-between">
+								<dt class="text-[var(--color-mist)]">Professionalism</dt>
+								<dd class="tabular text-[var(--color-bright)]">{player.professionalism}</dd>
+							</div>
+							<div class="flex justify-between">
+								<dt class="text-[var(--color-mist)]">Loyalty</dt>
+								<dd class="tabular text-[var(--color-bright)]">{player.loyalty}</dd>
+							</div>
+							<div class="flex justify-between">
+								<dt class="text-[var(--color-mist)]">Adaptability</dt>
+								<dd class="tabular text-[var(--color-bright)]">{player.adaptability}</dd>
+							</div>
+							<div class="flex justify-between">
+								<dt class="text-[var(--color-mist)]">Controversy</dt>
+								<dd class="tabular text-[var(--color-bright)]">{player.controversy}</dd>
+							</div>
+						</dl>
+					</div>
+				{/if}
+
 				<AttributeGrid attributes={player.attributes} />
 
 				<button

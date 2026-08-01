@@ -39,10 +39,10 @@
 </script>
 
 {#if collapsed}
-	<aside class="flex w-9 shrink-0 flex-col items-center border-r border-[var(--color-line)] bg-[var(--color-panel)] pt-4">
+	<aside class="flex w-9 shrink-0 border-r border-[var(--color-line)] bg-[var(--color-panel)]">
 		<button
 			type="button"
-			class="text-[var(--color-faint)] hover:text-[var(--color-bright)]"
+			class="flex w-full items-start justify-center pt-4 text-[var(--color-faint)] hover:text-[var(--color-bright)]"
 			aria-label="Expand shortlists"
 			title="Shortlists"
 			onclick={() => (collapsed = false)}>»</button

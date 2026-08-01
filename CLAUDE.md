@@ -19,8 +19,10 @@ the whole point of the tool is trusting the figure.
 no Tauri and no filesystem. It is testable on its own and every claim in it is
 backed by a test. `src-tauri` is a thin I/O shell over it.
 
-**User data on disk, readable.** Shortlists are JSON in the app data directory,
-not a private database. Exports are CSV.
+**User data on disk, readable.** Shortlists are JSON in Football Manager's own
+`shortlists` folder, not a private database. Exports are CSV. FM cannot read
+them — its own shortlists are encrypted, and `docs/SHORTLIST_FORMAT.md` §5
+records why that road is closed on purpose.
 
 ## Layout
 
@@ -29,6 +31,7 @@ crates/fm-save/   pure save parser — container, string table, person records
 src-tauri/        Tauri 2 shell: commands.rs, shortlist.rs
 src/              SvelteKit 5 frontend
 docs/             SAVE_FORMAT.md — what is decoded and what is not
+                  SHORTLIST_FORMAT.md — FM's own .fmf shortlist archive
 research/         Python spikes used to derive the format (throwaway, kept for provenance)
 ```
 
