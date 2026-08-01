@@ -121,7 +121,57 @@ internally on a 1–200 scale and divides by 10 for display, so a byte of 160
 displays as 16. That makes `+13` plausibly a single displayed attribute rather
 than CA.
 
-## 4. CA/PA — not yet located
+## 4. Club record
+
+Clubs carry a full name and the short name FM shows in tables. The header ends
+with a three-byte signature immediately before the name length:
+
+```
+u32  0xFFFFFFFF
+u32  nation_id
+u32  nation_id        (repeated)
+u32  club_id
+3    UNKNOWN
+3    10 FF FF          signature
+u32  name_length
+[u8] name              e.g. "Manchester City"
+u32  short_length
+[u8] short_name        e.g. "Man City"
+```
+
+Confirmed values: Manchester City `club_id` 1075, Arsenal 1040, Borussia
+Dortmund 541. Nation 139 for the English clubs, 145 for the German, 126 for the
+Albanian. 18,663 clubs parse from the reference save.
+
+The `10 FF FF` signature is doing real work. Two consecutive length-prefixed
+strings is not a specific enough shape on its own — the file also contains the
+commentary word lists, which produce thousands of pairs like
+`("admirable", "amazing")` and `("bewitching", "brilliant")`. Requiring the
+signature and an initial capital removes them.
+
+Nation IDs are **not** yet resolved to names, and squad lists are not located,
+so a club cannot yet be linked to its players.
+
+## 5. Players vs staff — not reliably separable
+
+Players and staff share the same record layout; Maldini and Davids parse
+identically in shape to Haaland and Saka. There is a real difference — staff
+records carry two null `u32`s where a player has a value followed by a contract
+date (day-of-year 60, year 2023 for Haaland, against the null 1 January 1900
+for staff) — and a `u32` read 24 bytes before the record start splits the
+population 47/53 and agrees with all eight hand-labelled knowns, with mean birth
+year 1998 against 1990.
+
+It is still not shipped as a player/staff flag. Reading the actual bytes shows
+that offset straddles field boundaries rather than landing on one: the section
+before the name is variable-length, so the agreement is luck rather than
+structure, and it would break on the first record shaped differently.
+
+The principled route is the club record's squad list — a player is someone a
+club lists as a player. That needs the club record body parsed, which is not
+done.
+
+## 6. CA/PA — not yet located
 
 The record body past roughly +14 is **variable length**: it contains repeated
 ~16-byte sub-blocks (visible as recurring `xx xx 00 03 01 32 4f 00 ff` style
@@ -132,17 +182,25 @@ The structural test to apply once the sub-blocks are parsed: **PA ≥ CA for eve
 player**, both within 1–200. Across ~12k records that constraint is strong
 enough to identify the pair on its own, with no ground truth needed.
 
+What the record body past the name actually contains, established since: an
+8-value run of 1–20 numbers at +21 (FM's personality block — Adaptability,
+Ambition, Loyalty, Professionalism and so on), then from +48 a repeating
+16-byte key/value structure whose values are far too large to be attributes
+(13961, 11004, 3136), so contracts, wages or valuations rather than ability.
+
+The technical attribute block is not in the first 320 bytes after the name.
+
 Approaches not yet tried:
 
-- Parse the repeating sub-blocks properly and treat each as a typed key/value,
-  rather than assuming a flat struct.
+- Follow the 16-byte key/value list to its end and see what follows it; the
+  attributes are likely past it rather than at a fixed offset.
 - Diff two saves of the same career a few in-game months apart. CA moves for
   developing players while DOB, height and IDs stay fixed, so the diff narrows
   the search enormously.
 - Cross-check against in-game values via the FM26 in-game editor for a handful
   of players to confirm a candidate offset.
 
-## 5. Prior art
+## 7. Prior art
 
 FM Scouting Tool 26 (the Electron app on fmscout.com) does **not** parse saves.
 Its `app.asar` bundles `koffi` and calls `OpenProcess` / `ReadProcessMemory`
@@ -153,7 +211,7 @@ entitlement — which is the reason this project parses the save file instead.
 `robeady/fm-explorer` similarly reads process memory via FMScoutFramework and is
 Windows-x64 only.
 
-## 6. Reproducing
+## 8. Reproducing
 
 `research/` holds the Python spikes used to derive the above:
 

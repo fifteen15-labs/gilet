@@ -15,12 +15,26 @@ export type Player = {
 	potential: number | null;
 };
 
+export type Club = {
+	id: number;
+	name: string;
+	short_name: string;
+	club_id: number;
+	nation_id: number;
+};
+
 export type SaveSummary = {
 	path: string;
 	players: Player[];
+	clubs: Club[];
 	frames: number;
 	decompressed_bytes: number;
 	parse_millis: number;
+};
+
+export type ImportResult = {
+	matched: string[];
+	unmatched: string[];
 };
 
 export type Shortlist = {
@@ -37,6 +51,12 @@ export function openSave(path: string): Promise<SaveSummary> {
 
 export function exportCsv(path: string, rows: Player[]): Promise<void> {
 	return invoke('export_csv', { path, rows });
+}
+
+/** `known` is every player name in the loaded save, so the backend can report
+ * which imported names it could not find. */
+export function importCsv(path: string, known: string[]): Promise<ImportResult> {
+	return invoke<ImportResult>('import_csv', { path, known });
 }
 
 export function loadShortlists(): Promise<Shortlist[]> {

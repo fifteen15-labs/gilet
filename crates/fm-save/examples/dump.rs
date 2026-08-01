@@ -55,5 +55,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let nicknamed = save.people.iter().filter(|p| p.common_name_id.is_some()).count();
     println!("\nwith a nickname: {nicknamed}");
+
+    println!("\nclubs      {}", save.clubs.len());
+    for c in save.clubs.iter().take(8) {
+        println!("  {:<38} {:<18} id {:<6} nation {}", c.name, c.short_name, c.club_id, c.nation_id);
+    }
+    for probe in ["Manchester City", "Arsenal", "Borussia Dortmund"] {
+        match save.clubs.iter().find(|c| c.name == probe) {
+            Some(c) => println!("  found {:<20} short {:<18} id {}", c.name, c.short_name, c.club_id),
+            None => println!("  MISSING {probe}"),
+        }
+    }
     Ok(())
 }

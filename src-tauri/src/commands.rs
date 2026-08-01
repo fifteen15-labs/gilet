@@ -25,10 +25,20 @@ pub struct PlayerRow {
     pub potential: Option<u8>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClubRow {
+    pub id: usize,
+    pub name: String,
+    pub short_name: String,
+    pub club_id: u32,
+    pub nation_id: u32,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct SaveSummary {
     pub path: String,
     pub players: Vec<PlayerRow>,
+    pub clubs: Vec<ClubRow>,
     pub frames: usize,
     pub decompressed_bytes: usize,
     pub parse_millis: u64,
@@ -77,13 +87,100 @@ pub fn open_save(path: String, today: Vec<u16>) -> Result<SaveSummary, CommandEr
         })
         .collect();
 
+    let clubs = save
+        .clubs
+        .iter()
+        .map(|c| ClubRow {
+            id: c.offset,
+            name: c.name.clone(),
+            short_name: c.short_name.clone(),
+            club_id: c.club_id,
+            nation_id: c.nation_id,
+        })
+        .collect();
+
     Ok(SaveSummary {
         path,
         players,
+        clubs,
         frames: save.frame_sizes.len(),
         decompressed_bytes: save.frame_sizes.iter().sum(),
         parse_millis,
     })
+}
+
+/// Reads player names out of a CSV so a shortlist can be brought in from a
+/// spreadsheet or another tool.
+///
+/// Takes the `name` column when there is a header, otherwise the first column.
+/// Names that are not in the loaded save are returned separately rather than
+/// dropped, so the user finds out rather than wondering where they went.
+///
+/// # Errors
+/// Fails if the file cannot be read.
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command]
+pub fn import_csv(path: String, known: Vec<String>) -> Result<ImportResult, CommandError> {
+    let text = std::fs::read_to_string(&path).map_err(|e| CommandError::Read {
+        path: path.clone(),
+        message: e.to_string(),
+    })?;
+
+    let known: std::collections::HashSet<&str> = known.iter().map(String::as_str).collect();
+    let mut matched = Vec::new();
+    let mut unmatched = Vec::new();
+
+    for (index, line) in text.lines().enumerate() {
+        let Some(first) = split_csv_row(line).into_iter().next() else {
+            continue;
+        };
+        let name = first.trim();
+        if name.is_empty() {
+            continue;
+        }
+        // Skip a header row rather than importing a player called "name".
+        if index == 0 && name.eq_ignore_ascii_case("name") {
+            continue;
+        }
+        if known.contains(name) {
+            if !matched.iter().any(|m| m == name) {
+                matched.push(name.to_owned());
+            }
+        } else {
+            unmatched.push(name.to_owned());
+        }
+    }
+
+    Ok(ImportResult { matched, unmatched })
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ImportResult {
+    pub matched: Vec<String>,
+    pub unmatched: Vec<String>,
+}
+
+/// Splits one CSV row, honouring double quotes so a quoted name containing a
+/// comma stays intact — the same quoting `export_csv` writes.
+fn split_csv_row(line: &str) -> Vec<String> {
+    let mut fields = Vec::new();
+    let mut current = String::new();
+    let mut quoted = false;
+    let mut chars = line.chars().peekable();
+
+    while let Some(c) = chars.next() {
+        match c {
+            '"' if quoted && chars.peek() == Some(&'"') => {
+                current.push('"');
+                chars.next();
+            }
+            '"' => quoted = !quoted,
+            ',' if !quoted => fields.push(std::mem::take(&mut current)),
+            _ => current.push(c),
+        }
+    }
+    fields.push(current);
+    fields
 }
 
 /// Writes rows to a CSV file.
@@ -127,7 +224,7 @@ fn csv_field(value: &str) -> String {
 #[cfg(test)]
 #[allow(clippy::unwrap_used)]
 mod tests {
-    use super::csv_field;
+    use super::{csv_field, split_csv_row};
 
     #[test]
     fn quotes_fields_containing_commas() {
@@ -143,5 +240,21 @@ mod tests {
     #[test]
     fn leaves_accented_names_alone() {
         assert_eq!(csv_field("Kylian Mbappé Lottin"), "Kylian Mbappé Lottin");
+    }
+
+    #[test]
+    fn splits_a_plain_row() {
+        assert_eq!(split_csv_row("a,b,c"), vec!["a", "b", "c"]);
+    }
+
+    #[test]
+    fn keeps_a_quoted_comma_together() {
+        // Round-trips what csv_field writes for a name containing a comma.
+        assert_eq!(split_csv_row("\"de Boer, Franciscus\",1970"), vec!["de Boer, Franciscus", "1970"]);
+    }
+
+    #[test]
+    fn unescapes_doubled_quotes() {
+        assert_eq!(split_csv_row("\"a\"\"b\",x"), vec!["a\"b", "x"]);
     }
 }

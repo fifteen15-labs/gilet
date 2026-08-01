@@ -3,8 +3,8 @@
 //! Everything here is I/O and serialisation. Format knowledge belongs in
 //! `fm-save`, which is pure and testable on its own.
 
-mod commands;
-mod shortlist;
+pub mod commands;
+pub mod shortlist;
 
 use serde::Serialize;
 
@@ -32,6 +32,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::open_save,
             commands::export_csv,
+            commands::import_csv,
             shortlist::load_shortlists,
             shortlist::save_shortlists,
         ])

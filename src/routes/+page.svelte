@@ -1,17 +1,46 @@
 <script lang="ts">
 	import { open, save } from '@tauri-apps/plugin-dialog';
+	import ClubTable from '$lib/components/ClubTable.svelte';
+	import DetailPanel from '$lib/components/DetailPanel.svelte';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import PlayerTable from '$lib/components/PlayerTable.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { shortlists } from '$lib/classes/Shortlists.svelte';
-	import { exportCsv } from '$lib/tauri/commands';
+	import { exportCsv, importCsv } from '$lib/tauri/commands';
 
 	let exportError = $state<string | null>(null);
+	let notice = $state<string | null>(null);
 
 	$effect(() => {
 		void shortlists.load();
 	});
+
+	/** Reads names from a CSV into the active shortlist. */
+	async function importIntoShortlist() {
+		exportError = null;
+		notice = null;
+		const list = shortlists.active;
+		if (!list) {
+			notice = 'Create a shortlist first, then import into it.';
+			return;
+		}
+		const picked = await open({ multiple: false, filters: [{ name: 'CSV', extensions: ['csv'] }] });
+		if (typeof picked !== 'string') return;
+		try {
+			const known = scout.players.map((p) => p.name);
+			const result = await importCsv(picked, known);
+			for (const name of result.matched) {
+				if (!list.players.includes(name)) await shortlists.toggle(name);
+			}
+			notice =
+				result.unmatched.length > 0
+					? `Added ${result.matched.length}. ${result.unmatched.length} not found in this save: ${result.unmatched.slice(0, 3).join(', ')}${result.unmatched.length > 3 ? '…' : ''}`
+					: `Added ${result.matched.length} to ${list.name}.`;
+		} catch (e) {
+			exportError = e instanceof Error ? e.message : String(e);
+		}
+	}
 
 	async function chooseSave() {
 		const picked = await open({
@@ -25,6 +54,7 @@
 	 * otherwise the current filtered set. */
 	async function exportVisible() {
 		exportError = null;
+		notice = null;
 		const rows = scout.matching(shortlists.activeMembers);
 		const suggested = shortlists.active ? `${shortlists.active.name}.csv` : 'players.csv';
 		const target = await save({ defaultPath: suggested, filters: [{ name: 'CSV', extensions: ['csv'] }] });
@@ -69,7 +99,11 @@
 	</header>
 
 	<div class="flex min-h-0 flex-1">
-		<Sidebar onExport={exportVisible} exportDisabled={!scout.loaded} />
+		<Sidebar
+			onExport={exportVisible}
+			onImport={importIntoShortlist}
+			exportDisabled={!scout.loaded}
+		/>
 
 		<main class="flex min-w-0 flex-1 flex-col">
 			{#if scout.loading}
@@ -101,15 +135,40 @@
 					</div>
 				</div>
 			{:else}
+				<div class="flex items-center gap-1 border-b border-[var(--color-line)] px-4 pt-2">
+					{#each [{ key: 'people', label: `People (${scout.players.length.toLocaleString()})` }, { key: 'clubs', label: `Clubs (${scout.clubs.length.toLocaleString()})` }] as t (t.key)}
+						<button
+							type="button"
+							class="border-b-2 px-3 pb-2 text-xs transition-colors
+								{scout.tab === t.key
+								? 'border-[var(--color-hivis)] text-[var(--color-bright)]'
+								: 'border-transparent text-[var(--color-faint)] hover:text-[var(--color-mist)]'}"
+							onclick={() => scout.show(t.key === 'clubs' ? 'clubs' : 'people')}
+						>
+							{t.label}
+						</button>
+					{/each}
+				</div>
+
 				<FilterBar />
-				<PlayerTable />
+				{#if scout.tab === 'people'}
+					<PlayerTable />
+				{:else}
+					<ClubTable />
+				{/if}
 			{/if}
 
 			{#if exportError}
 				<p class="border-t border-[var(--color-line)] px-4 py-2 text-xs text-[var(--color-hivis)]">
 					{exportError}
 				</p>
+			{:else if notice}
+				<p class="border-t border-[var(--color-line)] px-4 py-2 text-xs text-[var(--color-mist)]">
+					{notice}
+				</p>
 			{/if}
 		</main>
+
+		<DetailPanel />
 	</div>
 </div>

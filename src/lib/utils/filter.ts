@@ -1,4 +1,4 @@
-import type { Player } from '$lib/tauri/commands';
+import type { Club, Player } from '$lib/tauri/commands';
 
 export type SortKey = 'name' | 'age' | 'ability' | 'potential';
 export type SortDirection = 'asc' | 'desc';
@@ -32,6 +32,15 @@ export function matches(player: Player, filters: Filters, shortlisted: ReadonlyS
 	if (filters.maxAge !== null && player.age > filters.maxAge) return false;
 	if (filters.query.trim() === '') return true;
 	return normalise(player.name).includes(normalise(filters.query.trim()));
+}
+
+/** Clubs match on either their full or short name, so "Man City" and
+ * "Manchester City" both find the same club. */
+export function matchesClub(club: Club, filters: Filters): boolean {
+	const query = filters.query.trim();
+	if (query === '') return true;
+	const needle = normalise(query);
+	return normalise(club.name).includes(needle) || normalise(club.short_name).includes(needle);
 }
 
 /**

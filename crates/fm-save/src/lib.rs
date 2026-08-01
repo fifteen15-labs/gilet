@@ -12,11 +12,13 @@
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 
+pub mod club;
 pub mod container;
 pub mod date;
 pub mod error;
 pub mod person;
 
+pub use club::Club;
 pub use container::Frame;
 pub use date::Date;
 pub use error::{Error, Result};
@@ -26,6 +28,7 @@ pub use person::Person;
 #[derive(Debug, Clone)]
 pub struct Save {
     pub people: Vec<Person>,
+    pub clubs: Vec<Club>,
     /// Decompressed size of every frame, kept so the UI can report what was
     /// read without holding 187 MB of frame payloads alive.
     pub frame_sizes: Vec<usize>,
@@ -42,12 +45,14 @@ impl Save {
 
         // Records live in the single largest frame — 105 MB of the 187 MB total
         // in the reference save. Scanning every frame costs a lot for nothing.
-        let people = frames
-            .iter()
-            .max_by_key(|f| f.data.len())
-            .map(|f| person::scan_people(&f.data))
-            .unwrap_or_default();
+        let main = frames.iter().max_by_key(|f| f.data.len());
+        let people = main.map(|f| person::scan_people(&f.data)).unwrap_or_default();
+        let clubs = main.map(|f| club::scan_clubs(&f.data)).unwrap_or_default();
 
-        Ok(Self { people, frame_sizes })
+        Ok(Self {
+            people,
+            clubs,
+            frame_sizes,
+        })
     }
 }

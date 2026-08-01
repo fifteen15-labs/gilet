@@ -1,0 +1,178 @@
+/// A club as stored in the save.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Club {
+    /// Byte offset of the record within its frame, used as a stable row key.
+    pub offset: usize,
+    /// The club's own identifier, e.g. 1075 for Manchester City.
+    pub club_id: u32,
+    /// Nation identifier — 139 for the English clubs, 145 for the German ones.
+    /// Not yet resolved to a nation name.
+    pub nation_id: u32,
+    /// Full name, e.g. `"Manchester City"`.
+    pub name: String,
+    /// Short name as FM displays it in tables, e.g. `"Man City"`.
+    pub short_name: String,
+}
+
+/// Marks the end of a club header, immediately before the name length. Without
+/// a signature this shape (two length-prefixed strings) also matches the
+/// commentary word lists elsewhere in the file, which produce thousands of
+/// pairs like `("admirable", "amazing")`.
+const SIGNATURE: [u8; 3] = [0x10, 0xFF, 0xFF];
+
+const MIN_NAME: usize = 3;
+const MAX_NAME: usize = 64;
+const MAX_SHORT: usize = 32;
+
+/// Offsets back from the name-length field for the header values.
+const CLUB_ID_BACK: usize = 10;
+const NATION_ID_BACK: usize = 14;
+
+/// Scans a decompressed frame for club records.
+///
+/// Layout, reading backwards from the name length:
+/// `.. u32 nation_id, u32 nation_id, u32 club_id, 3 bytes, 0x10 0xFF 0xFF,
+/// u32 name_len, name, u32 short_len, short_name`.
+#[must_use]
+pub fn scan_clubs(frame: &[u8]) -> Vec<Club> {
+    let mut out = Vec::new();
+    let mut at = 0usize;
+
+    while at + SIGNATURE.len() + 8 < frame.len() {
+        if frame.get(at..at + SIGNATURE.len()) != Some(&SIGNATURE[..]) {
+            at += 1;
+            continue;
+        }
+        let len_at = at + SIGNATURE.len();
+        match parse_at(frame, len_at) {
+            Some(club) => {
+                at = club.offset + club.name.len() + club.short_name.len() + 8;
+                out.push(club);
+            }
+            None => at += 1,
+        }
+    }
+
+    out
+}
+
+fn parse_at(frame: &[u8], len_at: usize) -> Option<Club> {
+    let name_len = read_u32(frame, len_at)? as usize;
+    if !(MIN_NAME..=MAX_NAME).contains(&name_len) {
+        return None;
+    }
+    let name_start = len_at + 4;
+    let name = read_text(frame, name_start, name_len)?;
+
+    let short_at = name_start + name_len;
+    let short_len = read_u32(frame, short_at)? as usize;
+    if !(2..=MAX_SHORT).contains(&short_len) {
+        return None;
+    }
+    let short_name = read_text(frame, short_at + 4, short_len)?;
+
+    // A club name starts with a capital; the commentary lists are lowercase.
+    if !starts_upper(&name) || !starts_upper(&short_name) {
+        return None;
+    }
+
+    Some(Club {
+        offset: len_at,
+        club_id: read_u32(frame, len_at.checked_sub(CLUB_ID_BACK)?)?,
+        nation_id: read_u32(frame, len_at.checked_sub(NATION_ID_BACK)?)?,
+        name,
+        short_name,
+    })
+}
+
+fn starts_upper(s: &str) -> bool {
+    s.chars().next().is_some_and(char::is_uppercase)
+}
+
+fn read_text(frame: &[u8], at: usize, len: usize) -> Option<String> {
+    let raw = frame.get(at..at.checked_add(len)?)?;
+    let text = std::str::from_utf8(raw).ok()?;
+    if text.chars().any(char::is_control) || !text.chars().any(char::is_alphabetic) {
+        return None;
+    }
+    Some(text.to_owned())
+}
+
+fn read_u32(b: &[u8], at: usize) -> Option<u32> {
+    let s = b.get(at..at.checked_add(4)?)?;
+    Some(u32::from_le_bytes(<[u8; 4]>::try_from(s).ok()?))
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    fn record(nation: u32, club_id: u32, name: &str, short: &str) -> Vec<u8> {
+        let mut v = Vec::new();
+        v.extend_from_slice(&[0xFF; 4]);
+        v.extend_from_slice(&nation.to_le_bytes());
+        v.extend_from_slice(&nation.to_le_bytes());
+        v.extend_from_slice(&club_id.to_le_bytes());
+        v.extend_from_slice(&[0x00, 0x0A, 0x00]);
+        v.extend_from_slice(&SIGNATURE);
+        v.extend_from_slice(&(name.len() as u32).to_le_bytes());
+        v.extend_from_slice(name.as_bytes());
+        v.extend_from_slice(&(short.len() as u32).to_le_bytes());
+        v.extend_from_slice(short.as_bytes());
+        v
+    }
+
+    #[test]
+    fn reads_a_club_with_its_ids() {
+        // Manchester City's real values in the reference save.
+        let buf = record(139, 1075, "Manchester City", "Man City");
+        let found = scan_clubs(&buf);
+        assert_eq!(found.len(), 1);
+        let c = found.first().unwrap();
+        assert_eq!(c.name, "Manchester City");
+        assert_eq!(c.short_name, "Man City");
+        assert_eq!(c.club_id, 1075);
+        assert_eq!(c.nation_id, 139);
+    }
+
+    #[test]
+    fn reads_accented_club_names() {
+        let buf = record(145, 541, "Club Atlético Boca Juniors", "Boca");
+        assert_eq!(scan_clubs(&buf).first().unwrap().name, "Club Atlético Boca Juniors");
+    }
+
+    #[test]
+    fn rejects_lowercase_word_pairs() {
+        // The commentary word lists are the main false positive: without the
+        // capital-letter test they yield thousands of ("admirable", "amazing").
+        let buf = record(1, 1, "admirable", "amazing");
+        assert!(scan_clubs(&buf).is_empty());
+    }
+
+    #[test]
+    fn ignores_bytes_without_the_signature() {
+        let mut buf = record(139, 1075, "Manchester City", "Man City");
+        // Break the signature; the record must no longer be recognised.
+        let sig_at = buf.len() - 8 - 15 - 4 - 3;
+        *buf.get_mut(sig_at).unwrap() = 0x11;
+        assert!(scan_clubs(&buf).is_empty());
+    }
+
+    #[test]
+    fn finds_several_clubs_in_sequence() {
+        let mut buf = record(139, 1075, "Manchester City", "Man City");
+        buf.extend(record(139, 1040, "Arsenal", "Arsenal"));
+        let found = scan_clubs(&buf);
+        assert_eq!(found.len(), 2);
+        assert_eq!(found.get(1).unwrap().club_id, 1040);
+    }
+
+    #[test]
+    fn tolerates_a_truncated_buffer() {
+        let full = record(139, 1075, "Manchester City", "Man City");
+        for cut in 0..full.len() {
+            let _ = scan_clubs(full.get(..cut).unwrap());
+        }
+    }
+}

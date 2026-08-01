@@ -1,5 +1,6 @@
 <script lang="ts">
 	import AbilityBar from './AbilityBar.svelte';
+	import { scout } from '$lib/classes/Scout.svelte';
 	import type { Player } from '$lib/tauri/commands';
 
 	type Props = {
@@ -11,7 +12,13 @@
 	const { player, shortlisted, onToggle }: Props = $props();
 </script>
 
-<tr class="group border-b border-[var(--color-line-soft)] hover:bg-[var(--color-panel)]">
+<!-- The row opens the detail panel; the checkbox stops propagation so ticking
+	does not also select. -->
+<tr
+	class="group cursor-pointer border-b border-[var(--color-line-soft)] hover:bg-[var(--color-panel)]
+		{scout.selectedId === player.id ? 'bg-[var(--color-raised)]' : ''}"
+	onclick={() => (scout.selectedId = player.id)}
+>
 	<td class="w-8 pl-3">
 		<button
 			type="button"
@@ -21,7 +28,10 @@
 				: 'border-[var(--color-line)] text-transparent hover:border-[var(--color-faint)]'}"
 			aria-pressed={shortlisted}
 			aria-label={shortlisted ? `Remove ${player.name} from shortlist` : `Add ${player.name} to shortlist`}
-			onclick={() => onToggle(player.name)}
+			onclick={(event) => {
+				event.stopPropagation();
+				onToggle(player.name);
+			}}
 		>
 			<svg viewBox="0 0 10 10" class="h-2.5 w-2.5" aria-hidden="true">
 				<path d="M1 5l2.5 2.5L9 2" fill="none" stroke="currentColor" stroke-width="2" />

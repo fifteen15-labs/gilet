@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { shortlists } from '$lib/classes/Shortlists.svelte';
 
-	type Props = { onExport: () => void; exportDisabled: boolean };
-	const { onExport, exportDisabled }: Props = $props();
+	type Props = { onExport: () => void; onImport: () => void; exportDisabled: boolean };
+	const { onExport, onImport, exportDisabled }: Props = $props();
 
 	let draftName = $state('');
 	let adding = $state(false);
@@ -71,7 +71,18 @@
 		{/each}
 	</nav>
 
-	<div class="border-t border-[var(--color-line)] p-3">
+	<div class="space-y-2 border-t border-[var(--color-line)] p-3">
+		<button
+			type="button"
+			class="w-full rounded-[2px] border border-[var(--color-line)] py-1.5 text-xs text-[var(--color-mist)]
+				transition-colors hover:border-[var(--color-hivis)] hover:text-[var(--color-hivis)]
+				disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[var(--color-line)]
+				disabled:hover:text-[var(--color-mist)]"
+			disabled={exportDisabled}
+			onclick={onImport}
+		>
+			Import CSV
+		</button>
 		<button
 			type="button"
 			class="w-full rounded-[2px] border border-[var(--color-line)] py-1.5 text-xs text-[var(--color-mist)]
