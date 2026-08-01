@@ -143,16 +143,55 @@ value appears once on the screen.
 
 ---
 
-## 3b. Staff attributes — not wired
+## 3b. Staff attributes — not located, and harder than the player ones
 
-Staff (and players who can coach) show coaching, mental and knowledge
-attributes in-game; none are parsed. The parser's player/staff split is the
-*absence* of the 54-byte block, so staff currently carry no numbers at all.
-Two leads sit unexplored in the person record: a short 1-20 run right after
-the date of birth (eight values — `12 13 0f 0e 10 10 12 04` shapes), and the
-`.. 4f 00 ff`-terminated rows that look like coaching-badge and licence
-entries. A staff member's in-game profile screenshot against those bytes is
-the same trick that cracked the player attributes.
+Staff show 19 attributes in-game: nine coaching (Attacking, Defending,
+Fitness, Goalkeeping, Possession, Set Pieces, Tactical, Technical, Working
+With Youngsters), five mental (Adaptability, Authority, Determination,
+Motivating, People Management) and five knowledge (Judging Player Ability,
+Judging Player Potential, Judging Staff Ability, Negotiating, Tactical
+Knowledge). None are parsed; the player/staff split is the *absence* of the
+54-byte block, so staff carry no numbers at all.
+
+**What was tried, with two staff reports as evidence** — Unai Emery
+(Arsenal manager: Tactical uniquely Outstanding, Technical and Working With
+Youngsters Very Good, Goalkeeping Average, Set Pieces Competent, the rest
+Good) and an unemployed manager whose whole row is Unsuited bar three:
+
+1. **Shape search in report order.** Sweep every 9-byte window within
+   ±20,000 bytes of Emery's record for one ordered like his coaching row.
+   **Zero windows match** on either the 1-20 or 1-100 scale. The likely
+   reason is that storage order is not screen order — the same is true of
+   player attributes, where the report groups by Technical/Mental/Physical
+   while the block does not.
+2. **Differential against a weak manager.** Look for offsets, relative to
+   each record's prefix, where the elite manager reads 10-20 and the
+   unemployed one reads 1-4, which any attribute region would satisfy.
+   **No run of three or more.** Staff records are variable-length, so fixed
+   relative offsets do not line up between two people.
+
+**Why generalists cannot crack it, and specialists can.** FM shows staff
+attributes as words, so a manager's report gives only a rank ordering — and
+an ordering is worthless while storage order is unknown, since some
+permutation of the block fits any ordering. A *specialist* is different: a
+goalkeeping coach reads high on Goalkeeping and at the floor on everything
+else, so whichever index spikes for him and sits low for other staff **is**
+Goalkeeping. One specialist pins one index regardless of storage order, and
+a handful of them pin the block.
+
+The specialists worth collecting, each pinning the attribute in brackets:
+goalkeeping coach (Goalkeeping), fitness coach (Fitness), head of youth
+development (Working With Youngsters), physio (Physiotherapy), chief scout
+(Judging Player Ability and Potential), director of football (Negotiating).
+A first-team coach with a lopsided attacking or defending profile pins those
+two. Each needs the full attribute list visible and the person's name, so
+their record can be found.
+
+A smaller lead worth keeping: the eight-byte 1-20 run just past the date of
+birth (`12 13 0f 0e 10 10 12 04` shapes) appears on players *and* staff, so
+it is more likely the hidden personality set (Ambition, Loyalty, Pressure,
+Professionalism, Sportsmanship, Temperament, Controversy plus one more) than
+anything coaching-specific.
 
 ---
 
