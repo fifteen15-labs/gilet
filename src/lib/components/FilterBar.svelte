@@ -33,7 +33,7 @@
 	const POSITIONS = ['GK', 'DL', 'DC', 'DR', 'WBL', 'WBR', 'DM', 'ML', 'MC', 'MR', 'AML', 'AMC', 'AMR', 'ST'];
 	const nations = $derived(nationsIn(scout.players));
 	const nationName = $derived(nations.find((n) => n.id === scout.filters.nationId)?.name);
-	const resultCount = $derived(scout.matching(shortlists.activeMembers).length);
+	const resultCount = $derived(scout.results.length);
 	const filtered = $derived(
 		scout.filters.query.trim() !== '' ||
 			scout.filters.maxAge !== null ||
@@ -258,7 +258,7 @@
 				disabled:hover:text-[var(--color-mist)]"
 			disabled={!filtered || resultCount === 0}
 			title={shortlists.active ? `Add every result to ${shortlists.active.name}` : 'Creates a first shortlist'}
-			onclick={() => shortlists.addAll(scout.matching(shortlists.activeMembers).map((p) => p.name))}
+			onclick={() => shortlists.addAll(scout.results.map((p) => p.name))}
 		>
 			Add {resultCount.toLocaleString()} to {shortlists.active?.name ?? 'shortlist'}
 		</button>

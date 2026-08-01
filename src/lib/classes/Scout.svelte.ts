@@ -1,3 +1,4 @@
+import { shortlists } from '$lib/classes/Shortlists.svelte';
 import { onParseProgress, openSave, type Club, type Player, type SaveSummary } from '$lib/tauri/commands';
 import {
 	emptyFilters,
@@ -16,6 +17,9 @@ export type Tab = 'people' | 'clubs';
  * narrows far faster than scrolling, so the table stays cheap and the count
  * tells the user what is being held back. */
 const RENDER_LIMIT = 400;
+
+/** Stand-in for the membership set when no filter is consulting it. */
+const NO_MEMBERS: ReadonlySet<string> = new Set();
 
 /** Owns the loaded save and how the table is filtered and sorted. */
 class Scout {
@@ -85,16 +89,25 @@ class Scout {
 		this.selectedId = null;
 	}
 
-	/** Everything matching the current filters, sorted. Not capped — the count
-	 * shown to the user has to be the true one. */
-	matching(shortlisted: ReadonlySet<string>): Player[] {
-		const filtered = this.players.filter((p) => matches(p, this.filters, shortlisted));
-		return sortPlayers(filtered, this.sortKey, this.sortDirection);
-	}
+	/**
+	 * Everything matching the current filters, sorted. Not capped — the count
+	 * shown to the user has to be the true one.
+	 *
+	 * Derived, not a method: filtering and sorting 49,000 people is the most
+	 * expensive thing the app does, and the filter bar, the table header and
+	 * the table body all want the same answer. As a method it ran three times
+	 * per keystroke and the UI stopped keeping up with typing.
+	 */
+	readonly results: Player[] = $derived.by(() => {
+		// Only read the shortlist when a filter actually consults it. Reading it
+		// unconditionally made ticking one player re-filter and re-sort all
+		// 49,000, because the membership set had changed.
+		const shortlisted = this.filters.shortlistedOnly ? shortlists.activeMembers : NO_MEMBERS;
+		const found = this.players.filter((p) => matches(p, this.filters, shortlisted));
+		return sortPlayers(found, this.sortKey, this.sortDirection);
+	});
 
-	visible(shortlisted: ReadonlySet<string>): Player[] {
-		return this.matching(shortlisted).slice(0, RENDER_LIMIT);
-	}
+	readonly visibleResults: Player[] = $derived(this.results.slice(0, RENDER_LIMIT));
 
 	get renderLimit(): number {
 		return RENDER_LIMIT;

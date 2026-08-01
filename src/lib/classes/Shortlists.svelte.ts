@@ -12,19 +12,26 @@ class Shortlists {
 	activeName = $state<string | null>(null);
 	error = $state<string | null>(null);
 
-	get active(): Shortlist | null {
-		return this.lists.find((l) => l.name === this.activeName) ?? null;
-	}
+	readonly active: Shortlist | null = $derived(
+		this.lists.find((l) => l.name === this.activeName) ?? null
+	);
 
-	/** Names on the active list, for the row checkboxes. */
-	get activeMembers(): ReadonlySet<string> {
-		return new Set(this.active?.players ?? []);
-	}
+	/**
+	 * Names on the active list, for the row checkboxes. Derived rather than a
+	 * getter so the set is built once per change: a getter returned a fresh Set
+	 * on every read, and the table reads it several times per keystroke.
+	 */
+	readonly activeMembers: ReadonlySet<string> = $derived(new Set(this.active?.players ?? []));
 
+	/**
+	 * Loads from disk without selecting anything. Auto-selecting the first list
+	 * meant a large saved list came back active on every launch and pre-ticked
+	 * every one of its members across the table, which reads as the app having
+	 * chosen them for you.
+	 */
 	async load(): Promise<void> {
 		try {
 			this.lists = await loadShortlists();
-			this.activeName ??= this.lists[0]?.name ?? null;
 		} catch (e) {
 			this.error = e instanceof Error ? e.message : String(e);
 		}

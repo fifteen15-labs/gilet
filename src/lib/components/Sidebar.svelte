@@ -5,6 +5,10 @@
 	type Props = { onExport: () => void; onImport: () => void; exportDisabled: boolean };
 	const { onExport, onImport, exportDisabled }: Props = $props();
 
+	/** Members listed under the active shortlist before it is summarised. A list
+	 * saved from a broad search can hold thousands of names. */
+	const MEMBER_LIMIT = 50;
+
 	let draftName = $state('');
 	let adding = $state(false);
 	let collapsed = $state(false);
@@ -126,8 +130,10 @@
 				</div>
 
 				{#if shortlists.activeName === list.name && list.players.length > 0}
+					<!-- Capped: a list saved from a broad search can hold thousands of
+						names, and rendering every one of them stalls the whole window. -->
 					<ul class="mb-2 ml-3 border-l border-[var(--color-line)] pl-2">
-						{#each list.players as member (member)}
+						{#each list.players.slice(0, MEMBER_LIMIT) as member (member)}
 							<li>
 								<button
 									type="button"
@@ -139,6 +145,11 @@
 								</button>
 							</li>
 						{/each}
+						{#if list.players.length > MEMBER_LIMIT}
+							<li class="px-1 py-0.5 text-xs text-[var(--color-faint)]">
+								+{(list.players.length - MEMBER_LIMIT).toLocaleString()} more
+							</li>
+						{/if}
 					</ul>
 				{/if}
 			{:else}

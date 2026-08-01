@@ -165,6 +165,13 @@ export function matchesClub(club: Club, filters: Filters): boolean {
 }
 
 /**
+ * One reused collator. `String.prototype.localeCompare` builds its collation
+ * options on every call, which is the dominant cost when sorting 49,000 names
+ * on each keystroke; a hoisted `Intl.Collator` does that work once.
+ */
+const byName = new Intl.Collator(undefined, { sensitivity: 'base' });
+
+/**
  * Sorts in place on a copy. Players with no ability value sort last regardless
  * of direction — an unknown is not a low score, and burying them keeps the
  * top of the table meaningful once abilities are decoded.
@@ -172,11 +179,11 @@ export function matchesClub(club: Club, filters: Filters): boolean {
 export function sortPlayers(players: Player[], key: SortKey, direction: SortDirection): Player[] {
 	const factor = direction === 'asc' ? 1 : -1;
 	return [...players].sort((a, b) => {
-		if (key === 'name') return a.name.localeCompare(b.name) * factor;
+		if (key === 'name') return byName.compare(a.name, b.name) * factor;
 		if (key === 'age') return (a.age - b.age) * factor;
 		const left = a[key];
 		const right = b[key];
-		if (left === null && right === null) return a.name.localeCompare(b.name);
+		if (left === null && right === null) return byName.compare(a.name, b.name);
 		if (left === null) return 1;
 		if (right === null) return -1;
 		return (left - right) * factor;

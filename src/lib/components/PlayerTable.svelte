@@ -4,8 +4,8 @@
 	import { shortlists } from '$lib/classes/Shortlists.svelte';
 
 	const members = $derived(shortlists.activeMembers);
-	const total = $derived(scout.matching(members).length);
-	const rows = $derived(scout.visible(members));
+	const total = $derived(scout.results.length);
+	const rows = $derived(scout.visibleResults);
 
 	function toggle(name: string) {
 		void shortlists.toggle(name);

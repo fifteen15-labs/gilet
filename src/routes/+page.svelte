@@ -27,7 +27,7 @@
 	 * search that produced them. */
 	async function saveResultsAsShortlist() {
 		exportError = null;
-		const rows = scout.matching(shortlists.activeMembers);
+		const rows = scout.results;
 		const nation = nationsIn(scout.players).find((n) => n.id === scout.filters.nationId)?.name;
 		const name = await shortlists.saveAs(
 			describeFilters(scout.filters, nation),
@@ -80,7 +80,7 @@
 	async function exportVisible() {
 		exportError = null;
 		notice = null;
-		const rows = scout.matching(shortlists.activeMembers);
+		const rows = scout.results;
 		const file = shortlists.active ? `${shortlists.active.name}.csv` : 'players.csv';
 		const suggested = locations.documents ? `${locations.documents}/${file}` : file;
 		const target = await save({ defaultPath: suggested, filters: [{ name: 'CSV', extensions: ['csv'] }] });
