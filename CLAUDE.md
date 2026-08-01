@@ -68,7 +68,8 @@ import/export are wired end to end, covered by integration tests in
 
 Not yet located: squad lists (so no club-to-player link), the full nation-name
 table, most individual attribute names, and the in-game date on FM 26.2.0
-saves.
+saves. **`docs/OPEN_PROBLEMS.md` is the handoff document** — it records what was
+tried for each, what the evidence showed, and where to go next.
 
 ## Design philosophy
 

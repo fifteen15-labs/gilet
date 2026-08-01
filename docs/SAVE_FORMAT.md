@@ -321,7 +321,11 @@ the next attempt starts further along:
    each share ~44 `u32` values with the Manchester City record window, but every
    one is a common constant appearing hundreds of times in the file. Filtering
    to values used 30 times or fewer leaves nothing.
-3. **An identifier array in the club record body.** There are runs of
+3. **Same-club agreement.** The sharpest test available: sweep every offset in
+   ±4000 of both the attribute block and the person record for one where
+   Haaland, Walker and Grealish hold the same value while Saka, Alisson and Dias
+   hold different ones. **Zero hits on either anchor.**
+4. **An identifier array in the club record body.** There are runs of
    plausible-looking IDs (29 values at +5339, 22 at +5456), but the values that
    also appear near City players — 35839, 35584 — appear near Arsenal's Saka
    too, so they are constants rather than references.
