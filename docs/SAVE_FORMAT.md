@@ -441,6 +441,41 @@ rare shared values, same-club agreement sweeps, id arrays in the club body)
 are preserved in the git history of this file; the root mistake was assuming
 person records had no identifier — they do, the identity block of section 3.
 
+## 6e. Contracts — wage and expiry SOLVED
+
+The contract lives in the bytes immediately **before** the person's record
+prefix, within ~220 bytes. The wage row is anchored on the person's own
+entity id:
+
+```
+[eid u32] [u32] [00 00 00 00] [wage u32] 01 xx 00 [FF FF FF FF]
+```
+
+and the expiry sits earlier in the block as a date pair following a run of
+eight `FF` bytes. Other fields visible in the block but not yet parsed:
+contract start, the date the deal was signed, and several smaller money
+values that look like bonuses and clauses.
+
+Verified against public figures and an in-game report:
+
+| Player | Wage / week | Until | Source |
+| --- | --- | --- | --- |
+| Haaland | £450,000 | 30/6/2034 | FM Scout, exact on both |
+| Salah | £400,000 | 30/6/2027 | real contract |
+| Van Dijk | £350,000 | 30/6/2027 | real contract |
+| Mbappé | £496,918 | 30/6/2029 | Madrid, EUR converted |
+| Musiala (2035 save) | £392,499 | 30/6/2037 | in-game report band £350K-£425K |
+
+Non-round wages are foreign-currency contracts converted into the save's
+display currency — the signature of a real read. Haaland's block even holds
+17/1/2025, the real-world date he signed his extension. Across the reference
+save 20,388 contracts parse; the median weekly wage is £400 (semi-pros), the
+90th percentile £18K. People without a matching block — the unemployed and
+retired — get `None`, not zero.
+
+Transfer *value* has not been found and is probably computed by the game
+rather than stored.
+
 ## 7. Prior art
 
 FM Scouting Tool 26 (the Electron app on fmscout.com) does **not** parse saves.

@@ -96,6 +96,11 @@ pub struct PlayerRow {
     /// Short name of the club whose first-team squad lists this person, empty
     /// when unattached — free agents, national staff, unresolved records.
     pub club: String,
+    /// Weekly wage in the save's display currency. `None` when no contract
+    /// was found — the unemployed and the retired.
+    pub wage: Option<u32>,
+    /// Contract expiry as `YYYY-MM-DD`, empty when unknown.
+    pub contract_until: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -191,6 +196,11 @@ pub fn open_save(path: String, today: Vec<u16>) -> Result<SaveSummary, CommandEr
                     .and_then(|eid| club_names.get(&eid).copied())
                     .unwrap_or_default()
                     .to_owned(),
+                wage: p.wage,
+                contract_until: p
+                    .contract_until
+                    .map(|d| format!("{:04}-{:02}-{:02}", d.year, d.month, d.day))
+                    .unwrap_or_default(),
             }
         })
         .collect();
@@ -309,18 +319,20 @@ fn split_csv_row(line: &str) -> Vec<String> {
 pub fn export_csv(path: String, rows: Vec<PlayerRow>) -> Result<(), CommandError> {
     use std::fmt::Write as _;
 
-    let mut out = String::from("name,born,age,ability,potential,club\n");
+    let mut out = String::from("name,born,age,ability,potential,club,wage,contract_until\n");
     for r in &rows {
         // Writing into a String cannot fail, so the result is discarded.
         let _ = writeln!(
             out,
-            "{},{},{},{},{},{}",
+            "{},{},{},{},{},{},{},{}",
             csv_field(&r.name),
             r.born,
             r.age,
             r.ability.map_or(String::new(), |v| v.to_string()),
             r.potential.map_or(String::new(), |v| v.to_string()),
             csv_field(&r.club),
+            r.wage.map_or(String::new(), |v| v.to_string()),
+            r.contract_until,
         );
     }
     std::fs::write(&path, out).map_err(|e| CommandError::Write {

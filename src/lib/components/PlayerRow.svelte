@@ -10,6 +10,14 @@
 	};
 
 	const { player, shortlisted, onToggle }: Props = $props();
+
+	/** Compact weekly wage: £450K, £8.5K, £400 — or nothing when out of contract. */
+	function formatWage(wage: number | null): string {
+		if (wage === null) return '';
+		if (wage >= 100_000) return `£${Math.round(wage / 1000)}K`;
+		if (wage >= 1_000) return `£${(wage / 1000).toFixed(1).replace(/\.0$/, '')}K`;
+		return `£${wage}`;
+	}
 </script>
 
 <!-- The row opens the detail panel; the checkbox stops propagation so ticking
@@ -38,13 +46,16 @@
 			</svg>
 		</button>
 	</td>
-	<td class="py-1.5 pr-4 text-sm text-[var(--color-bright)]">{player.name}</td>
+	<td class="py-1.5 pr-4 pl-3 text-sm text-[var(--color-bright)]">{player.name}</td>
 	<td class="pr-4 text-xs text-[var(--color-mist)]">{player.club}</td>
 	<td class="pr-4 text-xs text-[var(--color-mist)]">{player.positions.slice(0, 3).join(', ')}</td>
 	<td class="pr-4 text-xs text-[var(--color-faint)]" title="Nation {player.nation_id}">
 		{player.nation || player.nation_id}
 	</td>
 	<td class="tabular pr-4 text-sm text-[var(--color-mist)]">{player.age}</td>
+	<td class="tabular pr-4 text-right text-xs text-[var(--color-mist)]" title={player.contract_until ? `Contract until ${player.contract_until}` : ''}>
+		{formatWage(player.wage)}
+	</td>
 	<td class="tabular pr-4 text-sm text-[var(--color-bright)]">{player.ability ?? ''}</td>
 	<td class="tabular pr-4 text-sm text-[var(--color-signal)]">{player.potential ?? ''}</td>
 	<td class="pr-3">

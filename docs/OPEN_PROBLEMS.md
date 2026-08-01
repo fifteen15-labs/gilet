@@ -139,17 +139,24 @@ the same trick that cracked the player attributes.
 
 ---
 
-## 4. Contracts, value and wages — untouched
+## 4. Contracts — wage and expiry solved, the rest of the block open
 
-The person record contains a variable-length run of 16-byte key/value rows
-starting around +48 past the name. Each looks like a 6-byte key then a `u16`
-value, and the values are far too large to be attributes: 13961, 11004, 3136,
-370, 160. These are plausibly wages, transfer values, contract clauses and
-squad-status flags.
+Wage and contract expiry parse (see `SAVE_FORMAT.md` §6e): the block sits
+just before the person's record prefix, wage anchored on the person's own
+entity id, expiry after an 8×FF run. Verified exactly against FM Scout's
+Haaland (£450K to 30/6/2034) and Musiala's in-game report in the 2035 save
+(£392,499 inside the scouted band, to 30/6/2037).
 
-Nobody has tried to parse them properly. FM Scout's own listing gives Haaland a
-£450K weekly wage and a £179M value in FM26, which are concrete numbers to
-search for as an entry point.
+Still in the block, unparsed: contract start date, signing date (Haaland's
+holds 17/1/2025 — the real-world date of his extension), and several smaller
+money fields that look like appearance/goal bonuses and clauses (£85,000 and
+£82,000 shapes in Haaland's). A player's full Contract tab screenshot against
+`cargo run --release --example player` output would name them the same way
+the attribute screen named the attributes.
+
+Roughly a third of eid-anchored candidates fail the strict structure test and
+keep `None` — variant layouts (part-time, youth, non-contract) not yet
+mapped. Transfer *value* is probably computed by the game, not stored.
 
 ---
 

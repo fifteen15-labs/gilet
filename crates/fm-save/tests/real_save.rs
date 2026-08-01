@@ -3,7 +3,7 @@
 //!
 //! Skips rather than fails when no save is present, like the journey tests.
 
-#![allow(clippy::unwrap_used, clippy::expect_used)]
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
 fn load_named(name: &str) -> Option<fm_save::Save> {
     let home = std::env::var_os("HOME")?;
@@ -92,6 +92,39 @@ fn known_entity_ids_read_back_exactly() {
     assert_eq!(haaland.uid, Some(29_179_241));
 }
 
+#[test]
+fn contracts_match_public_figures() {
+    let save = save_or_skip!();
+    let person = |name: &str| save.people.iter().find(|p| p.full_name == name).unwrap();
+
+    // FM Scout lists Haaland at £450K a week to 30 June 2034 in FM26.
+    let haaland = person("Erling Braut Haaland");
+    assert_eq!(haaland.wage, Some(450_000));
+    let until = haaland.contract_until.unwrap();
+    assert_eq!((until.year, until.month, until.day), (2034, 6, 30));
+
+    // Salah and van Dijk both signed to 2027.
+    assert_eq!(person("Mohamed Salah Ghaly").contract_until.map(|d| d.year), Some(2027));
+    assert_eq!(person("Virgil van Dijk").contract_until.map(|d| d.year), Some(2027));
+
+    // Foreign contracts convert to the display currency, so Madrid wages are
+    // not round numbers — the signature of a real read, not a guess.
+    let mbappe = person("Kylian Mbappé Lottin");
+    let wage = mbappe.wage.unwrap();
+    assert!((300_000..700_000).contains(&wage), "Mbappé wage {wage}");
+    assert!(wage % 1000 != 0, "a converted wage should not be round");
+
+    // Wages across the database form a pyramid: semi-pro at the median,
+    // thousands in the professional tail.
+    let mut wages: Vec<u32> = save.people.iter().filter_map(|p| p.wage).collect();
+    wages.sort_unstable();
+    assert!(wages.len() > 15_000, "expected contracts, got {}", wages.len());
+    let p50 = wages[wages.len() / 2];
+    let p90 = wages[wages.len() * 9 / 10];
+    assert!(p50 < 5_000, "median weekly wage should be modest, got {p50}");
+    assert!(p90 > 5_000, "the top decile should be professional, got {p90}");
+}
+
 /// An aged save is the hard case: a decade of training moves attribute
 /// internals off the multiples of five, and transfers shuffle every squad
 /// list out of entity-id order. The values asserted here are read straight
@@ -155,4 +188,10 @@ fn an_aged_save_decodes_against_the_in_game_report() {
 
     // His position ratings: natural AM(C), accomplished across the AM strip.
     assert_eq!(ability.natural_positions().first().copied(), Some("AMC"));
+
+    // His header strip: a wage inside the scouted £350K-£425K band, contract
+    // to 30 June 2037.
+    assert_eq!(musiala.wage, Some(392_499));
+    let until = musiala.contract_until.expect("contract expiry");
+    assert_eq!((until.year, until.month, until.day), (2037, 6, 30));
 }

@@ -27,6 +27,10 @@ export type Player = {
 	position_ratings: number[];
 	/** Short name of the club whose squad lists this person; empty when unattached. */
 	club: string;
+	/** Weekly wage in the save's display currency. Null when out of contract. */
+	wage: number | null;
+	/** Contract expiry as YYYY-MM-DD; empty when unknown. */
+	contract_until: string;
 };
 
 export type Club = {

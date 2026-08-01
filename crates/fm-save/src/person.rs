@@ -32,6 +32,11 @@ pub struct Person {
     /// Entity id of the club whose first-team squad lists this person.
     /// Filled from the squad table by `Save::parse`, `None` for the unattached.
     pub club_eid: Option<u32>,
+    /// Weekly wage in the save's display currency, from the contract block.
+    /// `None` when no contract parses — the unemployed and the retired.
+    pub wage: Option<u32>,
+    /// Contract expiry date, when the contract block carries one.
+    pub contract_until: Option<Date>,
     /// Ability and attributes, when this person has an attribute block.
     /// `None` means staff: only players carry one.
     pub ability: Option<crate::ability::Ability>,
@@ -194,6 +199,8 @@ fn parse_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<(Person, u
             eid: None,
             uid: None,
             club_eid: None,
+            wage: None,
+            contract_until: None,
             // Filled in by `Save::parse`, which matches blocks to people once
             // both scans have run.
             ability: None,
@@ -239,6 +246,74 @@ pub fn bind_identities(frame: &[u8], people: &mut [Person], start: usize) -> Vec
         }
     }
     chain
+}
+
+/// How far before the record prefix the contract block can sit.
+const CONTRACT_WINDOW: usize = 220;
+
+/// Latest plausible contract expiry year; beyond this is a misread.
+const MAX_CONTRACT_YEAR: u16 = 2060;
+
+/// Reads each person's contract from the block preceding their record.
+///
+/// The block is anchored on the person's own entity id:
+///
+/// ```text
+/// [eid u32] [u32] [00 00 00 00] [wage u32] 01 xx 00 [FF FF FF FF]
+/// ```
+///
+/// with the contract expiry earlier in the block, as a date pair following a
+/// run of eight `FF` bytes. Verified against FM Scout's Haaland figures
+/// (£450,000 a week until 30/6/2034) and an in-game report in an aged save
+/// (Musiala, £392,499 inside the scouted £350K-£425K band, until 30/6/2037).
+/// Non-round wages are foreign-currency contracts converted to the display
+/// currency. A person whose block does not match keeps `None` — the
+/// unemployed and the retired genuinely have no contract to read.
+pub fn bind_contracts(frame: &[u8], people: &mut [Person]) {
+    for person in people.iter_mut() {
+        let Some(eid) = person.eid else { continue };
+        let lo = person.offset.saturating_sub(CONTRACT_WINDOW);
+        let Some(p) = rfind_u32(frame, eid, lo, person.offset) else {
+            continue;
+        };
+        if frame.get(p + 8..p + 12) != Some(&[0, 0, 0, 0][..]) {
+            continue;
+        }
+        if frame.get(p + 16) != Some(&0x01)
+            || frame.get(p + 18) != Some(&0x00)
+            || frame.get(p + 19..p + 23) != Some(&[0xFF; 4][..])
+        {
+            continue;
+        }
+        person.wage = read_u32(frame, p + 12);
+
+        // Expiry: the date pair after the last 8xFF run before the anchor.
+        person.contract_until = frame
+            .get(lo..p)
+            .and_then(|w| {
+                w.windows(8).enumerate().rev().find(|(_, run)| run == &[0xFF; 8]).map(|(i, _)| lo + i)
+            })
+            .and_then(|q| {
+                let day = read_u16(frame, q + 8)?;
+                let year = read_u16(frame, q + 10)?;
+                if year > MAX_CONTRACT_YEAR {
+                    return None;
+                }
+                Date::from_day_of_year(day, year)
+            });
+    }
+}
+
+/// Last occurrence of a little-endian `u32` in `frame[lo..hi]`.
+fn rfind_u32(frame: &[u8], value: u32, lo: usize, hi: usize) -> Option<usize> {
+    let needle = value.to_le_bytes();
+    let window = frame.get(lo..hi)?;
+    window
+        .windows(4)
+        .enumerate()
+        .rev()
+        .find(|(_, w)| *w == needle)
+        .map(|(i, _)| lo + i)
 }
 
 fn scan_triples(frame: &[u8], start: usize) -> Vec<Identity> {
@@ -467,6 +542,72 @@ mod tests {
         assert_eq!(chain.len(), 2, "the noise block should lose the chain race");
         assert_eq!(people.first().unwrap().eid, Some(50));
         assert_eq!(people.get(1).unwrap().eid, Some(51));
+    }
+
+    /// Builds a contract block for `eid`: expiry after an 8xFF run, then the
+    /// eid-anchored wage row, as found on disk before the record prefix.
+    fn contract(eid: u32, wage: u32, expiry_doy: u16, expiry_year: u16) -> Vec<u8> {
+        let mut v = vec![0u8; 8];
+        v.extend_from_slice(&[0xFF; 8]);
+        v.extend_from_slice(&expiry_doy.to_le_bytes());
+        v.extend_from_slice(&expiry_year.to_le_bytes());
+        v.extend_from_slice(&[0u8; 12]);
+        v.extend_from_slice(&eid.to_le_bytes());
+        v.extend_from_slice(&501u32.to_le_bytes());
+        v.extend_from_slice(&[0u8; 4]);
+        v.extend_from_slice(&wage.to_le_bytes());
+        v.extend_from_slice(&[0x01, 0x0B, 0x00]);
+        v.extend_from_slice(&[0xFF; 4]);
+        v.extend_from_slice(&[0u8; 6]);
+        v
+    }
+
+    #[test]
+    fn reads_the_wage_and_expiry_from_the_contract_block() {
+        // Haaland's real figures: £450K a week until 30 June 2034.
+        let mut buf = contract(50, 450_000, 181, 2034);
+        buf.extend(record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000));
+        buf.extend(identity_block(50, 9_000_001));
+
+        let mut people = scan_people(&buf, &table());
+        bind_identities(&buf, &mut people, 0);
+        bind_contracts(&buf, &mut people);
+
+        let p = people.first().unwrap();
+        assert_eq!(p.wage, Some(450_000));
+        let until = p.contract_until.unwrap();
+        assert_eq!((until.year, until.month, until.day), (2034, 6, 30));
+    }
+
+    #[test]
+    fn no_contract_block_means_no_wage() {
+        // Retired and unemployed people have nothing before their record.
+        let mut buf = vec![0u8; 64];
+        buf.extend(record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000));
+        buf.extend(identity_block(50, 9_000_001));
+
+        let mut people = scan_people(&buf, &table());
+        bind_identities(&buf, &mut people, 0);
+        bind_contracts(&buf, &mut people);
+
+        assert_eq!(people.first().unwrap().wage, None);
+        assert_eq!(people.first().unwrap().contract_until, None);
+    }
+
+    #[test]
+    fn a_wage_row_with_the_wrong_shape_is_not_a_contract() {
+        // Same eid nearby but without the 01-xx-00-FFFFFFFF tail.
+        let mut buf = vec![0u8; 16];
+        buf.extend_from_slice(&50u32.to_le_bytes());
+        buf.extend_from_slice(&[0u8; 24]);
+        buf.extend(record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000));
+        buf.extend(identity_block(50, 9_000_001));
+
+        let mut people = scan_people(&buf, &table());
+        bind_identities(&buf, &mut people, 0);
+        bind_contracts(&buf, &mut people);
+
+        assert_eq!(people.first().unwrap().wage, None);
     }
 
     #[test]

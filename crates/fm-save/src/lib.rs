@@ -70,6 +70,7 @@ impl Save {
             if let Some(table) = strings::scan_strings(&frame.data) {
                 people = person::scan_people(&frame.data, &table);
                 let chain = person::bind_identities(&frame.data, &mut people, table.end_offset);
+                person::bind_contracts(&frame.data, &mut people);
 
                 let club_ids: Vec<(u32, u32)> = clubs
                     .iter()

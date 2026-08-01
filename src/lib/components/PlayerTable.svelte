@@ -18,7 +18,7 @@
 			<thead class="sticky top-0 z-10 bg-[var(--color-void)]">
 				<tr class="border-b border-[var(--color-line)]">
 					<th class="w-8"></th>
-					<th class="pr-4 pb-2 text-left">
+					<th class="pr-4 pb-2 pl-3 text-left">
 						<button class="eyebrow hover:text-[var(--color-mist)]" onclick={() => scout.sortBy('name')}>
 							Name{scout.sortKey === 'name' ? (scout.sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}
 						</button>
@@ -31,6 +31,7 @@
 							Age{scout.sortKey === 'age' ? (scout.sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}
 						</button>
 					</th>
+					<th class="w-20 pr-4 pb-2 text-right"><span class="eyebrow">Wage</span></th>
 					<th class="w-16 pr-4 pb-2 text-left">
 						<button class="eyebrow hover:text-[var(--color-mist)]" onclick={() => scout.sortBy('ability')}>
 							CA{scout.sortKey === 'ability' ? (scout.sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}

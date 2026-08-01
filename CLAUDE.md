@@ -70,7 +70,9 @@ attribute internals are 1-100 (only initialised to display×5) and squad
 lists shuffle after years of transfers, both handled and locked in by a
 test against a 2035 save. From a 44 MB save: 49,217 people, 18,663 clubs,
 1,814 squads, ~1.5 s. Squad resolution is 99.76% of referenced people; every
-player row carries their club's short name.
+player row carries their club's short name. **Wages and contract expiry**
+parse from the block before each person record (Haaland £450K/30-6-2034
+exact vs FM Scout), shown as a table column and exported in CSV.
 
 Search, shortlists, saving a filtered search as a shortlist, and CSV
 import/export are wired end to end, covered by integration tests in
