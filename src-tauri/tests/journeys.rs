@@ -339,3 +339,34 @@ fn nationality_covers_the_database_not_just_a_handful() {
     let share = named as f64 / players.len() as f64;
     assert!(share > 0.9, "only {:.1}% of players have a named nation", share * 100.0);
 }
+
+#[test]
+fn club_squad_strength_ranks_the_divisions_correctly() {
+    let summary = save_or_skip!();
+
+    let club = |name: &str| -> &commands::ClubRow {
+        summary
+            .clubs
+            .iter()
+            .find(|c| c.name == name)
+            .unwrap_or_else(|| panic!("{name} should be in the database"))
+    };
+
+    // Squad averages stand in for a league level while competitions are
+    // undecoded, so the ordering across divisions has to hold.
+    let city = club("Manchester City");
+    assert!((15..=60).contains(&city.squad_size), "squad size {}", city.squad_size);
+    let city_ca = city.average_ability.expect("City should have an average");
+
+    // A League Two side must sit well below a Premier League one.
+    let lower = club("Accrington Stanley").average_ability.expect("Accrington average");
+    assert!(city_ca > lower + 30, "City {city_ca} vs Accrington {lower}");
+
+    // Potential is never below current, in the aggregate as for one player.
+    for c in summary.clubs.iter().filter(|c| c.squad_size > 0) {
+        let (Some(ca), Some(pa)) = (c.average_ability, c.average_potential) else {
+            panic!("{} has a squad but no averages", c.name);
+        };
+        assert!(pa >= ca, "{}: average PA {pa} below CA {ca}", c.name);
+    }
+}

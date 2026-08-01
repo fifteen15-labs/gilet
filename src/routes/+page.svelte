@@ -7,6 +7,7 @@
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { shortlists } from '$lib/classes/Shortlists.svelte';
+	import { savedFilters } from '$lib/classes/SavedFilters.svelte';
 	import { defaultLocations, exportCsv, importCsv, type Locations } from '$lib/tauri/commands';
 	import { describeFilters } from '$lib/utils/filter';
 
@@ -18,6 +19,7 @@
 
 	$effect(() => {
 		void shortlists.load();
+		void savedFilters.load();
 		void defaultLocations().then((l) => (locations = l));
 	});
 

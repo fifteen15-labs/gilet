@@ -10,10 +10,19 @@
 		<table class="w-full border-collapse">
 			<thead class="sticky top-0 z-10 bg-[var(--color-void)]">
 				<tr class="border-b border-[var(--color-line)]">
-					<th class="pr-4 pb-2 pl-3 text-left"><span class="eyebrow">Club</span></th>
+					<th class="pr-4 pb-2 pl-3 text-left">
+						<button class="eyebrow hover:text-[var(--color-mist)]" onclick={() => (scout.clubSort = 'name')}>
+							Club{scout.clubSort === 'name' ? ' ↑' : ''}
+						</button>
+					</th>
 					<th class="w-48 pr-4 pb-2 text-left"><span class="eyebrow">Short name</span></th>
-					<th class="w-24 pr-4 pb-2 text-left"><span class="eyebrow">Club ID</span></th>
-					<th class="w-24 pr-3 pb-2 text-left"><span class="eyebrow">Nation ID</span></th>
+					<th class="w-20 pr-4 pb-2 text-right"><span class="eyebrow">Squad</span></th>
+					<th class="w-20 pr-4 pb-2 text-right">
+						<button class="eyebrow hover:text-[var(--color-mist)]" onclick={() => (scout.clubSort = 'strength')}>
+							Avg CA{scout.clubSort === 'strength' ? ' ↓' : ''}
+						</button>
+					</th>
+					<th class="w-20 pr-3 pb-2 text-right"><span class="eyebrow">Avg PA</span></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -25,8 +34,15 @@
 					>
 						<td class="py-1.5 pr-4 pl-3 text-sm text-[var(--color-bright)]">{club.name}</td>
 						<td class="pr-4 text-sm text-[var(--color-mist)]">{club.short_name}</td>
-						<td class="tabular pr-4 text-xs text-[var(--color-faint)]">{club.club_id}</td>
-						<td class="tabular pr-3 text-xs text-[var(--color-faint)]">{club.nation_id}</td>
+						<td class="tabular pr-4 text-right text-xs text-[var(--color-faint)]">
+							{club.squad_size || ''}
+						</td>
+						<td class="tabular pr-4 text-right text-sm text-[var(--color-bright)]">
+							{club.average_ability ?? ''}
+						</td>
+						<td class="tabular pr-3 text-right text-sm text-[var(--color-signal)]">
+							{club.average_potential ?? ''}
+						</td>
 					</tr>
 				{/each}
 			</tbody>

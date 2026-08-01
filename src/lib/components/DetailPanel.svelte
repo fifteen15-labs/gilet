@@ -117,6 +117,19 @@
 						<dt class="eyebrow">Nation ID</dt>
 						<dd class="tabular text-sm text-[var(--color-bright)]">{club.nation_id}</dd>
 					</div>
+					{#if club.squad_size > 0}
+						<div>
+							<dt class="eyebrow">Squad</dt>
+							<dd class="tabular text-sm text-[var(--color-bright)]">{club.squad_size} players</dd>
+						</div>
+						<div>
+							<dt class="eyebrow">Squad average</dt>
+							<dd class="tabular text-sm text-[var(--color-bright)]">
+								CA {club.average_ability ?? '—'} · PA
+								<span class="text-[var(--color-signal)]">{club.average_potential ?? '—'}</span>
+							</dd>
+						</div>
+					{/if}
 				</dl>
 				<button
 					type="button"

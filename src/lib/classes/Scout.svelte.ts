@@ -31,6 +31,9 @@ class Scout {
 	sortKey = $state<SortKey>('name');
 	sortDirection = $state<SortDirection>('asc');
 	tab = $state<Tab>('people');
+	/** How the clubs table is ordered. Strength is the useful one: it is the
+	 * closest thing to a league level while competitions are undecoded. */
+	clubSort = $state<'name' | 'strength'>('name');
 	/** Record the detail panel is showing, by row id. */
 	selectedId = $state<number | null>(null);
 
@@ -58,6 +61,10 @@ class Scout {
 
 	matchingClubs(): Club[] {
 		const found = this.clubs.filter((c) => matchesClub(c, this.filters));
+		if (this.clubSort === 'strength') {
+			// Clubs with no squad sort last: an unknown is not a weak squad.
+			return found.sort((a, b) => (b.average_ability ?? -1) - (a.average_ability ?? -1));
+		}
 		return found.sort((a, b) => a.name.localeCompare(b.name));
 	}
 

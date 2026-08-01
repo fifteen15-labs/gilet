@@ -8,8 +8,12 @@ export type Filters = {
 	maxAge: number | null;
 	/** Minimum Current Ability, 1-200. Excludes staff, who have no ability. */
 	minAbility: number | null;
+	/** Maximum Current Ability, 1-200. Finds the affordable end of a bracket. */
+	maxAbility: number | null;
 	/** Minimum Potential Ability, 1-200. Excludes staff. */
 	minPotential: number | null;
+	/** Maximum Potential Ability, 1-200. Rules out the ones already at the top. */
+	maxPotential: number | null;
 	/** Restrict to players or to staff. Players are the ones with ability data. */
 	kind: 'all' | 'players' | 'staff';
 	/** Only players comfortable in this position, e.g. "ST". Null for any. */
@@ -30,7 +34,9 @@ export const emptyFilters: Filters = {
 	query: '',
 	maxAge: null,
 	minAbility: null,
+	maxAbility: null,
 	minPotential: null,
+	maxPotential: null,
 	kind: 'all',
 	position: null,
 	nationId: null,
@@ -71,17 +77,31 @@ export function matches(player: Player, filters: Filters, shortlisted: ReadonlyS
 	}
 	if (filters.maxAge !== null && player.age > filters.maxAge) return false;
 	// Staff have no ability, and an unknown is not a low score — an ability
-	// filter therefore excludes them rather than treating them as zero.
-	if (filters.minAbility !== null) {
-		if (player.ability === null || player.ability < filters.minAbility) return false;
+	// filter therefore excludes them rather than treating them as zero. That
+	// holds for an upper bound too: an unknown is not "safely under 120".
+	if (filters.minAbility !== null || filters.maxAbility !== null) {
+		if (player.ability === null) return false;
+		if (filters.minAbility !== null && player.ability < filters.minAbility) return false;
+		if (filters.maxAbility !== null && player.ability > filters.maxAbility) return false;
 	}
-	if (filters.minPotential !== null) {
-		if (player.potential === null || player.potential < filters.minPotential) return false;
+	if (filters.minPotential !== null || filters.maxPotential !== null) {
+		if (player.potential === null) return false;
+		if (filters.minPotential !== null && player.potential < filters.minPotential) return false;
+		if (filters.maxPotential !== null && player.potential > filters.maxPotential) return false;
 	}
 	if (filters.query.trim() === '') return true;
 	// The query matches the club too, so "man city" lists City's squad.
 	const needle = normalise(filters.query.trim());
 	return normalise(player.name).includes(needle) || normalise(player.club).includes(needle);
+}
+
+/** Renders a bounded range the way a scout would say it out loud: "CA 120+",
+ * "CA up to 140", or "CA 120-140". Null when neither bound is set. */
+function describeRange(label: string, min: number | null, max: number | null): string | null {
+	if (min !== null && max !== null) return `${label} ${min}-${max}`;
+	if (min !== null) return `${label} ${min}+`;
+	if (max !== null) return `${label} up to ${max}`;
+	return null;
 }
 
 /** Names a shortlist after the search that produced it, so a saved list says
@@ -97,8 +117,10 @@ export function describeFilters(filters: Filters): string {
 	if (filters.position !== null) parts.push(filters.position);
 	if (filters.nationId !== null) parts.push(`nation ${filters.nationId}`);
 	if (filters.maxAge !== null) parts.push(`Under ${filters.maxAge}`);
-	if (filters.minAbility !== null) parts.push(`CA ${filters.minAbility}+`);
-	if (filters.minPotential !== null) parts.push(`PA ${filters.minPotential}+`);
+	const ca = describeRange('CA', filters.minAbility, filters.maxAbility);
+	if (ca !== null) parts.push(ca);
+	const pa = describeRange('PA', filters.minPotential, filters.maxPotential);
+	if (pa !== null) parts.push(pa);
 	if (filters.query.trim() !== '') parts.push(`"${filters.query.trim()}"`);
 	if (filters.shortlistedOnly) parts.push('shortlisted');
 	return parts.length > 0 ? parts.join(' · ') : 'All players';

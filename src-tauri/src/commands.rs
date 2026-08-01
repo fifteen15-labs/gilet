@@ -21,36 +21,45 @@ pub struct Locations {
     pub documents: Option<String>,
 }
 
-/// FM keeps saves under Application Support on macOS and in Documents on
-/// Windows. Only the directory that actually exists is offered, so the dialog
-/// falls back to the system default rather than opening on a missing path.
-fn saves_dir(app: &tauri::AppHandle) -> Option<std::path::PathBuf> {
+/// Football Manager's own data folder for the newest installed version, e.g.
+/// `…/Sports Interactive/Football Manager 26`.
+///
+/// FM keeps this under Application Support on macOS and in Documents on
+/// Windows. `None` when FM is not installed, so callers fall back rather than
+/// inventing a path that does not exist.
+pub(crate) fn fm_dir(app: &tauri::AppHandle) -> Option<std::path::PathBuf> {
     let path = app.path();
-    let candidates = if cfg!(target_os = "macos") {
-        vec![path.data_dir().ok()?.join("Sports Interactive")]
+    let base = if cfg!(target_os = "macos") {
+        path.data_dir().ok()?.join("Sports Interactive")
     } else {
-        vec![path.document_dir().ok()?.join("Sports Interactive")]
+        path.document_dir().ok()?.join("Sports Interactive")
     };
-
-    for base in candidates {
-        if !base.is_dir() {
-            continue;
-        }
-        // Prefer the newest Football Manager folder, so a machine with several
-        // installed opens on the current one.
-        let mut versions: Vec<_> = std::fs::read_dir(&base)
-            .ok()?
-            .flatten()
-            .map(|e| e.path())
-            .filter(|p| p.join("games").is_dir())
-            .collect();
-        versions.sort();
-        if let Some(newest) = versions.pop() {
-            return Some(newest.join("games"));
-        }
-        return Some(base);
+    if !base.is_dir() {
+        return None;
     }
-    None
+    // Prefer the newest Football Manager folder, so a machine with several
+    // installed opens on the current one. A version folder is only a real one
+    // if it holds saves, which rules out leftovers from an uninstall.
+    let mut versions: Vec<_> = std::fs::read_dir(&base)
+        .ok()?
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.join("games").is_dir())
+        .collect();
+    versions.sort();
+    versions.pop().or(Some(base))
+}
+
+/// Where the open dialog should start. Only a directory that actually exists is
+/// offered, so the dialog falls back to the system default rather than opening
+/// on a missing path.
+fn saves_dir(app: &tauri::AppHandle) -> Option<std::path::PathBuf> {
+    let dir = fm_dir(app)?;
+    let games = dir.join("games");
+    if games.is_dir() {
+        return Some(games);
+    }
+    Some(dir)
 }
 
 /// Returns the directories the open and save dialogs should default to.
@@ -113,6 +122,13 @@ pub struct ClubRow {
     pub short_name: String,
     pub club_id: u32,
     pub nation_id: u32,
+    /// How many players the squad table lists for this club.
+    pub squad_size: usize,
+    /// Mean Current Ability across the squad, rounded. `None` when the club
+    /// fields no squad whose ability is decoded.
+    pub average_ability: Option<u16>,
+    /// Mean Potential Ability across the squad, rounded.
+    pub average_potential: Option<u16>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -184,6 +200,27 @@ pub async fn open_save(
     })
     .await
     .map_err(|e| CommandError::Parse(format!("parsing did not finish: {e}")))?
+}
+
+/// Totals the ability of every player each club fields, as
+/// `(current, potential, count)` by club entity id.
+///
+/// Squad strength is the closest thing to a league level while competitions are
+/// undecoded: a club is as strong as the players it fields. Staff carry no
+/// ability and so do not count towards the squad.
+fn squad_strength(save: &fm_save::Save) -> std::collections::HashMap<u32, (u32, u32, usize)> {
+    let mut strength: std::collections::HashMap<u32, (u32, u32, usize)> =
+        std::collections::HashMap::new();
+    for p in &save.people {
+        let (Some(eid), Some(ability)) = (p.club_eid, p.ability.as_ref()) else {
+            continue;
+        };
+        let entry = strength.entry(eid).or_default();
+        entry.0 += u32::from(ability.current);
+        entry.1 += u32::from(ability.potential);
+        entry.2 += 1;
+    }
+    strength
 }
 
 /// The body of [`open_save`], without the Tauri handle, so the whole
@@ -260,15 +297,25 @@ pub fn load_save(
         })
         .collect();
 
+    let strength = squad_strength(&save);
     let clubs = save
         .clubs
         .iter()
-        .map(|c| ClubRow {
-            id: c.offset,
-            name: c.name.clone(),
-            short_name: c.short_name.clone(),
-            club_id: c.club_id,
-            nation_id: c.nation_id,
+        .map(|c| {
+            let totals = c.eid.and_then(|eid| strength.get(&eid)).copied();
+            let mean = |sum: u32, n: usize| -> Option<u16> {
+                (n > 0).then(|| u16::try_from(sum as usize / n).unwrap_or(u16::MAX))
+            };
+            ClubRow {
+                id: c.offset,
+                name: c.name.clone(),
+                short_name: c.short_name.clone(),
+                club_id: c.club_id,
+                nation_id: c.nation_id,
+                squad_size: totals.map_or(0, |t| t.2),
+                average_ability: totals.and_then(|t| mean(t.0, t.2)),
+                average_potential: totals.and_then(|t| mean(t.1, t.2)),
+            }
         })
         .collect();
 

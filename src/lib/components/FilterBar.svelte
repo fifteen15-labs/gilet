@@ -1,7 +1,18 @@
 <script lang="ts">
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { shortlists } from '$lib/classes/Shortlists.svelte';
-	import { hasAbilityData } from '$lib/utils/filter';
+	import { savedFilters } from '$lib/classes/SavedFilters.svelte';
+	import { describeFilters, hasAbilityData } from '$lib/utils/filter';
+
+	let savingPreset = $state(false);
+	let presetName = $state('');
+
+	async function submitPreset(event: SubmitEvent) {
+		event.preventDefault();
+		await savedFilters.save(presetName, scout.filters);
+		presetName = '';
+		savingPreset = false;
+	}
 
 	type Props = { onSaveResults: () => void };
 	const { onSaveResults }: Props = $props();
@@ -25,7 +36,9 @@
 		scout.filters.query.trim() !== '' ||
 			scout.filters.maxAge !== null ||
 			scout.filters.minAbility !== null ||
+			scout.filters.maxAbility !== null ||
 			scout.filters.minPotential !== null ||
+			scout.filters.maxPotential !== null ||
 			scout.filters.kind !== 'all' ||
 			scout.filters.position !== null ||
 			scout.filters.gender !== 'all' ||
@@ -109,27 +122,57 @@
 			class="flex items-center gap-1"
 			title={abilityKnown ? '' : 'This save has no ability data'}
 		>
-			<span class="eyebrow mr-1">CA over</span>
+			<span class="eyebrow mr-1">CA</span>
 			<input
 				type="number"
 				min="1"
 				max="200"
+				placeholder="min"
 				disabled={!abilityKnown}
 				bind:value={scout.filters.minAbility}
 				aria-label="Minimum current ability"
-				class="tabular w-16 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
-					focus:border-[var(--color-hivis)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
+				class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+					placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none
+					disabled:cursor-not-allowed disabled:opacity-40"
 			/>
-			<span class="eyebrow mr-1 ml-2">PA over</span>
+			<span class="text-xs text-[var(--color-faint)]">–</span>
 			<input
 				type="number"
 				min="1"
 				max="200"
+				placeholder="max"
+				disabled={!abilityKnown}
+				bind:value={scout.filters.maxAbility}
+				aria-label="Maximum current ability"
+				class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+					placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none
+					disabled:cursor-not-allowed disabled:opacity-40"
+			/>
+			<span class="eyebrow mr-1 ml-2">PA</span>
+			<input
+				type="number"
+				min="1"
+				max="200"
+				placeholder="min"
 				disabled={!abilityKnown}
 				bind:value={scout.filters.minPotential}
 				aria-label="Minimum potential ability"
-				class="tabular w-16 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
-					focus:border-[var(--color-hivis)] focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
+				class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+					placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none
+					disabled:cursor-not-allowed disabled:opacity-40"
+			/>
+			<span class="text-xs text-[var(--color-faint)]">–</span>
+			<input
+				type="number"
+				min="1"
+				max="200"
+				placeholder="max"
+				disabled={!abilityKnown}
+				bind:value={scout.filters.maxPotential}
+				aria-label="Maximum potential ability"
+				class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+					placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none
+					disabled:cursor-not-allowed disabled:opacity-40"
 			/>
 		</div>
 
@@ -206,11 +249,60 @@
 		</button>
 	{/if}
 
-	<button
-		type="button"
-		class="ml-auto text-xs text-[var(--color-faint)] hover:text-[var(--color-mist)]"
-		onclick={() => scout.reset()}
-	>
-		Clear filters
-	</button>
+	<div class="ml-auto flex items-center gap-2">
+		{#if savedFilters.presets.length > 0}
+			<select
+				aria-label="Load a saved filter"
+				class="max-w-40 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+					text-[var(--color-mist)] focus:border-[var(--color-hivis)] focus:outline-none"
+				onchange={(event) => {
+					const name = event.currentTarget.value;
+					const preset = savedFilters.get(name);
+					if (preset) scout.filters = preset;
+					event.currentTarget.value = '';
+				}}
+			>
+				<option value="">Saved filters</option>
+				{#each savedFilters.presets as preset (preset.name)}
+					<option value={preset.name}>{preset.name}</option>
+				{/each}
+			</select>
+		{/if}
+
+		{#if savingPreset}
+			<form onsubmit={submitPreset}>
+				<!-- svelte-ignore a11y_autofocus -->
+				<input
+					autofocus
+					bind:value={presetName}
+					placeholder="Name this filter"
+					class="w-36 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+						placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none"
+					onblur={() => !presetName && (savingPreset = false)}
+				/>
+			</form>
+		{:else if scout.tab === 'people'}
+			<button
+				type="button"
+				class="text-xs text-[var(--color-faint)] hover:text-[var(--color-mist)]
+					disabled:cursor-not-allowed disabled:opacity-40"
+				disabled={!filtered}
+				title={filtered ? `Save "${describeFilters(scout.filters)}"` : 'Set a filter first'}
+				onclick={() => {
+					presetName = describeFilters(scout.filters);
+					savingPreset = true;
+				}}
+			>
+				Save filter
+			</button>
+		{/if}
+
+		<button
+			type="button"
+			class="text-xs text-[var(--color-faint)] hover:text-[var(--color-mist)]"
+			onclick={() => scout.reset()}
+		>
+			Clear filters
+		</button>
+	</div>
 </div>

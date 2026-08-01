@@ -36,6 +36,8 @@ pub fn run() {
             commands::import_csv,
             shortlist::load_shortlists,
             shortlist::save_shortlists,
+            shortlist::load_filters,
+            shortlist::save_filters,
         ])
         .run(tauri::generate_context!());
 

@@ -42,6 +42,12 @@ export type Club = {
 	short_name: string;
 	club_id: number;
 	nation_id: number;
+	/** How many players the squad table lists for this club. */
+	squad_size: number;
+	/** Mean Current Ability across the squad; null when it has no players. */
+	average_ability: number | null;
+	/** Mean Potential Ability across the squad. */
+	average_potential: number | null;
 };
 
 export type SaveSummary = {
@@ -78,6 +84,14 @@ export type ImportResult = {
 export type Shortlist = {
 	name: string;
 	players: string[];
+};
+
+/** A named filter configuration, saved so a recurring search can be re-run. */
+export type SavedFilter = {
+	name: string;
+	/** The `Filters` object, stored opaquely so the backend never has to know
+	 * the shape of a frontend type. */
+	filters: unknown;
 };
 
 /** How far through parsing the backend is, as it reports it. */
@@ -120,4 +134,12 @@ export function loadShortlists(): Promise<Shortlist[]> {
 
 export function saveShortlists(lists: Shortlist[]): Promise<void> {
 	return invoke('save_shortlists', { lists });
+}
+
+export function loadFilters(): Promise<SavedFilter[]> {
+	return invoke<SavedFilter[]>('load_filters');
+}
+
+export function saveFilters(filters: SavedFilter[]): Promise<void> {
+	return invoke('save_filters', { filters });
 }
