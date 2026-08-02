@@ -7,6 +7,9 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 
 export type Player = {
 	id: number;
+	/** Person entity id — the save's own identifier, used for in-save
+	 * shortlist edits. Null for the few unresolved records. */
+	eid: number | null;
 	name: string;
 	born: string;
 	age: number;
@@ -58,6 +61,14 @@ export type Club = {
 	average_potential: number | null;
 };
 
+/** A shortlist as FM stores it inside the save, members already resolved to
+ * the same names the player table uses. */
+export type GameShortlist = {
+	/** The name given in FM; null for the unnamed default list. */
+	name: string | null;
+	players: string[];
+};
+
 export type SaveSummary = {
 	path: string;
 	players: Player[];
@@ -71,6 +82,8 @@ export type SaveSummary = {
 	/** The save's in-game date. Null when it could not be read, in which case
 	 * ages fall back to the system clock. */
 	game_date: string | null;
+	/** The human manager's shortlists read from the save itself. */
+	game_shortlists: GameShortlist[];
 	frames: number;
 	decompressed_bytes: number;
 	parse_millis: number;
@@ -146,6 +159,22 @@ export function importCsv(path: string, known: string[]): Promise<ImportResult> 
 
 export function defaultLocations(): Promise<Locations> {
 	return invoke<Locations>('default_locations');
+}
+
+/**
+ * Adds or removes a player on a shortlist inside the save file itself.
+ * The backend refuses to touch the file without a `.gilet.bak` sibling
+ * holding the untouched original. `list` null targets the unnamed default
+ * list; `date` is the save's own current date as [year, month, day].
+ */
+export function editGameShortlist(
+	path: string,
+	list: string | null,
+	eid: number,
+	add: boolean,
+	date: [number, number, number]
+): Promise<void> {
+	return invoke('edit_game_shortlist', { path, list, eid, add, date });
 }
 
 export function loadShortlists(): Promise<Shortlist[]> {

@@ -2,6 +2,7 @@
 	import { shortlists } from '$lib/classes/Shortlists.svelte';
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { profiles } from '$lib/classes/Profiles.svelte';
+	import type { GameShortlist } from '$lib/tauri/commands';
 
 	type Props = {
 		onExport: () => void;
@@ -45,6 +46,16 @@
 			scout.tab = 'people';
 			scout.selectedId = player.id;
 		}
+	}
+
+	/** Shortlists FM itself stores in the loaded save, importable one click at
+	 * a time. Read-only until imported: the save is never written. */
+	const inSave = $derived(scout.summary?.game_shortlists ?? []);
+
+	/** Copies an in-game shortlist into Gilet's own lists. `saveAs` suffixes
+	 * the name if it clashes, so re-importing never overwrites. */
+	async function importGame(list: GameShortlist) {
+		await shortlists.saveAs(list.name ?? 'FM Shortlist', list.players);
 	}
 </script>
 
@@ -163,6 +174,32 @@
 					No shortlists yet. Create one, then tick players to add them.
 				</p>
 			{/each}
+
+			{#if inSave.length > 0}
+				<div class="mt-3 border-t border-[var(--color-line)] pt-2 pb-2">
+					<h2 class="eyebrow px-2 pb-1" title="Shortlists FM stores inside the loaded save">
+						In this save
+					</h2>
+					{#each inSave as list (list)}
+						<div class="group flex items-center">
+							<span class="flex-1 truncate px-2 py-1 text-sm text-[var(--color-mist)]">
+								{list.name ?? '(unnamed)'}
+								<span class="tabular ml-1 text-xs text-[var(--color-faint)]">{list.players.length}</span>
+							</span>
+							<button
+								type="button"
+								class="px-2 text-xs text-[var(--color-faint)] opacity-0 transition-colors group-hover:opacity-100
+									hover:text-[var(--color-hivis)] disabled:cursor-not-allowed disabled:opacity-40"
+								disabled={list.players.length === 0}
+								title="Copy into Gilet's shortlists"
+								onclick={() => importGame(list)}
+							>
+								Import
+							</button>
+						</div>
+					{/each}
+				</div>
+			{/if}
 		</nav>
 
 		<div class="space-y-2 border-t border-[var(--color-line)] p-3">

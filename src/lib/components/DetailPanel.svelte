@@ -7,6 +7,8 @@
 	const player = $derived(scout.selectedPlayer);
 	const club = $derived(scout.selectedClub);
 	const shortlisted = $derived(player !== null && shortlists.activeMembers.has(player.name));
+	/** Shortlists stored in the save file itself, editable in place. */
+	const gameLists = $derived(scout.summary?.game_shortlists ?? []);
 </script>
 
 {#if player || club}
@@ -126,6 +128,40 @@
 						Add to {shortlists.active.name}
 					{/if}
 				</button>
+
+				{#if gameLists.length > 0 && player.eid !== null}
+					<div class="mt-4">
+						<h4
+							class="eyebrow mb-1.5"
+							title="Shortlists inside the save file. Edits write to the save — the untouched original is kept as a .gilet.bak sibling."
+						>
+							In-save shortlists
+						</h4>
+						{#if !scout.canEditGameShortlists}
+							<p class="text-xs leading-relaxed text-[var(--color-faint)]">
+								Read-only: this save's own date could not be read, so a
+								date-added field cannot be written honestly.
+							</p>
+						{:else}
+							<div class="space-y-1">
+								{#each gameLists as list (list)}
+									{@const on = list.players.includes(player.name)}
+									<button
+										type="button"
+										class="flex w-full items-center justify-between rounded-[2px] border py-1 pr-2 pl-2 text-xs transition-colors
+											{on
+											? 'border-[var(--color-hivis)] text-[var(--color-hivis)]'
+											: 'border-[var(--color-line)] text-[var(--color-mist)] hover:border-[var(--color-faint)]'}"
+										onclick={() => scout.toggleGameShortlist(list, player)}
+									>
+										<span class="truncate">{list.name ?? '(unnamed)'}</span>
+										<span class="tabular ml-2 shrink-0">{on ? '− remove' : '+ add'}</span>
+									</button>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{/if}
 
 			{:else if club}
 				<dl class="space-y-3">

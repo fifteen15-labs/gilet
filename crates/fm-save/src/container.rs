@@ -95,7 +95,7 @@ fn find_next_frame(bytes: &[u8], from: usize) -> Option<usize> {
 /// bytes it used. Stopping at the frame boundary is the whole point: the `zstd`
 /// CLI and stream readers either read across frames or reject the tail
 /// outright.
-fn decode_one(src: &[u8]) -> std::result::Result<(Vec<u8>, usize), ZstdError> {
+pub(crate) fn decode_one(src: &[u8]) -> std::result::Result<(Vec<u8>, usize), ZstdError> {
     let mut ctx = DCtx::create();
     let mut input = InBuffer::around(src);
     // zstd-safe implements its output trait for slices, not `Vec`, so decode

@@ -31,11 +31,96 @@ Two traps:
   magic occurrences but only **1,215 real frames**. Always advance by bytes
   consumed, and only scan for the next magic when recovering from an error.
 
-Every decompressed frame starts with `03 01` + `"tad."`. Frame 0 also carries
-the version string `26.0.0+0`.
+Every decompressed frame starts with `03 01` + `"tad."` — except the last,
+which is the member manifest (§1b). Frame 0 also carries the version string
+`26.0.0+0`.
 
-Frame 3 is the main database: 29.7 MB compressed, **105.7 MB decompressed**.
-Everything below lives in frame 3.
+Frame 3 is the main database — the manifest names it `game_db.dat`: 29.7 MB
+compressed, **105.7 MB decompressed**. Everything below (§§2–6) lives in
+frame 3.
+
+## 1b. The member manifest — every frame has a name, SOLVED
+
+The save is not an anonymous frame stream. It is an **archive**, and the last
+frame is its manifest — the same member layout as the `.fmf` shortlist archive
+(`SHORTLIST_FORMAT.md` §3), which is how it was recognised. The manifest frame
+has no `03 01 "tad."` prefix; decompressed it reads:
+
+```
+u32 len + bytes     save name ("Career")
+u32                 top-level member count
+per member:
+  u32 len + bytes   name parts, repeated until one begins with '.'
+  u64               offset, relative to byte 26
+  u64               stored length == the member's compressed frame size
+  u64               plaintext length == the member's decompressed size
+  8 bytes           stamp   (paired values consistent with unix timestamps)
+  8 bytes           stamp
+u32                 sub-archive count
+per sub-archive:
+  u32 len + bytes   name ("rgman")
+  u32               child count
+  children          same member record as above
+00 00 00 00         terminator
+```
+
+Members sorted by offset are exactly the frames in file order: the reference
+save declares 77 top-level members plus one sub-archive `rgman` of 1,137
+competition rule groups (`comp_<uid>.dat`), 1,214 in all — frames 0–1213, with
+the manifest itself as frame 1214. Offsets tile the file from 0 with no gaps,
+and all 1,214 plaintext lengths match the decompressed frames byte for byte.
+Verified identically against a 188 MB `Ongoing.fm` (106 members) and a fresh
+career's save.
+
+Two things follow:
+
+- **Random access.** `offset + 26` is a file position; one seek and one zstd
+  frame decode extracts any member. No need to decompress the save up to it.
+  `research/members.py` lists and extracts by name.
+- **A map of everything not yet decoded.** `shortlist_man.dat`,
+  `tactics_man.dat`, `injury_manager.dat`, `transfer_man.dat`,
+  `humans.dat` — each subsystem is a named member, so future work starts from
+  a labelled 1–2 MB frame instead of a 106 MB haystack.
+
+Named members confirmed so far: `game_info.dat` (frame 0), `memory_pools.dat`,
+`save_game_summary.dat`, `game_db.dat` (frame 3), `humans.dat`,
+`shortlist_man.dat`, `manager_manager.dat`, `scout_man.dat`, and ~70 more —
+run `members.py` for the full list of a given save.
+
+## 1c. The in-game date — SOLVED on both format versions
+
+Dates throughout the save are `(u16 day_of_year, u16 year)` pairs, the same
+encoding as a date of birth. Where the *current* date lives depends on the
+format version, which is the string in frame 0 at offset 12 (`"26.0.0+0"`,
+`"26.2.0+0"`).
+
+**26.0.0**: the header frame (`game_info.dat`) holds the current date at
+offset 50, and exactly one valid pair exists in that frame, so a validated
+scan is reliable. Career.fm reads (299, 2025) = 26 October 2025, the known
+true date.
+
+**26.2.0**: the header pair is gone. Offset 50 instead holds a career-constant
+value (identical across saves of the same career, e.g. `d5 68 ea 07` on both
+Afan Lido saves) whose year half reads the real-world year — not the in-game
+date. The current date moved to the **main frame's week stamp** at `game_db`
+offset 0x2A: a u16 whose **low nine bits are the day of year** (the high seven
+vary per save and are not understood — 0, 13 and 41 observed), then the u16
+year. It tracks the weekly rollover, so it lags the true date by up to a week.
+Two verifications: the 2035 save masks to 24 May 2035 against a known true
+28 May, and the Afan Lido save masks to day 159 of 2026 (8 June), which is
+exactly the current-date stamp repeated through that save's
+`rgman/comp_*.dat` competition frames.
+
+**Do not apply the mask to a 26.0.0 save.** There the same offset holds a
+different quantity: Career.fm's `0x1EC7` masks to day 199 (18 July) against a
+true 26 October. The reader gates the masked read on the format version and
+still refuses to guess when both sources fail.
+
+The save-list summary (`save_game_summary.dat`) repeats the same stamp pair
+after the manager's name and club, so it is a stale copy too, not an exact
+source. The exact current date does exist per-save in the `rgman/comp_*.dat`
+members, but which competitions carry it varies by career, so nothing is read
+from there.
 
 ## 2. String table — SOLVED, sectioned
 
@@ -203,13 +288,30 @@ and human-manager avatars.
 
 ### The second object — where staff data lives
 
-A person record contains **two** entity objects, with consecutive entity
-ids: the person object (what squads reference) and a non-player object. The
-second identity block is followed by `01/02`, three u16s, a pair, and — laid
-out exactly like a player's — **a second 54-byte attribute block** on the
-1-100 scale, index 25 = 100, with its own 15 position bytes. The scanner
-never saw these because the CA/PA offsets in front land in an `FF` run,
-which the block test rejects.
+A person owns **two** entity objects: the person object (what squads
+reference) and a non-player object. Their **uids are persistent DB ids**
+(Haaland's player object is uid 29179241 — the same id sortitoutsi and
+fmscout use in their URLs — and his non-player object 29179299 in every
+save), while **eids are per-save indexes** that renumber between saves
+(that non-player object is eid 10242 in Career.fm, 12400 in the 2035 save).
+
+The non-player object is *inside* the person record only sometimes (~1,100
+of 49,217 records in Career.fm, `objmap` example); usually it lives
+elsewhere and the record carries 30-byte references instead:
+`10 00 [u32][u32] [flags] 04 00 00 00 [eid][uid][uid]`, zero to two of
+them directly after the person's identity block on aged saves. Where the
+in-record object does occur, its identity block is followed by `01/02`,
+three u16s, a pair, and — laid out exactly like a player's — **a second
+54-byte attribute block** on the 1-100 scale, index 25 = 100, with its own
+15 position bytes. The scanner never saw these because the CA/PA offsets in
+front land in an `FF` run, which the block test rejects.
+
+Directly after the person's own identity block (past any `10 00`
+references) sits a `02 [u16 A][u16 B][u16 C] ...` run of live state. It is
+**not** the reputation triple, despite its shape: published FM 26
+reputations order Haaland 96 > Chevalier 70 while the run reads Chevalier
+6400 > Haaland 5250 in the same save. Its semantics are open —
+`OPEN_PROBLEMS.md` §3b has the full evidence.
 
 For pure staff (Emery), the record instead carries an id→value row list
 (`[u32 id] … [value 1-100] [4f|00] ff` rows) holding coaching badges and
@@ -234,7 +336,8 @@ u32  nation_id         (repeated)
 u32  nation_id         (repeated)
 u32  club_id
 3    UNKNOWN
-3    10 FF FF          signature
+u8   flags             usually 0x10; 0x00/0x01/0x11/0x12/0x14/0x30 also occur
+2    FF FF             signature
 u32  name_length
 [u8] name              e.g. "Manchester City"
 u32  short_length
@@ -253,11 +356,18 @@ that distinct club entities share display names: the reference save has two
 "Manchester City" clubs, eid 369 (men) and eid 15524 (women), each with its
 own squad.
 
-The `10 FF FF` signature is doing real work. Two consecutive length-prefixed
-strings is not a specific enough shape on its own — the file also contains the
-commentary word lists, which produce thousands of pairs like
-`("admirable", "amazing")` and `("bewitching", "brilliant")`. Requiring the
-signature and an initial capital removes them.
+The byte before `FF FF` is a **per-club flags byte, not part of the
+signature**. An Afan Lido save reads 0x10 on 17,203 records but 0x00 on 522,
+0x11 on 299, 0x12 on 6 (Tottenham and Chelsea among them), 0x14 on 3 and 0x30
+on 13. Anchoring the scan on `10 FF FF` silently dropped every non-0x10 club —
+and squads validate against the club table, so those clubs' entire squads
+vanished with them and their contracted first-teamers showed no club. The
+reader now accepts any flags byte when the entity head validates, and requires
+the long-verified 0x10 only for records without a validating head, because two
+consecutive length-prefixed strings is not a specific enough shape on its own —
+the file also contains the commentary word lists, which produce thousands of
+pairs like `("admirable", "amazing")` and `("bewitching", "brilliant")`.
+Requiring an initial capital removes those too.
 
 ### The eight u32s after the short name are not teams
 
@@ -379,7 +489,7 @@ resolve to ST alone, Saka to AMR/AML, Mbappé to AML/ST/AMR, Bellingham to
 MC/AMC/ML, Messi to AMR/AMC/ST, and Naomi Girma to DC. The population shape is
 right too — centre-back most common, sweeper unused.
 
-## 6c. Attribute names — 45 of 54, every visible outfield one
+## 6c. Attribute names — 49 of 54, every visible attribute named
 
 **Method: intersect in-game player reports.** An index can carry a name only
 if every report showing that name agrees with the decoded value there. One
@@ -420,17 +530,32 @@ players. The one left-footer among the five reports reads 20 at index 24 and
 | 8 | Penalty Taking | 29 | Work Rate | 50 | Natural Fitness |
 | 9 | Tackling | 30 | Long Throws | 51 | Determination |
 | 10 | Vision | 31 | Eccentricity | 52 | Composure |
-| 13 | Command of Area | 32 | Rushing Out Tendency | 53 | Concentration |
-| 15 | Kicking | 33 | Punching Tendency | | |
-| 16 | Throwing | 34 | Acceleration | | |
-| 17 | Anticipation | 35 | Free Kick Taking | | |
-| 18 | Decisions | 36 | Strength | | |
+| 11 | Handling | 32 | Rushing Out Tendency | 53 | Concentration |
+| 12 | Aerial Reach | 33 | Punching Tendency | | |
+| 13 | Command of Area | 34 | Acceleration | | |
+| 14 | Communication | 35 | Free Kick Taking | | |
+| 15 | Kicking | 36 | Strength | | |
+| 16 | Throwing | | | | |
+| 17 | Anticipation | | | | |
+| 18 | Decisions | | | | |
 | 19 | One on Ones | | | | |
 
-Unnamed: **11, 12, 14, 21** hold Aerial Reach, Communication, Handling and
-Reflexes in some order — all read 15 for the one keeper seen, so a second
-keeper report separates them — and **41, 44, 47, 48, 49** are hidden
-attributes no player screen ever shows.
+**The last four goalkeeping indices fell to published data.** fminside.net
+serves the FM 26.2 database with display×5 values — the same source class
+as the FM Scout wage check — so a player page works as a report without a
+screenshot. Donnarumma's page splits Handling 80 / Aerial Reach 75 /
+Communication 70 / Reflexes 90 where the in-game keeper report read 15 at
+all four; his decoded block matches exactly (11=16, 12=15, 14=14, 21=18)
+and Alisson's page is consistent with his (17/14/14/17). Chevalier's
+distinctive published Punching (display 5) re-confirmed index 33, and the
+same pages re-verified the Passing/First Touch, Bravery/Concentration and
+Vision splits on four players. Locked by
+`published_keeper_attributes_split_the_last_four` in `real_save.rs`.
+
+Unnamed: **41, 44, 47, 48, 49** are the five hidden attributes no player
+screen ever shows (Consistency, Important Matches, Injury Proneness,
+Dirtiness, Versatility in some order — partial evidence in
+`OPEN_PROBLEMS.md` §2).
 
 Two labels the statistical era got wrong, both corrected by ground truth:
 index 40 was "Aggression" and is Leadership (Aggression is 45), and index 10
@@ -575,6 +700,71 @@ retired — get `None`, not zero.
 
 Transfer *value* has not been found and is probably computed by the game
 rather than stored.
+
+## 6f. In-game shortlists — SOLVED, in `scout_man.dat`
+
+The human manager's shortlists live in the `scout_man.dat` member (§1b), not
+in `game_db.dat` — a few KB, located through the manifest and read by
+`shortlist.rs`. Decoded 2 August 2026 against a probe save whose shortlists
+were created minutes earlier with known contents, then verified end to end:
+`ZZPROBE` = van Dijk, Wirtz, Salah, in creation order, resolved through
+person entity ids by the ordinary parse.
+
+After the frame's `03 01 "tad."` header, shortlist records follow, one per
+list plus lookalike records for scouting focuses:
+
+```
+1e 00 06 f8 43 01 00 01        record separator (first record differs)
+... flags ...
+FF FF FF FF  01 01 00  6c 07   head run; 6c 07 = year 1900
+[u32 len] [name]               the list's name; len 0 = the unnamed default
+... filter block               "frlp"/"tlif", nation and division ranges;
+                               a focus carries "flpn" + "manP" instead
+"rSrP" 00 [u32 count]          the player list
+per entry, 22 bytes:
+  02                           entity type tag
+  [u32 person eid]             resolves against Person::eid
+  [u32 date added]             the masked day-of-year pair of §1c: day of
+                               year in the low nine bits of the first u16
+                               (probe entries: 0x1a9f → day 159 = 8 June,
+                               the career's current date), then the year
+  [u32 0]
+  01 00 6c 07                  null date (day 1, year 1900)
+  FF FF FF FF
+  00
+... 75 x u32                   column ids for the shortlist view
+```
+
+The parser anchors on `rSrP`, reads the count and entries, and takes the name
+from the last head run before the tag. A focus record has no `rSrP` and so
+contributes nothing. Entries whose type tag or eid range fails drop the whole
+block rather than half-read it.
+
+The tags echo names FM has used for years: `tslf`/`tslm` (shortlist file /
+manager — the `.slf` extension) mark the same structures in `humans.dat`,
+which holds only filter state, no player lists.
+
+**Writing.** Since the format and the date encoding are both known, edits go
+back in: `shortlist::add_entry`/`remove_entry` splice a 22-byte entry and fix
+the count, and `archive::replace_member` rebuilds the save around the changed
+member — recompressing it, re-tiling every offset after it, rewriting the
+manifest, and repointing the header u32 at +9, which sits exactly nine bytes
+before the inner `02 01 "fmf." 08 00 00` container that precedes the manifest
+frame (verified on all four saves examined). Identity reassembly is
+byte-identical on a real save, and an in-memory add survives a full reparse
+(`probe_save_survives_reassembly_and_a_shortlist_edit`). New entries write
+the day-of-year with the high seven bits zero — an attested value of that
+field (§1c observes 0, 13 and 41) — because those bits' meaning is unknown.
+**FM accepts the result**: verified 2 August 2026 by loading a rewritten
+save in the game and seeing the added player on the shortlist — which also
+means FM tolerates a zstd level different from its own and the zeroed high
+date bits.
+
+Still unknown: those high seven bits, the flag bytes in the record head, the
+filter block's meaning beyond its nation/division range lists, and everything
+in the 1.6 MB `shortlist_man.dat` member — descending ranked pools of
+`(eid, reputation-like value)` pairs, the AI's candidate lists, with no
+strings anywhere.
 
 ## 7. Prior art
 

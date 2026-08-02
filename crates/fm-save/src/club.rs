@@ -23,11 +23,19 @@ pub struct Club {
     pub short_name: String,
 }
 
-/// Marks the end of a club header, immediately before the name length. Without
-/// a signature this shape (two length-prefixed strings) also matches the
-/// commentary word lists elsewhere in the file, which produce thousands of
-/// pairs like `("admirable", "amazing")`.
-const SIGNATURE: [u8; 3] = [0x10, 0xFF, 0xFF];
+/// Marks the end of a club header, immediately before the name length. The
+/// byte before it is a per-club flags byte, not a constant: real saves carry
+/// 0x00, 0x01, 0x10, 0x11, 0x12, 0x14 and 0x30 (Tottenham and Chelsea sit at
+/// 0x12), so anchoring on `10 FF FF` silently dropped those clubs — and with
+/// them their squads, which is how contracted first-teamers showed no club.
+const SIGNATURE: [u8; 2] = [0xFF, 0xFF];
+
+/// The flags byte a record must carry when its entity head does *not*
+/// validate. A validated `[eid][uid][uid]` head is proof enough on its own;
+/// without one, only the long-verified 0x10 shape is trusted, because the
+/// two-string tail alone also matches commentary word lists elsewhere in the
+/// file ("admirable", "amazing", ...).
+const HEADLESS_FLAGS: u8 = 0x10;
 
 const MIN_NAME: usize = 3;
 const MAX_NAME: usize = 64;
@@ -58,17 +66,21 @@ pub fn scan_clubs(frame: &[u8]) -> Vec<Club> {
     let mut at = 0usize;
 
     while at + SIGNATURE.len() + 8 < frame.len() {
-        if frame.get(at..at + SIGNATURE.len()) != Some(&SIGNATURE[..]) {
+        if at == 0 || frame.get(at..at + SIGNATURE.len()) != Some(&SIGNATURE[..]) {
             at += 1;
             continue;
         }
         let len_at = at + SIGNATURE.len();
+        let flags = frame.get(at.wrapping_sub(1)).copied();
         match parse_at(frame, len_at) {
-            Some(club) => {
+            // A club is real when its entity head validates, whatever the
+            // flags byte reads; a headless record is only trusted in the
+            // long-verified 0x10 shape.
+            Some(club) if club.eid.is_some() || flags == Some(HEADLESS_FLAGS) => {
                 at = club.offset + club.name.len() + club.short_name.len() + 8;
                 out.push(club);
             }
-            None => at += 1,
+            _ => at += 1,
         }
     }
 
@@ -151,10 +163,15 @@ mod tests {
     use super::*;
 
     fn record(nation: u32, club_id: u32, name: &str, short: &str) -> Vec<u8> {
-        record_with_head(369, 678, nation, club_id, name, short)
+        record_flagged(369, 678, nation, club_id, name, short, HEADLESS_FLAGS)
     }
 
     fn record_with_head(eid: u32, uid: u32, nation: u32, club_id: u32, name: &str, short: &str) -> Vec<u8> {
+        record_flagged(eid, uid, nation, club_id, name, short, HEADLESS_FLAGS)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn record_flagged(eid: u32, uid: u32, nation: u32, club_id: u32, name: &str, short: &str, flags: u8) -> Vec<u8> {
         let mut v = Vec::new();
         v.extend_from_slice(&eid.to_le_bytes());
         v.extend_from_slice(&uid.to_le_bytes());
@@ -166,6 +183,7 @@ mod tests {
         v.extend_from_slice(&nation.to_le_bytes());
         v.extend_from_slice(&club_id.to_le_bytes());
         v.extend_from_slice(&[0x00, 0x0A, 0x00]);
+        v.push(flags);
         v.extend_from_slice(&SIGNATURE);
         v.extend_from_slice(&(name.len() as u32).to_le_bytes());
         v.extend_from_slice(name.as_bytes());
@@ -216,9 +234,30 @@ mod tests {
     #[test]
     fn ignores_bytes_without_the_signature() {
         let mut buf = record(139, 1075, "Manchester City", "Man City");
-        // Break the signature; the record must no longer be recognised.
-        let sig_at = buf.len() - 8 - 15 - 4 - 3;
+        // Break the FF FF pair; the record must no longer be recognised.
+        let sig_at = buf.len() - 8 - 15 - 4 - 2;
         *buf.get_mut(sig_at).unwrap() = 0x11;
+        assert!(scan_clubs(&buf).is_empty());
+    }
+
+    #[test]
+    fn a_validated_head_carries_any_flags_byte() {
+        // Tottenham's real record reads 0x12 where most clubs read 0x10; the
+        // entity head still validates, and dropping the club dropped its whole
+        // squad — Sarr and Bissouma showed no club despite live contracts.
+        let buf = record_flagged(418, 727, 139, 1040, "Tottenham Hotspur", "Spurs", 0x12);
+        let found = scan_clubs(&buf);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found.first().unwrap().eid, Some(418));
+        assert_eq!(found.first().unwrap().uid, Some(727));
+    }
+
+    #[test]
+    fn a_headless_record_needs_the_trusted_flags_byte() {
+        // Without a validating head the two-string tail also matches word
+        // lists, so an unknown flags byte is not enough to admit the record.
+        let mut buf = record_flagged(418, 727, 139, 1040, "Tottenham Hotspur", "Spurs", 0x12);
+        *buf.get_mut(4).unwrap() ^= 0xFF; // break the repeated uid
         assert!(scan_clubs(&buf).is_empty());
     }
 

@@ -458,6 +458,10 @@ const CONTRACT_WINDOW: usize = 220;
 /// Latest plausible contract expiry year; beyond this is a misread.
 const MAX_CONTRACT_YEAR: u16 = 2060;
 
+/// Earliest plausible contract expiry year. Free agents carry a sentinel of
+/// the null date's era (2 January 1900), which is "no expiry", not a date.
+const MIN_CONTRACT_YEAR: u16 = 1950;
+
 /// Reads each person's contract from the block preceding their record.
 ///
 /// The block is anchored on the person's own entity id:
@@ -489,10 +493,10 @@ pub fn bind_contracts(frame: &[u8], people: &mut [Person]) {
         {
             continue;
         }
-        person.wage = read_u32(frame, p + 12);
+        let wage = read_u32(frame, p + 12);
 
         // Expiry: the date pair after the last 8xFF run before the anchor.
-        person.contract_until = frame
+        let until = frame
             .get(lo..p)
             .and_then(|w| {
                 w.windows(8).enumerate().rev().find(|(_, run)| run == &[0xFF; 8]).map(|(i, _)| lo + i)
@@ -500,11 +504,19 @@ pub fn bind_contracts(frame: &[u8], people: &mut [Person]) {
             .and_then(|q| {
                 let day = read_u16(frame, q + 8)?;
                 let year = read_u16(frame, q + 10)?;
-                if year > MAX_CONTRACT_YEAR {
+                if !(MIN_CONTRACT_YEAR..=MAX_CONTRACT_YEAR).contains(&year) {
                     return None;
                 }
                 Date::from_day_of_year(day, year)
             });
+
+        // A zero wage with no expiry is a free agent's sentinel row, not a
+        // contract; a zero wage *with* an expiry is a real amateur deal.
+        if wage == Some(0) && until.is_none() {
+            continue;
+        }
+        person.wage = wage;
+        person.contract_until = until;
     }
 }
 
@@ -881,6 +893,38 @@ mod tests {
 
         assert_eq!(people.first().unwrap().wage, None);
         assert_eq!(people.first().unwrap().contract_until, None);
+    }
+
+    #[test]
+    fn a_free_agents_sentinel_row_is_not_a_contract() {
+        // Free agents carry wage 0 with the null-era expiry (2 January 1900).
+        // Showing that as a contract is what made club-less players look
+        // employed in the UI.
+        let mut buf = contract(50, 0, 2, 1900);
+        buf.extend(record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000));
+        buf.extend(identity_block(50, 9_000_001));
+
+        let mut people = scan_people(&buf, &table());
+        bind_identities(&buf, &mut people, 0);
+        bind_contracts(&buf, &mut people);
+
+        assert_eq!(people.first().unwrap().wage, None);
+        assert_eq!(people.first().unwrap().contract_until, None);
+    }
+
+    #[test]
+    fn an_amateur_deal_keeps_its_zero_wage() {
+        // A real expiry with no wage is an amateur contract, not a sentinel.
+        let mut buf = contract(50, 0, 151, 2027);
+        buf.extend(record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000));
+        buf.extend(identity_block(50, 9_000_001));
+
+        let mut people = scan_people(&buf, &table());
+        bind_identities(&buf, &mut people, 0);
+        bind_contracts(&buf, &mut people);
+
+        assert_eq!(people.first().unwrap().wage, Some(0));
+        assert_eq!(people.first().unwrap().contract_until.map(|d| d.year), Some(2027));
     }
 
     #[test]

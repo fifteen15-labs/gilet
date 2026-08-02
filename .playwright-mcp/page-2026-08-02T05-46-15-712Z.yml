@@ -1,0 +1,326 @@
+- generic [active] [ref=f324e1]:
+  - alert [ref=f324e2]
+  - banner [ref=f324e3]:
+    - generic [ref=f324e5]:
+      - link [ref=f324e6] [cursor=pointer]:
+        - /url: /
+        - img "EFEM Logo" [ref=f324e7]
+      - list [ref=f324e9]:
+        - listitem [ref=f324e10]:
+          - link "Players" [ref=f324e11] [cursor=pointer]:
+            - /url: /players
+        - listitem [ref=f324e12]:
+          - link "Staff" [ref=f324e13] [cursor=pointer]:
+            - /url: /staff
+        - listitem [ref=f324e14]:
+          - link "Clubs" [ref=f324e15] [cursor=pointer]:
+            - /url: /clubs
+        - listitem [ref=f324e16]:
+          - link "Nations" [ref=f324e17] [cursor=pointer]:
+            - /url: /nations
+        - listitem [ref=f324e18]:
+          - link "Shortlists" [ref=f324e19] [cursor=pointer]:
+            - /url: /shortlists
+        - listitem [ref=f324e20]:
+          - link "Discord Bot" [ref=f324e21] [cursor=pointer]:
+            - /url: /discord-bot
+        - listitem [ref=f324e22]:
+          - link "Personality Calculator" [ref=f324e23] [cursor=pointer]:
+            - /url: /personality-calculator
+        - listitem [ref=f324e24]:
+          - link "Analyse Player" [ref=f324e25] [cursor=pointer]:
+            - /url: /analyse-player
+      - generic [ref=f324e26]:
+        - search "Site search" [ref=f324e28]:
+          - combobox "Search players, clubs, staff, and nations" [ref=f324e30]
+        - generic [ref=f324e31]:
+          - link "Support EFEM" [ref=f324e32] [cursor=pointer]:
+            - /url: /login
+          - link "Sign In" [ref=f324e33] [cursor=pointer]:
+            - /url: /login
+  - main [ref=f324e34]:
+    - generic [ref=f324e36]:
+      - generic [ref=f324e37]:
+        - generic [ref=f324e40]:
+          - navigation "Breadcrumb" [ref=f324e41]:
+            - list [ref=f324e42]:
+              - listitem [ref=f324e43]:
+                - link "Home" [ref=f324e44] [cursor=pointer]:
+                  - /url: /
+              - listitem [ref=f324e45]:
+                - text: /
+                - link "Staff" [ref=f324e46] [cursor=pointer]:
+                  - /url: /staff
+              - listitem [ref=f324e47]: /Unai Emery
+          - generic [ref=f324e48]:
+            - generic [ref=f324e49]:
+              - generic [ref=f324e50]:
+                - img "Unai Emery" [ref=f324e52]
+                - generic [ref=f324e53]:
+                  - generic [ref=f324e54]: "Image source:"
+                  - link "DF11Faces.com" [ref=f324e55] [cursor=pointer]:
+                    - /url: https://df11faces.com/
+              - generic [ref=f324e56]:
+                - generic [ref=f324e57]:
+                  - generic [ref=f324e58]: "86"
+                  - heading "Unai Emery" [level=1] [ref=f324e61]
+                - generic [ref=f324e64]:
+                  - img "Aston Villa" [ref=f324e65]
+                  - link "Aston Villa" [ref=f324e66] [cursor=pointer]:
+                    - /url: /clubs/603-Aston-Villa
+                  - img "Spain" [ref=f324e67]
+                  - link "Spain" [ref=f324e68] [cursor=pointer]:
+                    - /url: /nations/796-Spain
+                - generic [ref=f324e69]: 55 yrs old
+              - generic [ref=f324e74]:
+                - link "High Potential" [ref=f324e75] [cursor=pointer]:
+                  - /url: /staff/tags/HighPotential
+                - link "Top Manager" [ref=f324e76] [cursor=pointer]:
+                  - /url: /staff/tags/TopManager
+                - link "Elite" [ref=f324e77] [cursor=pointer]:
+                  - /url: /staff/tags/Elite
+                - link "International Role" [ref=f324e78] [cursor=pointer]:
+                  - /url: /staff/tags/InternationalRole
+                - link "Dual Roles" [ref=f324e79] [cursor=pointer]:
+                  - /url: /staff/tags/DualRoles
+                - link "Respected" [ref=f324e80] [cursor=pointer]:
+                  - /url: /staff/tags/Respected
+                - link "Manager" [ref=f324e81] [cursor=pointer]:
+                  - /url: /staff/tags/Manager
+                - link "High Attributes" [ref=f324e82] [cursor=pointer]:
+                  - /url: /staff/tags/HighAttributes
+                - link "Strong Coach" [ref=f324e83] [cursor=pointer]:
+                  - /url: /staff/tags/StrongCoach
+                - link "Strong Tactics" [ref=f324e84] [cursor=pointer]:
+                  - /url: /staff/tags/StrongTactics
+                - link "Good Judge Of Players" [ref=f324e85] [cursor=pointer]:
+                  - /url: /staff/tags/GoodJudgeOfPlayers
+                - link "Strong Fitness Training" [ref=f324e86] [cursor=pointer]:
+                  - /url: /staff/tags/StrongFitnessTraining
+                - link "High Loyalty" [ref=f324e87] [cursor=pointer]:
+                  - /url: /staff/tags/HighLoyalty
+            - combobox "Select staff database version" [ref=f324e89]:
+              - option "26.2.0" [selected]
+              - option "26.0.0"
+              - option "24.3.0"
+        - complementary "Advertisement" [ref=f324e91]:
+          - insertion [ref=f324e92]:
+            - iframe [ref=f324e94]:
+              - generic [ref=f333e3]:
+                - button [ref=f333e4]
+                - generic [ref=f333e7]:
+                  - generic [ref=f333e9]:
+                    - generic [ref=f333e13]:
+                      - button "Play video" [ref=f333e17] [cursor=pointer]
+                      - button "Unmute video" [ref=f333e23] [cursor=pointer]
+                    - button "Replay" [ref=f333e30]
+                  - button "Learn more" [ref=f333e44] [cursor=pointer]
+        - generic [ref=f324e96]:
+          - generic [ref=f324e97]:
+            - generic [ref=f324e98]:
+              - heading "Details" [level=2] [ref=f324e99]
+              - generic [ref=f324e100]:
+                - generic [ref=f324e101]: Club
+                - generic [ref=f324e102]: Aston Villa
+              - generic [ref=f324e103]:
+                - generic [ref=f324e104]: Age
+                - generic [ref=f324e105]: "55"
+              - generic [ref=f324e106]:
+                - generic [ref=f324e107]: Job
+                - generic [ref=f324e108]: Manager
+            - generic [ref=f324e109]:
+              - heading "Contract" [level=2] [ref=f324e110]
+              - generic [ref=f324e111]:
+                - generic [ref=f324e112]: Contract Expires On
+                - generic [ref=f324e113]: 2029-06-30
+              - generic [ref=f324e114]:
+                - generic [ref=f324e115]: Full Time
+                - generic [ref=f324e116]: "Yes"
+              - generic [ref=f324e117]: Secondary Job
+              - generic [ref=f324e119]:
+                - generic [ref=f324e120]: Wage per Week
+                - generic [ref=f324e121]: £150k
+            - generic [ref=f324e123]:
+              - heading "Job Rating" [level=2] [ref=f324e124]
+              - heading "83" [level=2] [ref=f324e125]
+          - generic [ref=f324e128]:
+            - generic [ref=f324e129]:
+              - generic [ref=f324e131]:
+                - heading "Ability" [level=2] [ref=f324e132]
+                - heading "86" [level=2] [ref=f324e133]
+              - generic [ref=f324e137]:
+                - heading "Potential" [level=2] [ref=f324e138]
+                - heading "87" [level=2] [ref=f324e139]
+            - generic [ref=f324e144]:
+              - heading "Reputation" [level=2] [ref=f324e145]
+              - heading "86" [level=2] [ref=f324e146]
+          - generic [ref=f324e149]:
+            - heading "Pros" [level=2] [ref=f324e152]
+            - heading "Cons" [level=2] [ref=f324e155]
+        - generic [ref=f324e156]:
+          - heading "Job Breakdown" [level=1] [ref=f324e157]
+          - generic [ref=f324e158]:
+            - generic [ref=f324e159]:
+              - generic [ref=f324e161]:
+                - heading "Manager" [level=2] [ref=f324e162]
+                - heading "83" [level=2] [ref=f324e163]
+              - generic [ref=f324e167]:
+                - heading "Outfield Coach" [level=2] [ref=f324e168]
+                - heading "84" [level=2] [ref=f324e169]
+              - generic [ref=f324e173]:
+                - heading "Director of Football" [level=2] [ref=f324e174]
+                - heading "83" [level=2] [ref=f324e175]
+            - generic [ref=f324e178]:
+              - generic [ref=f324e180]:
+                - heading "Goalkeeping Coach" [level=2] [ref=f324e181]
+                - heading "57" [level=2] [ref=f324e182]
+              - generic [ref=f324e186]:
+                - heading "Fitness Coach" [level=2] [ref=f324e187]
+                - heading "80" [level=2] [ref=f324e188]
+              - generic [ref=f324e192]:
+                - heading "Set Piece Coach" [level=2] [ref=f324e193]
+                - heading "74" [level=2] [ref=f324e194]
+            - generic [ref=f324e197]:
+              - generic [ref=f324e199]:
+                - heading "Scout" [level=2] [ref=f324e200]
+                - heading "72" [level=2] [ref=f324e201]
+              - generic [ref=f324e205]:
+                - heading "Head of Youth Development" [level=2] [ref=f324e206]
+                - heading "80" [level=2] [ref=f324e207]
+              - generic [ref=f324e211]:
+                - heading "Analyst" [level=2] [ref=f324e212]
+                - heading "75" [level=2] [ref=f324e213]
+            - generic [ref=f324e216]:
+              - generic [ref=f324e218]:
+                - heading "Technical Director" [level=2] [ref=f324e219]
+                - heading "84" [level=2] [ref=f324e220]
+              - generic [ref=f324e224]:
+                - heading "Physio" [level=2] [ref=f324e225]
+                - heading "26" [level=2] [ref=f324e226]
+              - generic [ref=f324e230]:
+                - heading "Sports Scientist" [level=2] [ref=f324e231]
+                - heading "32" [level=2] [ref=f324e232]
+        - generic [ref=f324e235]:
+          - heading "Attributes" [level=1] [ref=f324e236]
+          - generic [ref=f324e239]:
+            - heading "Total Attributes" [level=2] [ref=f324e240]
+            - heading "84" [level=2] [ref=f324e241]
+          - generic [ref=f324e244]:
+            - generic [ref=f324e245]:
+              - button [ref=f324e247] [cursor=pointer]:
+                - generic [ref=f324e248]:
+                  - generic [ref=f324e250]:
+                    - heading "Coaching" [level=2] [ref=f324e251]
+                    - heading "84" [level=2] [ref=f324e252]
+                  - generic [ref=f324e256]:
+                    - heading "Gk Coaching" [level=2] [ref=f324e257]
+                    - heading "30" [level=2] [ref=f324e258]
+                  - generic [ref=f324e262]:
+                    - heading "Mental" [level=2] [ref=f324e263]
+                    - heading "79" [level=2] [ref=f324e264]
+              - button [ref=f324e271] [cursor=pointer]:
+                - generic [ref=f324e272]:
+                  - generic [ref=f324e274]:
+                    - heading "Knowledge" [level=2] [ref=f324e275]
+                    - heading "80" [level=2] [ref=f324e276]
+                  - generic [ref=f324e280]:
+                    - heading "Scouting" [level=2] [ref=f324e281]
+                    - heading "84" [level=2] [ref=f324e282]
+                  - generic [ref=f324e286]:
+                    - heading "Medical" [level=2] [ref=f324e287]
+                    - heading "29" [level=2] [ref=f324e288]
+              - button [ref=f324e294] [cursor=pointer]:
+                - generic [ref=f324e297]:
+                  - heading "Personality" [level=2] [ref=f324e298]
+                  - heading "78" [level=2] [ref=f324e299]
+            - img [ref=f324e310]:
+              - generic [ref=f324e326]:
+                - generic [ref=f324e327]: Coaching
+                - generic [ref=f324e329]: GK Coaching
+                - generic [ref=f324e332]: Scouting
+                - generic [ref=f324e335]: Mental
+                - generic [ref=f324e338]: Knowledge
+                - generic [ref=f324e341]: Medical
+                - generic [ref=f324e344]: Personality
+      - complementary [ref=f324e350]:
+        - generic [ref=f324e351]:
+          - complementary "Advertisement" [ref=f324e352]:
+            - insertion [ref=f324e354]:
+              - iframe [ref=f324e356]:
+                - generic [ref=f334e3]:
+                  - link [ref=f334e4] [cursor=pointer]:
+                    - /url: //cdn.mediago.io/js/officialWebsite/policy.html
+                  - link "Fungus Is A Parasite, And It Dies From A Drop Of Plain... Fungus Is A Parasite, And It Dies From A Drop Of Plain... Orivelle" [ref=f334e7] [cursor=pointer]:
+                    - /url: https://trace-eu.mediago.io/ju/ic?tn=41b6e88a2b85b0e731ef8e73e5558712&trackingid=9b3bec0d64f496198c8afcd4758ef7cd&acid=33907&data=2jt6Lafqro0yXIyXBtqDIHiiz2wv9otalecHBXzK3Hd7NpwuJAezyq-O84xbKuQi6c3334EULiOJBMSbUb-VoVmGiHoP-wDEAj0WZUWFo2DQyCENN-EBWj8FCUAS2cXr7cmG9bO-TQW4j5Dd2U-FhPoOZxyblpv5Yp3mqCPO59x87NX-mjV82z239xjOctBEVcm0lawmLZEgSTTaSVipDAYqDQeEMxnDqKdXOYz2TUhvZyua91rCkMTkgc3uDYgyduoSHN-UKzA7rakk9AJRge4HsVKTTmJkQiktmUMdX67TKjW_Mkk65tMSfA7f-51XHj25Ydt_i4jBOrJTO0Gxcw4TRhg9Mlra1a76lhIfD9pmLMM38LMeTtOEQ_ZqEhdxESM47YWDKzTApJx9wggYGr1_bu8XnLftIPga4gw_NmNDKpWgubbyKyNBWUoe8Xl4XmnwytDwvsXoVpJtA_6XA-yvgFm768MkRl0wzicwruv0N4-XASRIgR0B0ywRl3mWzVVjzuhmLE2ydgXwxDSwioWX3SeVQ6ZdoNZ2WzRED1b7e3trmK1fM57WrLE6P5xK6JI42DSRJ663u-cvP-GQPDwHcRt20asFOrmUuMHwYucvHNqRIi3GAuH03KK8M6U1peMDofvJySafBomOzBJsmZMSgmpsCBN6lFwOlWlIz3KDlot9kWPBmVVMkcskEJAPH7OENQ7Bq4ik-ZTNh_0Bo62a_0KZkzkPWS5Lvt3HGGiL7yuxvSap8aEp6CTH8Yu09G_GDGwwbo8kqLyshCBlHYVudJA3BpujyycQIulSMholR6IfZFtAqE8JAalCU5JVUXyAMRHbgz0bKDJEBy9Zh4jxf26VFjlo9-PDCfCzijr9RubnY08mY77bXjAofDOLuBovT___FhXxhnIb5-65VcSoilt9wqDZEiJ3w3Q16lkvBqXPyov3Qnv39OKEQrLguhVauIuCD1ej6XQAmWlDTPfA3YVu97NGr-biXsL7ZE91l2uGGC_2FQS9dpiBYootVg1MLosgtQliguc-kEAWY3sgBcffKuKHb1cIiNKVgmLFHlI4oGGkqp10dg7IZ4iv6e00fhCi0OYRPypRB07lim-DGsCu7giD4DTjjz2y34pDkuuoVIbKfrZPVmqhHJKv6XSeprrRnfHT780Nk17NM84BmIpTtIGY1H62KAylLHQGP8tkMASkdRYVBhZOyssr0Mlxjlvx90SNfLZ4F9lW4UpTjmDKk1mYwyyqRLBwJoBDh_CSCEfeW0K87VFAVaJjJMz086LtuJPrgll3XC9B4_cp57h4DOh2I6ybgnM7ywsfGkDgJS2R2_YLmIBci5SBZJ5QbpevDjr32SHwDjbD6zpcbJ5knR3yOKfb-k4WPNgKYjUlHjiwQtMwQqzzgoj9ndicg6Z9Wyg2X-ZppVxwpcbwnHdiHj_HGyqL2bz8jf0UbjAG6ZOnfWEIjcIQzHt_nxU5m9fXn0jxODOnMLV2SicG19Ig27NaIPvoaKqDG2ghUiUHJBtxQw4-kXgQ_RjtIyh9sMZyU4OXxInFx6bDA9mQuSxDxvKkJyfLRvujt5eaBYfXeRWq3vskoFNeLj56trMzG4iLkgtdwy7hyj5rAit9p7aO0vvfniUB13JMfbh3M5WW9IPowTFyyqVv9dx-BojS__WENTUVQEp2ZElmLbO0V0x_jorVakuyBpTaattYVy_enhKTXP_mvB3IJ9yG5E73Al7JzmjSRdZ_zb1OakIM_b6jRkxPBe-qh03q0b1hANj-KWIvPuW3izcKxR0k-DcYd-nxRj_ySddYEfPm_fPzrhpsEAdFzv4Kql142LZa6XbL3aMMygbCnKlT_aatNeyhAGQj94Nxm30gonzPOJucnfRs1kgFcjjQZFHMSu4u-hPfzbYQLQXujMbOFvY-KktHmoCc_vmKqkcMJ9k3d2bTF2_OEpkuu6HA6ScNbSV_DoaYi5VFhBZTZUVaGJ9B7ZqGeXxf0axW1rCJkmeg3UypurafDT74ZBv0im6GFya4pg_a3b8MTBhTSf4fuAurqOTuoy5b4JSAd9yhE-Juo2OPtXo2GaYSGDMS4fr-XVcjEbGfnTg4ken9ulzdARs2W0yawYO_VS3PfaFXOTA6wWhM6t-sZ0M6brEmrLhZLax3y1ICTmMkEhuzBSMkOX0K-oPQoOKYwM7C9nD8rK7A-Zy1aemu644aQ-hELOxl_nQ&uid=CAESEFueMu7h2ymrSZorGJDzmkY&mguid=4fc07ba5e8cd609e2cfb5a00msbdkwbz&ap=0.012733&tid=72&gprice=VzIVJ70GE7kwyYigLcCi5ef6sdfmbX3SGUANvdLtCc8&campaignid=5364882&c_sync=1&google_click_url=https://adclick.g.doubleclick.net/aclk%3Fsa%3DL%26ai%3DC5ytyp9luauPuDKGG1fAP3fyBiQ7577npc8D4-ezNEMCNtwEQASDnhIWkAWC7vq6D0ArIAQmoAwHIAwKqBPkBT9A2osjfVpT6UwuLl3r_6xcrFXyXB3ScSvqVXSmSZ4jvJR9Gi8U3A-jHySBJl7GcljRTtvRyeewd1GErr7thMUVat18q3zrQaSddQUU65QzAwiyISaDbikNAOt5-rxR4prjUU-TCNiYFlMBpeDRxa2iVaQfrgJa4__jPKabuka4cXGMAT7opq7toImZ5nxMCRHNx5DUQcKe2KldbjdGrzjixvvMEVRpszh8JIE9f05XE2Dkh7wnkKCievom5YipVD86_0MwCsepwPmT_Fsln9xkn_vY0A8z4jsA4tqjSezfDAYKlsQqAwxDt7B_5AZGlKqOqexh5QB8ogAbv4oqplcL_vZUBoAYhqAeT2LECqAeU2LECqAeV2LECqAemvhuoB5bYG6gHqpuxAqgH_56xAqgH35-xAqgH_uixAqgHrb6xAqgHv9OxAtgHANIIMwiA4YAQEAEyCKqCgICAgKAIOhCAwAOAgISAgJSu4AOoh4AQSL39wTpY8-v9hJ-BlgNgAPoLAggBgAwBqg0CR0LqDRMIruT-hJ-BlgMVIUMVCB1dfiDhiA4J0BUBgBcBshcQGAwqCjU0NjkxNTIwODNQAaoYFwlV46WbBMDCQBIKNTQ2OTE1MjA4MxgB%26num%3D1%26sig%3DAOD64_22ZwC3DjpoBXGZ_ty874uALmXv0Q%26client%3Dca-pub-8105909796317759%26adurl%3D
+                    - img "Fungus Is A Parasite, And It Dies From A Drop Of Plain..." [ref=f334e8]
+                    - heading "Fungus Is A Parasite, And It Dies From A Drop Of Plain..." [level=3] [ref=f334e9]
+                    - generic [ref=f334e10]: Orivelle
+          - complementary "Advertisement" [ref=f324e357]:
+            - insertion [ref=f324e359]:
+              - generic [ref=f324e362]:
+                - heading "These are topics related to the article that might interest you" [level=2] [ref=f324e364]: Discover more
+                - link "Best wonderkids list" [ref=f324e365] [cursor=pointer]
+                - link "FM26 database subscription" [ref=f324e370] [cursor=pointer]
+                - link "Sports Games" [ref=f324e375] [cursor=pointer]
+                - link "Football Manager databases" [ref=f324e380] [cursor=pointer]
+                - link "Database" [ref=f324e385] [cursor=pointer]
+                - link "FM24 wonderkids" [ref=f324e390] [cursor=pointer]
+                - link "Soccer" [ref=f324e395] [cursor=pointer]
+                - link "FM26 Mobile database" [ref=f324e400] [cursor=pointer]
+  - contentinfo [ref=f324e405]:
+    - generic [ref=f324e406]:
+      - generic [ref=f324e407]:
+        - generic [ref=f324e408]:
+          - heading "Quick Links" [level=3] [ref=f324e409]
+          - list [ref=f324e410]:
+            - listitem [ref=f324e411]:
+              - link "Players" [ref=f324e412] [cursor=pointer]:
+                - /url: /players
+            - listitem [ref=f324e413]:
+              - link "Clubs" [ref=f324e414] [cursor=pointer]:
+                - /url: /clubs
+            - listitem [ref=f324e415]:
+              - link "Nations" [ref=f324e416] [cursor=pointer]:
+                - /url: /nations
+            - listitem [ref=f324e417]:
+              - link "Staff" [ref=f324e418] [cursor=pointer]:
+                - /url: /staff
+            - listitem [ref=f324e419]:
+              - link "Shortlists" [ref=f324e420] [cursor=pointer]:
+                - /url: /shortlists
+        - generic [ref=f324e421]:
+          - heading "Tools" [level=3] [ref=f324e422]
+          - list [ref=f324e423]:
+            - listitem [ref=f324e424]:
+              - link "Personality Calculator" [ref=f324e425] [cursor=pointer]:
+                - /url: /personality-calculator
+            - listitem [ref=f324e426]:
+              - link "Analyse Player" [ref=f324e427] [cursor=pointer]:
+                - /url: /analyse-player
+            - listitem [ref=f324e428]:
+              - link "Discord Bot" [ref=f324e429] [cursor=pointer]:
+                - /url: /discord-bot
+        - generic [ref=f324e430]:
+          - heading "Connect" [level=3] [ref=f324e431]
+          - list [ref=f324e432]:
+            - listitem [ref=f324e433]:
+              - link "Discord" [ref=f324e434] [cursor=pointer]:
+                - /url: https://discord.gg/BmQBvKmxwG
+            - listitem [ref=f324e437]:
+              - link "X (Twitter)" [ref=f324e438] [cursor=pointer]:
+                - /url: https://x.com/WeAreEFEM
+            - listitem [ref=f324e441]:
+              - link "Instagram" [ref=f324e442] [cursor=pointer]:
+                - /url: https://instagram.com/efemclub
+      - generic [ref=f324e445]:
+        - generic [ref=f324e446]:
+          - link "Privacy Policy" [ref=f324e447] [cursor=pointer]:
+            - /url: /privacy-policy
+          - link "Terms of Use" [ref=f324e448] [cursor=pointer]:
+            - /url: /terms-of-use
+          - link "About Us" [ref=f324e449] [cursor=pointer]:
+            - /url: /about-us
+          - link "Contact" [ref=f324e450] [cursor=pointer]:
+            - /url: /contact
+        - paragraph [ref=f324e451]: © 2026 EFEM.club. All rights reserved.
+        - paragraph [ref=f324e452]: EFEM.club is an unofficial fan site and is not affiliated with or endorsed by Sports Interactive or SEGA. The content on this site is for entertainment purposes only and reflects the personal views of individual contributors, not those of Sports Interactive or SEGA.

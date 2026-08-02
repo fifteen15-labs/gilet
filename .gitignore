@@ -5,3 +5,7 @@ node_modules/
 app-icon.png
 research/frames/
 research/frames-ongoing/
+# game-written data extracted during format work — never check game data in
+research/*.bin
+research/save_manifest.json
+research/__pycache__/

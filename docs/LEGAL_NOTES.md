@@ -75,6 +75,16 @@ creates no estoppel — but it is a well-founded basis for expecting to be left 
    format**, because that single change flips both the UK and US analyses from "no
    technological measure exists" to "circumvention".
 
+   *Amended 2 August 2026 — writing the user's own save files.* The owner decided to
+   let Gilet **write** shortlist changes into their own `.fm` saves: personal use on
+   their own machine, never distributed. The save is unencrypted, so no circumvention
+   analysis is touched; what this accepts is §7(h) exposure ("create data … which
+   mimic data in the Product") as a contract-only risk with a fifteen-year record of
+   non-enforcement against tools that go much further (FMRTE sells a save editor).
+   Everything else in this rule stands: no process attachment, no key extraction, and
+   the encrypted `.fmf` export path stays closed (`SHORTLIST_FORMAT.md` §5). Writes
+   are opt-in per action, and never touch a save without a `.bak` sibling first.
+
 **Biggest legal risk:** EULA clause 7(h), as a breach of contract claim (§10).
 **Biggest practical risk:** unilateral platform action — a Steam/SEGA account ban or a
 complaint to Apple — which needs no lawyer, no notice and no proof, and against which

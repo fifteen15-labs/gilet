@@ -19,6 +19,9 @@ pub enum Error {
 
     #[error("frame {frame} at offset {offset} consumed no input; refusing to loop")]
     StalledFrame { frame: usize, offset: usize },
+
+    #[error("save archive cannot be rewritten: {reason}")]
+    Archive { reason: String },
 }
 
 /// zstd-safe reports failures as a bare code plus a static description, which

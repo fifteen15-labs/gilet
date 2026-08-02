@@ -85,6 +85,9 @@ pub fn default_locations(app: tauri::AppHandle) -> Locations {
 pub struct PlayerRow {
     /// Byte offset of the record, stable within one save and used as the row key.
     pub id: usize,
+    /// Person entity id, the save's own identifier — what shortlist edits key
+    /// on. `None` for the few records whose identity block did not resolve.
+    pub eid: Option<u32>,
     pub name: String,
     pub born: String,
     pub age: u16,
@@ -139,6 +142,15 @@ pub struct ClubRow {
     pub average_potential: Option<u16>,
 }
 
+/// An in-game shortlist, with entity ids resolved to the same names the
+/// player table uses, so importing one is a name-for-name copy.
+#[derive(Debug, Clone, Serialize)]
+pub struct GameShortlistRow {
+    /// The name the user gave it in FM; `None` for the unnamed default list.
+    pub name: Option<String>,
+    pub players: Vec<String>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct SaveSummary {
     /// Which attribute indices are goalkeeping ones, so the UI can group them.
@@ -153,6 +165,8 @@ pub struct SaveSummary {
     /// The save's in-game date, when it could be read. `None` means ages fall
     /// back to the system clock, which the UI says out loud.
     pub game_date: Option<String>,
+    /// The human manager's shortlists as FM stores them in the save.
+    pub game_shortlists: Vec<GameShortlistRow>,
     pub frames: usize,
     pub decompressed_bytes: usize,
     pub parse_millis: u64,
@@ -208,6 +222,102 @@ pub async fn open_save(
     })
     .await
     .map_err(|e| CommandError::Parse(format!("parsing did not finish: {e}")))?
+}
+
+/// Edits one in-game shortlist inside the save file itself.
+///
+/// The write policy comes from `LEGAL_NOTES.md` (amendment of 2 August 2026):
+/// the user's own saves only, and never without a backup — the first write to
+/// a save puts the untouched original at `<path>.gilet.bak`, and that file is
+/// never overwritten afterwards.
+///
+/// `list` is the shortlist's FM name, or `None` for the unnamed default list.
+/// `date` is `[year, month, day]` — the save's own current date, which the
+/// frontend already holds; it becomes the new entry's date-added field.
+///
+/// # Errors
+/// Fails when the file cannot be read or written, the save cannot be safely
+/// rewritten (`fm_save::archive` validates before touching anything), or no
+/// shortlist has that name.
+// Commands receive owned values deserialised from the frontend payload.
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command]
+pub fn edit_game_shortlist(
+    path: String,
+    list: Option<String>,
+    eid: u32,
+    add: bool,
+    date: Vec<u16>,
+) -> Result<(), CommandError> {
+    let bytes = std::fs::read(&path).map_err(|e| CommandError::Read {
+        path: path.clone(),
+        message: e.to_string(),
+    })?;
+
+    let scout = fm_save::archive::member_plaintext(&bytes, "scout_man.dat")
+        .map_err(|e| CommandError::Parse(e.to_string()))?;
+
+    let edited = if add {
+        let when = fm_save::Date {
+            year: date.first().copied().unwrap_or(2026),
+            month: date.get(1).copied().unwrap_or(1) as u8,
+            day: date.get(2).copied().unwrap_or(1) as u8,
+        };
+        let stamp = fm_save::shortlist::date_added_bytes(when);
+        fm_save::shortlist::add_entry(&scout, list.as_deref(), eid, stamp)
+    } else {
+        fm_save::shortlist::remove_entry(&scout, list.as_deref(), eid)
+    }
+    .ok_or_else(|| {
+        CommandError::Parse(format!(
+            "no shortlist named {}",
+            list.as_deref().unwrap_or("(unnamed)")
+        ))
+    })?;
+
+    if edited == scout {
+        return Ok(());
+    }
+
+    let written = fm_save::archive::replace_member(&bytes, "scout_man.dat", &edited)
+        .map_err(|e| CommandError::Parse(e.to_string()))?;
+
+    // The backup preserves the save as it was before Gilet ever wrote to it,
+    // so it is created once and never replaced.
+    let backup = format!("{path}.gilet.bak");
+    if !std::path::Path::new(&backup).exists() {
+        std::fs::write(&backup, &bytes).map_err(|e| CommandError::Write {
+            path: backup.clone(),
+            message: e.to_string(),
+        })?;
+    }
+    std::fs::write(&path, written).map_err(|e| CommandError::Write {
+        path,
+        message: e.to_string(),
+    })
+}
+
+/// Resolves the save's in-game shortlists to the same names the player table
+/// uses. An eid that resolves to nobody is dropped rather than guessed at; a
+/// list that ends up nameless and empty is noise, not data.
+fn resolve_game_shortlists(save: &fm_save::Save) -> Vec<GameShortlistRow> {
+    let people_by_eid: std::collections::HashMap<u32, &str> = save
+        .people
+        .iter()
+        .filter_map(|p| Some((p.eid?, p.full_name.as_str())))
+        .collect();
+    save.shortlists
+        .iter()
+        .map(|s| GameShortlistRow {
+            name: s.name.clone(),
+            players: s
+                .person_eids
+                .iter()
+                .filter_map(|eid| people_by_eid.get(eid).map(|&n| n.to_owned()))
+                .collect(),
+        })
+        .filter(|s| s.name.is_some() || !s.players.is_empty())
+        .collect()
 }
 
 /// Totals the ability of every player each club fields, as
@@ -275,6 +385,7 @@ pub fn load_save(
             let d = p.date_of_birth;
             PlayerRow {
                 id: p.offset,
+                eid: p.eid,
                 name: p.full_name.clone(),
                 born: format!("{:04}-{:02}-{:02}", d.year, d.month, d.day),
                 age: d.age_on(now),
@@ -344,6 +455,7 @@ pub fn load_save(
         players,
         clubs,
         game_date: dated_from_save.then(|| format!("{:04}-{:02}-{:02}", now.year, now.month, now.day)),
+        game_shortlists: resolve_game_shortlists(&save),
         frames: save.frame_sizes.len(),
         decompressed_bytes: save.frame_sizes.iter().sum(),
         parse_millis,

@@ -24,4 +24,5 @@ module_name_repetitions = "allow"
 [workspace.dependencies]
 thiserror = "2"
 zstd = "0.13"
-zstd-safe = "7"
+# std gives the WriteBuf impl for Vec, which the archive writer compresses into.
+zstd-safe = { version = "7", features = ["std"] }

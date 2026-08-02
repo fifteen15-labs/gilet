@@ -1,0 +1,95 @@
+- generic [active] [ref=f377e1]:
+  - alert [ref=f377e2]
+  - banner [ref=f377e3]:
+    - generic [ref=f377e5]:
+      - link [ref=f377e6] [cursor=pointer]:
+        - /url: /
+        - img "EFEM Logo" [ref=f377e7]
+      - list [ref=f377e9]:
+        - listitem [ref=f377e10]:
+          - link "Players" [ref=f377e11] [cursor=pointer]:
+            - /url: /players
+        - listitem [ref=f377e12]:
+          - link "Staff" [ref=f377e13] [cursor=pointer]:
+            - /url: /staff
+        - listitem [ref=f377e14]:
+          - link "Clubs" [ref=f377e15] [cursor=pointer]:
+            - /url: /clubs
+        - listitem [ref=f377e16]:
+          - link "Nations" [ref=f377e17] [cursor=pointer]:
+            - /url: /nations
+        - listitem [ref=f377e18]:
+          - link "Shortlists" [ref=f377e19] [cursor=pointer]:
+            - /url: /shortlists
+        - listitem [ref=f377e20]:
+          - link "Discord Bot" [ref=f377e21] [cursor=pointer]:
+            - /url: /discord-bot
+        - listitem [ref=f377e22]:
+          - link "Personality Calculator" [ref=f377e23] [cursor=pointer]:
+            - /url: /personality-calculator
+        - listitem [ref=f377e24]:
+          - link "Analyse Player" [ref=f377e25] [cursor=pointer]:
+            - /url: /analyse-player
+      - search "Site search" [ref=f377e28]:
+        - combobox "Search players, clubs, staff, and nations" [ref=f377e30]
+  - main [ref=f377e36]:
+    - generic [ref=f377e38]:
+      - heading "404" [level=1] [ref=f377e39]
+      - heading "This page could not be found." [level=2] [ref=f377e41]
+  - contentinfo [ref=f377e42]:
+    - generic [ref=f377e43]:
+      - generic [ref=f377e44]:
+        - generic [ref=f377e45]:
+          - heading "Quick Links" [level=3] [ref=f377e46]
+          - list [ref=f377e47]:
+            - listitem [ref=f377e48]:
+              - link "Players" [ref=f377e49] [cursor=pointer]:
+                - /url: /players
+            - listitem [ref=f377e50]:
+              - link "Clubs" [ref=f377e51] [cursor=pointer]:
+                - /url: /clubs
+            - listitem [ref=f377e52]:
+              - link "Nations" [ref=f377e53] [cursor=pointer]:
+                - /url: /nations
+            - listitem [ref=f377e54]:
+              - link "Staff" [ref=f377e55] [cursor=pointer]:
+                - /url: /staff
+            - listitem [ref=f377e56]:
+              - link "Shortlists" [ref=f377e57] [cursor=pointer]:
+                - /url: /shortlists
+        - generic [ref=f377e58]:
+          - heading "Tools" [level=3] [ref=f377e59]
+          - list [ref=f377e60]:
+            - listitem [ref=f377e61]:
+              - link "Personality Calculator" [ref=f377e62] [cursor=pointer]:
+                - /url: /personality-calculator
+            - listitem [ref=f377e63]:
+              - link "Analyse Player" [ref=f377e64] [cursor=pointer]:
+                - /url: /analyse-player
+            - listitem [ref=f377e65]:
+              - link "Discord Bot" [ref=f377e66] [cursor=pointer]:
+                - /url: /discord-bot
+        - generic [ref=f377e67]:
+          - heading "Connect" [level=3] [ref=f377e68]
+          - list [ref=f377e69]:
+            - listitem [ref=f377e70]:
+              - link "Discord" [ref=f377e71] [cursor=pointer]:
+                - /url: https://discord.gg/BmQBvKmxwG
+            - listitem [ref=f377e74]:
+              - link "X (Twitter)" [ref=f377e75] [cursor=pointer]:
+                - /url: https://x.com/WeAreEFEM
+            - listitem [ref=f377e78]:
+              - link "Instagram" [ref=f377e79] [cursor=pointer]:
+                - /url: https://instagram.com/efemclub
+      - generic [ref=f377e82]:
+        - generic [ref=f377e83]:
+          - link "Privacy Policy" [ref=f377e84] [cursor=pointer]:
+            - /url: /privacy-policy
+          - link "Terms of Use" [ref=f377e85] [cursor=pointer]:
+            - /url: /terms-of-use
+          - link "About Us" [ref=f377e86] [cursor=pointer]:
+            - /url: /about-us
+          - link "Contact" [ref=f377e87] [cursor=pointer]:
+            - /url: /contact
+        - paragraph [ref=f377e88]: © 2026 EFEM.club. All rights reserved.
+        - paragraph [ref=f377e89]: EFEM.club is an unofficial fan site and is not affiliated with or endorsed by Sports Interactive or SEGA. The content on this site is for entertainment purposes only and reflects the personal views of individual contributors, not those of Sports Interactive or SEGA.

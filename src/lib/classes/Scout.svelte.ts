@@ -1,7 +1,15 @@
 import { profiles } from '$lib/classes/Profiles.svelte';
 import { shortlists } from '$lib/classes/Shortlists.svelte';
 import { scoreAll } from '$lib/utils/score';
-import { onParseProgress, openSave, type Club, type Player, type SaveSummary } from '$lib/tauri/commands';
+import {
+	editGameShortlist,
+	onParseProgress,
+	openSave,
+	type Club,
+	type GameShortlist,
+	type Player,
+	type SaveSummary
+} from '$lib/tauri/commands';
 import {
 	emptyFilters,
 	matches,
@@ -138,6 +146,37 @@ class Scout {
 		} finally {
 			stop();
 			this.loading = false;
+		}
+	}
+
+	/**
+	 * Whether shortlists inside the save can be edited: the write needs the
+	 * save's own date for the entry's date-added field, so an undated save
+	 * stays read-only — a wrong date written into the file is an invented
+	 * number, and the one rule is never to invent one.
+	 */
+	get canEditGameShortlists(): boolean {
+		return this.summary !== null && this.summary.game_date !== null;
+	}
+
+	/**
+	 * Adds or removes a player on a shortlist stored in the save file itself.
+	 * The backend backs the save up to `<path>.gilet.bak` before its first
+	 * write; on success the loaded summary is updated in place rather than
+	 * re-parsing 60 MB.
+	 */
+	async toggleGameShortlist(list: GameShortlist, player: Player): Promise<void> {
+		if (!this.summary || !this.summary.game_date || player.eid === null) return;
+		const [year, month, day] = this.summary.game_date.split('-').map(Number);
+		const has = list.players.includes(player.name);
+		this.error = null;
+		try {
+			await editGameShortlist(this.summary.path, list.name, player.eid, !has, [year, month, day]);
+			list.players = has
+				? list.players.filter((n) => n !== player.name)
+				: [...list.players, player.name];
+		} catch (e) {
+			this.error = e instanceof Error ? e.message : String(e);
 		}
 	}
 

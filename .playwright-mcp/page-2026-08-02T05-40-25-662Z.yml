@@ -1,0 +1,515 @@
+- generic [active] [ref=f28e1]:
+  - generic [ref=f28e2]:
+    - list [ref=f28e5]:
+      - listitem [ref=f28e6]:
+        - link " Follow @fmscout" [ref=f28e7] [cursor=pointer]:
+          - /url: https://twitter.com/fmscout
+          - generic [ref=f28e8]: 
+          - text: Follow @fmscout
+      - listitem [ref=f28e9]: 3506 online
+    - generic [ref=f28e11]:
+      - menubar [ref=f28e13]:
+        - menuitem [ref=f28e14]:
+          - link [ref=f28e15] [cursor=pointer]:
+            - /url: https://www.fmscout.com
+            - img "FMSCOUT" [ref=f28e16]
+        - menuitem [ref=f28e17]:
+          - link "recent updates" [ref=f28e18] [cursor=pointer]:
+            - /url: p-recentitems.html
+        - menuitem [ref=f28e20]:
+          - generic "site search" [ref=f28e21] [cursor=pointer]
+        - menuitem "TotD:" [ref=f28e23]
+        - menuitem [ref=f28e24]:
+          - link "FM26 Live Editor" [ref=f28e25] [cursor=pointer]:
+            - /url: a-fm-live-editor-26.html
+      - menubar [ref=f28e27]:
+        - menuitem [ref=f28e28]:
+          - link "Sign In" [ref=f28e29] [cursor=pointer]:
+            - /url: login.php
+    - navigation [ref=f28e30]:
+      - menubar [ref=f28e32]:
+        - menuitem "scouting" [ref=f28e33]:
+          - link "scouting" [ref=f28e34] [cursor=pointer]:
+            - /url: c-players-and-staff.html
+        - menuitem "clubs" [ref=f28e36]:
+          - link "clubs" [ref=f28e37] [cursor=pointer]:
+            - /url: clubs.html
+        - menuitem "forums" [ref=f28e39]:
+          - link "forums" [ref=f28e40] [cursor=pointer]:
+            - /url: forums.html
+        - menuitem "tactics" [ref=f28e42]:
+          - link "tactics" [ref=f28e43] [cursor=pointer]:
+            - /url: c-fm26-tactics.html
+        - menuitem "addons" [ref=f28e45]:
+          - link "addons" [ref=f28e46] [cursor=pointer]:
+            - /url: c-files26.html
+        - menuitem "tools" [ref=f28e48]:
+          - link "tools" [ref=f28e49] [cursor=pointer]:
+            - /url: c-fm26-tools.html
+        - menuitem "guides" [ref=f28e51]:
+          - link "guides" [ref=f28e52] [cursor=pointer]:
+            - /url: c-advice.html
+        - menuitem "help" [ref=f28e54]:
+          - link "help" [ref=f28e55] [cursor=pointer]:
+            - /url: forums.html?c=support
+        - menuitem "blog" [ref=f28e57]:
+          - link "blog" [ref=f28e58] [cursor=pointer]:
+            - /url: c-blogs.html
+        - menuitem [ref=f28e60]:
+          - link "videos" [ref=f28e61] [cursor=pointer]:
+            - /url: f-football-manager-videos.html
+        - menuitem "shop" [ref=f28e63]:
+          - link "shop" [ref=f28e64] [cursor=pointer]:
+            - /url: c-shop.html
+        - menuitem [ref=f28e66]:
+          - link [ref=f28e67] [cursor=pointer]:
+            - /url: a-football-manager-2026-steam-key.html
+            - img "official FM26 Steam key" [ref=f28e68]
+            - text: buy now
+  - generic [ref=f28e70]:
+    - text: On FM Scout you can chat about Football Manager in real time since 2011. Here are
+    - link "10 reasons to join" [ref=f28e71] [cursor=pointer]:
+      - /url: a-why-become-a-member.html
+    - text: "!"
+  - generic [ref=f28e72]:
+    - generic [ref=f28e76]:
+      - link "Home" [ref=f28e77] [cursor=pointer]:
+        - /url: https://www.fmscout.com
+      - text: › FM e-Tools ›
+      - link "FM Scouting Platform" [ref=f28e78] [cursor=pointer]:
+        - /url: players.html
+      - text: › Erling Haaland
+    - generic [ref=f28e79]:
+      - generic [ref=f28e80]:
+        - heading "FM 2026 Scouting Platform" [level=4] [ref=f28e81]
+        - generic [ref=f28e82]:
+          - link "About FMSP" [ref=f28e83] [cursor=pointer]:
+            - /url: a-fm-social-scouting.html
+          - link "Player Search" [ref=f28e85] [cursor=pointer]:
+            - /url: players.html
+          - generic [ref=f28e87] [cursor=pointer]: Request Player
+      - generic [ref=f28e89]:
+        - generic [ref=f28e90]:
+          - generic [ref=f28e91]:
+            - generic [ref=f28e92]: FM Version
+            - combobox [ref=f28e93]:
+              - option "FM 18"
+              - option "FM 19"
+              - option "FM 20"
+              - option "FM 21"
+              - option "FM 22"
+              - option "FM 23"
+              - option "FM 24"
+              - option "FM 26" [selected]
+          - img "Man City" [ref=f28e94]
+          - heading [level=1] [ref=f28e95]:
+            - link "Erling Haaland FM26 Profile" [ref=f28e96] [cursor=pointer]:
+              - /url: player/29179241/erling-haaland.html
+          - paragraph [ref=f28e97]: ST
+        - generic [ref=f28e98]:
+          - generic [ref=f28e99]:
+            - img "Erling Haaland" [ref=f28e100]
+            - img "NOR flag" [ref=f28e101]
+            - generic [ref=f28e102]: Photo ©2026 Man City
+          - list [ref=f28e104]:
+            - listitem "Natural" [ref=f28e105]
+          - generic [ref=f28e106]:
+            - table [ref=f28e107]:
+              - rowgroup [ref=f28e108]:
+                - row [ref=f28e109]:
+                  - columnheader "Pos. Abilities" [ref=f28e110]
+              - rowgroup [ref=f28e112]:
+                - row [ref=f28e113]:
+                  - rowheader "Natural 20" [ref=f28e114]
+                  - cell "ST" [ref=f28e115]
+                - row [ref=f28e116]:
+                  - rowheader "Best IP Role" [ref=f28e117]
+                  - cell "Poacher" [ref=f28e118]
+                - row [ref=f28e119]:
+                  - rowheader "Best OOP Role" [ref=f28e120]
+                  - cell "In Possession" [ref=f28e121]
+                - row [ref=f28e122]:
+                  - rowheader "Foot" [ref=f28e123]
+                  - cell "Left" [ref=f28e124]
+                - row [ref=f28e125]:
+                  - rowheader "Height" [ref=f28e126]
+                  - cell "195cm" [ref=f28e127]
+            - generic [ref=f28e128]:
+              - table [ref=f28e130]:
+                - rowgroup [ref=f28e131]:
+                  - row [ref=f28e132]:
+                    - columnheader "GS Rating" [ref=f28e133]:
+                      - generic "Genie Scout Rating" [ref=f28e134]: GS Rating
+                  - row [ref=f28e135]:
+                    - cell "92" [ref=f28e136]
+                  - row [ref=f28e138]:
+                    - cell [ref=f28e139]:
+                      - generic [ref=f28e140]:
+                        - text: Based on his CA as assessed by
+                        - link "GS26" [ref=f28e141] [cursor=pointer]:
+                          - /url: a-genie-scout-26g-edition.html
+                        - text: .
+              - table [ref=f28e143]:
+                - rowgroup [ref=f28e144]:
+                  - row [ref=f28e145]:
+                    - columnheader "Recommend" [ref=f28e146]
+                  - row [ref=f28e148]:
+                    - cell [ref=f28e149]:
+                      - link "👍" [ref=f28e150] [cursor=pointer]:
+                        - /url: p-thanks.html?a=thank&ext=fmsdb&item=158497
+                  - row [ref=f28e151]:
+                    - cell "58 votes so far Write Review" [ref=f28e152]:
+                      - generic [ref=f28e153]: 58 votes so far
+                      - text: Write Review
+        - generic [ref=f28e154]:
+          - generic [ref=f28e155]:
+            - table [ref=f28e156]:
+              - rowgroup [ref=f28e157]:
+                - row [ref=f28e158]:
+                  - columnheader "Scout Opinion" [ref=f28e159]
+                - row [ref=f28e161]:
+                  - rowheader "Potential" [ref=f28e162]
+                  - cell "Can Polish Skills" [ref=f28e163]
+                - row [ref=f28e164]:
+                  - rowheader "Injury Prone" [ref=f28e165]
+                  - cell "Not Specifically" [ref=f28e166]
+            - table [ref=f28e167]:
+              - rowgroup [ref=f28e168]:
+                - row [ref=f28e169]:
+                  - columnheader "Personal Details" [ref=f28e170]
+                - row [ref=f28e172]:
+                  - rowheader "FM26 ID" [ref=f28e173]
+                  - cell "29179241" [ref=f28e174]
+                - row [ref=f28e175]:
+                  - rowheader "Age" [ref=f28e176]
+                  - cell "24" [ref=f28e177]
+                - row [ref=f28e178]:
+                  - rowheader "D.O.B." [ref=f28e179]
+                  - cell "21-Jul-2000" [ref=f28e180]
+                - row [ref=f28e181]:
+                  - rowheader "Nation" [ref=f28e182]
+                  - cell [ref=f28e183]:
+                    - img "NOR flag" [ref=f28e184]
+                    - text: NOR
+                - row [ref=f28e185]:
+                  - rowheader "EU National" [ref=f28e186]
+                  - cell "No" [ref=f28e187]
+          - generic [ref=f28e188]:
+            - table [ref=f28e189]:
+              - rowgroup [ref=f28e190]:
+                - row [ref=f28e191]:
+                  - columnheader "Contract Details" [ref=f28e192]
+                - row [ref=f28e194]:
+                  - rowheader "Club" [ref=f28e195]
+                  - cell [ref=f28e196]:
+                    - link "Man City" [ref=f28e197] [cursor=pointer]:
+                      - /url: club/man-city.html
+                - row [ref=f28e198]:
+                  - rowheader "Expires" [ref=f28e199]
+                  - cell "30-Jun-2034" [ref=f28e200]
+                - row [ref=f28e201]:
+                  - rowheader "Value" [ref=f28e202]
+                  - cell "£179M" [ref=f28e203]
+                - row [ref=f28e204]:
+                  - rowheader "Wage" [ref=f28e205]
+                  - cell "£450K p/w" [ref=f28e206]
+                - row [ref=f28e207]:
+                  - rowheader "Status" [ref=f28e208]
+                  - cell "Not Set" [ref=f28e209]
+            - table [ref=f28e210]:
+              - rowgroup [ref=f28e211]:
+                - row [ref=f28e212]:
+                  - columnheader "Player Traits" [ref=f28e213]
+                - row [ref=f28e215]:
+                  - cell [ref=f28e216]:
+                    - text: To check on the player traits of Erling Haaland
+                    - link "get Genie Scout" [ref=f28e217] [cursor=pointer]:
+                      - /url: a-genie-scout-26g-edition.html
+                    - text: .
+          - blockquote [ref=f28e219]:
+            - text: Erling Haaland profile in Football Manager 2026. Erling Haaland is a 24 years old professional footballer from Norway. His preferred foot is Left and his best role is Poacher - In Possession. In the first season of FM26, he is contracted to
+            - link "Man City" [ref=f28e220] [cursor=pointer]:
+              - /url: club/man-city.html
+            - text: until 30-Jun-2034 earning £450K per week and has a market value of 179M. You can help him reach his full FM26 potential with
+            - link "proper training" [ref=f28e221] [cursor=pointer]:
+              - /url: a-fm19-training-module-masterclass.html
+            - text: .
+        - generic [ref=f28e222]:
+          - heading "Erling Haaland FM26 Screenshots" [level=4] [ref=f28e223]
+          - generic [ref=f28e224]:
+            - img "Upload" [ref=f28e227] [cursor=pointer]
+            - generic [ref=f28e229]:
+              - text: Be the first to
+              - generic [ref=f28e230] [cursor=pointer]:
+                - text: upload a screenshot of
+                - strong [ref=f28e231]: Erling Haaland
+                - text: from FM26
+              - text: .
+        - generic [ref=f28e232]:
+          - generic [ref=f28e233]: 🙏
+          - text: If you ever had
+          - emphasis [ref=f28e234]: Erling Haaland on your FM 2026 team
+          - text: ", we encourage you to:"
+          - list [ref=f28e235]:
+            - listitem [ref=f28e236]: press the green "Recommend!" button above if you think he's a good player,
+            - listitem [ref=f28e237]: write a review to share your opinion about him, and
+            - listitem [ref=f28e238]: upload FM26 screenshots of him that showcase his attributes and historic performances.
+          - text: Your contribution really helps shape a collective knowledge base for Erling Haaland on Football Manager 2026.
+        - generic [ref=f28e239]:
+          - generic [ref=f28e240]:
+            - heading "Erling Haaland FM26 Reviews" [level=4] [ref=f28e241]
+            - generic:
+              - list
+          - generic [ref=f28e242]:
+            - paragraph [ref=f28e243]:
+              - link [ref=f28e244] [cursor=pointer]:
+                - /url: a-football-manager-2026-steam-key.html
+                - img "official FM26 Steam key" [ref=f28e245]
+            - table [ref=f28e246]:
+              - rowgroup [ref=f28e247]:
+                - row [ref=f28e248]:
+                  - columnheader "Notable Teammates" [ref=f28e249]
+              - rowgroup [ref=f28e251]:
+                - row [ref=f28e252]:
+                  - cell [ref=f28e253]:
+                    - img "Marc Guéhi" [ref=f28e254]
+                  - cell "Marc Guéhi DC" [ref=f28e255]:
+                    - link "Marc Guéhi" [ref=f28e256] [cursor=pointer]:
+                      - /url: player/28108033/marc-gu%C3%A9hi.html
+                    - generic [ref=f28e257]: DC
+                - row [ref=f28e258]:
+                  - cell [ref=f28e259]:
+                    - img "Jack Grealish" [ref=f28e260]
+                  - cell "Jack Grealish AMR AML AMC" [ref=f28e261]:
+                    - link "Jack Grealish" [ref=f28e262] [cursor=pointer]:
+                      - /url: player/28067800/jack-grealish.html
+                    - generic [ref=f28e263]: AMR AML AMC
+                - row [ref=f28e264]:
+                  - cell [ref=f28e265]:
+                    - img "Omar Marmoush" [ref=f28e266]
+                  - cell "Omar Marmoush AMR AML AMC ST" [ref=f28e267]:
+                    - link "Omar Marmoush" [ref=f28e268] [cursor=pointer]:
+                      - /url: player/91205962/omar-marmoush.html
+                    - generic [ref=f28e269]: AMR AML AMC ST
+                - row [ref=f28e270]:
+                  - cell [ref=f28e271]:
+                    - img "Gianluigi Donnarumma" [ref=f28e272]
+                  - cell "Gianluigi Donnarumma GK" [ref=f28e273]:
+                    - link "Gianluigi Donnarumma" [ref=f28e274] [cursor=pointer]:
+                      - /url: player/43252073/gianluigi-donnarumma.html
+                    - generic [ref=f28e275]: GK
+                - row [ref=f28e276]:
+                  - cell [ref=f28e277]:
+                    - img "Bernardo Silva" [ref=f28e278]
+                  - cell "Bernardo Silva AMR AMC" [ref=f28e279]:
+                    - link "Bernardo Silva" [ref=f28e280] [cursor=pointer]:
+                      - /url: player/55041632/bernardo-silva.html
+                    - generic [ref=f28e281]: AMR AMC
+                - row [ref=f28e282]:
+                  - cell [ref=f28e283]:
+                    - img "Joško Gvardiol" [ref=f28e284]
+                  - cell "Joško Gvardiol DL DC" [ref=f28e285]:
+                    - link "Joško Gvardiol" [ref=f28e286] [cursor=pointer]:
+                      - /url: player/24060473/jo%C5%A1ko-gvardiol.html
+                    - generic [ref=f28e287]: DL DC
+                - row [ref=f28e288]:
+                  - cell [ref=f28e289]:
+                    - img "John Stones" [ref=f28e290]
+                  - cell "John Stones DR DC DM" [ref=f28e291]:
+                    - link "John Stones" [ref=f28e292] [cursor=pointer]:
+                      - /url: player/28060397/john-stones.html
+                    - generic [ref=f28e293]: DR DC DM
+                - row [ref=f28e294]:
+                  - cell [ref=f28e295]:
+                    - img "Rúben Dias" [ref=f28e296]
+                  - cell "Rúben Dias DC" [ref=f28e297]:
+                    - link "Rúben Dias" [ref=f28e298] [cursor=pointer]:
+                      - /url: player/55070299/r%C3%BAben-dias.html
+                    - generic [ref=f28e299]: DC
+                - row [ref=f28e300]:
+                  - cell [ref=f28e301]:
+                    - img "Antoine Semenyo" [ref=f28e302]
+                  - cell "Antoine Semenyo AMR AML ST" [ref=f28e303]:
+                    - link "Antoine Semenyo" [ref=f28e304] [cursor=pointer]:
+                      - /url: player/29194724/antoine-semenyo.html
+                    - generic [ref=f28e305]: AMR AML ST
+            - heading [level=6] [ref=f28e306]:
+              - link "Man City FM26 Profile" [ref=f28e307] [cursor=pointer]:
+                - /url: club/man-city.html?rev=26
+      - generic [ref=f28e308]:
+        - table [ref=f28e309]:
+          - rowgroup [ref=f28e310]:
+            - row [ref=f28e311]:
+              - columnheader "Technical Attributes" [ref=f28e312]
+          - rowgroup [ref=f28e313]:
+            - row [ref=f28e314]:
+              - cell "Corners" [ref=f28e315]
+            - row [ref=f28e316]:
+              - cell "Crossing" [ref=f28e317]
+            - row [ref=f28e318]:
+              - cell "Dribbling" [ref=f28e319]
+            - row [ref=f28e320]:
+              - cell "Finishing" [ref=f28e321]
+            - row [ref=f28e322]:
+              - cell "First Touch" [ref=f28e323]
+            - row [ref=f28e324]:
+              - cell "Free Kick Taking" [ref=f28e325]
+            - row [ref=f28e326]:
+              - cell "Heading" [ref=f28e327]
+            - row [ref=f28e328]:
+              - cell "Long Shots" [ref=f28e329]
+            - row [ref=f28e330]:
+              - cell "Long Throws" [ref=f28e331]
+            - row [ref=f28e332]:
+              - cell "Marking" [ref=f28e333]
+            - row [ref=f28e334]:
+              - cell "Passing" [ref=f28e335]
+            - row [ref=f28e336]:
+              - cell "Penalty Taking" [ref=f28e337]
+            - row [ref=f28e338]:
+              - cell "Tackling" [ref=f28e339]
+            - row [ref=f28e340]:
+              - cell "Technique" [ref=f28e341]
+        - table [ref=f28e342]:
+          - rowgroup [ref=f28e343]:
+            - row [ref=f28e344]:
+              - columnheader "Mental Attributes" [ref=f28e345]
+          - rowgroup [ref=f28e346]:
+            - row [ref=f28e347]:
+              - cell "Aggression" [ref=f28e348]
+            - row [ref=f28e349]:
+              - cell "Anticipation" [ref=f28e350]
+            - row [ref=f28e351]:
+              - cell "Bravery" [ref=f28e352]
+            - row [ref=f28e353]:
+              - cell "Composure" [ref=f28e354]
+            - row [ref=f28e355]:
+              - cell "Concentration" [ref=f28e356]
+            - row [ref=f28e357]:
+              - cell "Decisions" [ref=f28e358]
+            - row [ref=f28e359]:
+              - cell "Determination" [ref=f28e360]
+            - row [ref=f28e361]:
+              - cell "Flair" [ref=f28e362]
+            - row [ref=f28e363]:
+              - cell "Leadership" [ref=f28e364]
+            - row [ref=f28e365]:
+              - cell "Off The Ball" [ref=f28e366]
+            - row [ref=f28e367]:
+              - cell "Positioning" [ref=f28e368]
+            - row [ref=f28e369]:
+              - cell "Teamwork" [ref=f28e370]
+            - row [ref=f28e371]:
+              - cell "Vision" [ref=f28e372]
+            - row [ref=f28e373]:
+              - cell "Work Rate" [ref=f28e374]
+        - table [ref=f28e375]:
+          - rowgroup [ref=f28e376]:
+            - row [ref=f28e377]:
+              - columnheader "Physical Attributes" [ref=f28e378]
+          - rowgroup [ref=f28e379]:
+            - row [ref=f28e380]:
+              - cell "Acceleration" [ref=f28e381]
+            - row [ref=f28e382]:
+              - cell "Agility" [ref=f28e383]
+            - row [ref=f28e384]:
+              - cell "Balance" [ref=f28e385]
+            - row [ref=f28e386]:
+              - cell "Jumping Reach" [ref=f28e387]
+            - row [ref=f28e388]:
+              - cell "Natural Fitness" [ref=f28e389]
+            - row [ref=f28e390]:
+              - cell "Pace" [ref=f28e391]
+            - row [ref=f28e392]:
+              - cell "Stamina" [ref=f28e393]
+            - row [ref=f28e394]:
+              - cell "Strength" [ref=f28e395]
+            - row [ref=f28e396]:
+              - columnheader "Hidden Attributes" [ref=f28e397]
+            - row [ref=f28e398]:
+              - cell "Current Ability" [ref=f28e399]
+            - row [ref=f28e400]:
+              - cell "Potential Ability" [ref=f28e401]
+            - row [ref=f28e402]:
+              - cell "Consistency" [ref=f28e403]
+            - row [ref=f28e404]:
+              - cell "Important Matches" [ref=f28e405]
+            - row [ref=f28e406]:
+              - cell "Injury Proneness" [ref=f28e407]
+        - generic [ref=f28e408]:
+          - text: To check on the hidden attributes of Erling Haaland
+          - link "get Genie Scout" [ref=f28e409] [cursor=pointer]:
+            - /url: a-genie-scout-26g-edition.html
+          - text: .
+    - generic [ref=f28e410]:
+      - heading "FMS Chat –" [level=6] [ref=f28e411] [cursor=pointer]:
+        - text: FMS Chat
+        - generic [ref=f28e412]: –
+      - paragraph [ref=f28e414]:
+        - link "Stam" [ref=f28e415] [cursor=pointer]:
+          - /url: users/Stam.html
+        - text: hey, just wanted to let you know that we have a fb style chat for our members.
+        - link "login or sign up" [ref=f28e416] [cursor=pointer]:
+          - /url: login.php
+        - text: to start chatting.
+      - paragraph [ref=f28e417]
+  - contentinfo [ref=f28e418]:
+    - generic [ref=f28e419]:
+      - paragraph [ref=f28e420]: FM SCOUT is the definitive Football Manager fan site. Online since 2004.
+      - list [ref=f28e421]:
+        - listitem [ref=f28e422]:
+          - link "About" [ref=f28e423] [cursor=pointer]:
+            - /url: a-about.html
+        - listitem [ref=f28e424]:
+          - link "Contact" [ref=f28e425] [cursor=pointer]:
+            - /url: p-contact.html
+        - listitem [ref=f28e426]:
+          - link "Advertise" [ref=f28e427] [cursor=pointer]:
+            - /url: a-advertising.html
+        - listitem [ref=f28e428]:
+          - link "Terms" [ref=f28e429] [cursor=pointer]:
+            - /url: a-terms_of_use.html
+        - listitem [ref=f28e430]:
+          - link "Privacy" [ref=f28e431] [cursor=pointer]:
+            - /url: a-privacy_policy.html
+        - listitem [ref=f28e432]:
+          - link "Staff" [ref=f28e433] [cursor=pointer]:
+            - /url: a-fmscout-team.html
+        - listitem [ref=f28e434]:
+          - link "Vacancies" [ref=f28e435] [cursor=pointer]:
+            - /url: a-fmscout-team-vacancies.html
+        - listitem [ref=f28e436]:
+          - link "Content Creators" [ref=f28e437] [cursor=pointer]:
+            - /url: a-write-for-us.html
+      - paragraph [ref=f28e438]:
+        - text: Copyright © 2004-2025 fmscout.com. You may not copy and distribute the work in full.Football Manager, the Sports Interactive logo and generated in-game images are © Sports Interactive. Disclaimer.
+        - link "Cookie Settings" [ref=f28e439] [cursor=pointer]:
+          - /url: javascript:void(0);
+        - text: Handcrafted in Symi, Hellas. Page created in 0.409 seconds.
+  - generic [ref=f28e444]:
+    - img "Website CMP logo" [ref=f28e449]
+    - generic [ref=f28e451]:
+      - heading "We care about your privacy!" [level=1] [ref=f28e452]
+      - paragraph [ref=f28e453]:
+        - text: When visiting our site, pre-selected companies may access and use certain information on your device and about this web page to serve relevant ads or personalised content. Please note that ads help keep our service free. Personal data will be processed based on consent in accordance with Art.6(1)(a) of the GDPR framework in
+        - link "EU law" [ref=f28e454] [cursor=pointer]:
+          - /url: https://eur-lex.europa.eu/legal-content/EN/TXT/?qid=1528874672298&uri=CELEX%3A32016R0679
+        - text: ", or as legitimate interest in accordance with Art.6(1)(f) of the same."
+      - heading "Learn more why you are seeing this" [level=3] [ref=f28e455]
+      - paragraph [ref=f28e456]: "To offer you free, high-quality content and deliver the best possible user experience on our website, we and our technology partners (1731) require your consent to store and access personal data on your device. This includes using cookies, unique identifiers and information about your browse activity to show you relevant ads. This may include the following:"
+      - list [ref=f28e457]:
+        - listitem [ref=f28e458]: Store and/or access information on a device
+        - listitem [ref=f28e459]: Personalised advertising and content, advertising and content measurement, audience research and services development
+        - listitem [ref=f28e460]: Use precise geolocation data
+        - listitem [ref=f28e461]: Identify devices based on information actively requested
+      - paragraph
+      - paragraph [ref=f28e462]: You may consent to the processing described above or access more detailed information and customise your choices. The given consent will apply to this site only. Please take into consideration that some of your personal data processing may rely on legitimate interest which does not require your consent, but you have a right to object to this.
+      - paragraph [ref=f28e463]:
+        - text: You can change or withdraw your consent anytime via our footer link or
+        - link "privacy policy page" [ref=f28e464] [cursor=pointer]:
+          - /url: https://www.fmscout.com/a-privacy_policy.html
+        - text: .
+    - generic [ref=f28e466]:
+      - generic [ref=f28e467]: Reject all
+      - generic [ref=f28e468]: Customise choices
+      - generic [ref=f28e469]: Accept all & visit the site

@@ -1,0 +1,478 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - link "FMINSIDE .NET" [ref=e6] [cursor=pointer]:
+      - /url: /
+      - text: FMINSIDE
+      - generic [ref=e7]: .NET
+    - generic:
+      - generic:
+        - link:
+          - /url: "#"
+      - list [ref=e8]:
+        - listitem [ref=e9]:
+          - link "Buy FM26" [ref=e10] [cursor=pointer]:
+            - /url: /news/802-buy-football-manager-26
+      - list [ref=e11]:
+        - link:
+          - /url: "#"
+        - listitem [ref=e12]:
+          - link "Players" [ref=e13] [cursor=pointer]:
+            - /url: /players
+        - listitem [ref=e14]:
+          - link "Clubs" [ref=e15] [cursor=pointer]:
+            - /url: /clubs
+        - listitem [ref=e16]:
+          - link "Downloads" [ref=e17] [cursor=pointer]:
+            - /url: /downloads
+        - listitem [ref=e18]:
+          - link "FMUpdate" [ref=e19] [cursor=pointer]:
+            - /url: /fmi-update
+        - listitem [ref=e20]:
+          - link "News" [ref=e21] [cursor=pointer]:
+            - /url: /news
+        - listitem [ref=e22]:
+          - link "Articles" [ref=e23] [cursor=pointer]:
+            - /url: /articles
+        - listitem [ref=e24]:
+          - link "Shortlists" [ref=e25] [cursor=pointer]:
+            - /url: /shortlists
+        - listitem [ref=e26]:
+          - link "Guides" [ref=e27] [cursor=pointer]:
+            - /url: /guides
+        - listitem [ref=e28]:
+          - link "Challenges" [ref=e29] [cursor=pointer]:
+            - /url: /challenges
+        - listitem [ref=e30]:
+          - link "Videos" [ref=e31] [cursor=pointer]:
+            - /url: /videos
+  - list [ref=e34]:
+    - listitem [ref=e35]: "Essentials:"
+    - listitem [ref=e36]:
+      - link "FM26 Wonderkids" [ref=e37] [cursor=pointer]:
+        - /url: /players/wonderkids
+    - listitem [ref=e38]:
+      - link "FM26 Free transfers" [ref=e39] [cursor=pointer]:
+        - /url: /players/free-transfers
+    - listitem [ref=e40]:
+      - link "Best Bargains FM26" [ref=e41] [cursor=pointer]:
+        - /url: /players/best-bargains
+    - listitem [ref=e42]:
+      - link "Contract expiring" [ref=e43] [cursor=pointer]:
+        - /url: /players/contract-expiring
+    - listitem [ref=e44]:
+      - link "Richest clubs in FM26" [ref=e45] [cursor=pointer]:
+        - /url: /clubs/richest/
+    - listitem [ref=e46]:
+      - link "FMUpdate" [ref=e47] [cursor=pointer]:
+        - /url: /update
+  - generic [ref=e49]:
+    - generic [ref=e50]:
+      - link "Home/" [ref=e51] [cursor=pointer]:
+        - /url: /
+      - link "Players/" [ref=e52] [cursor=pointer]:
+        - /url: /players
+      - link "Football Manager 26.2/" [ref=e53] [cursor=pointer]:
+        - /url: /players
+      - link "Erling Haaland" [ref=e54] [cursor=pointer]:
+        - /url: /players/7-fm-26/29179241-erling-haaland
+    - generic [ref=e55]:
+      - generic "upvote player" [ref=e56] [cursor=pointer]
+      - text: 19 likes
+    - list [ref=e57]:
+      - listitem [ref=e58]:
+        - link "92 FM 26.2" [ref=e59] [cursor=pointer]:
+          - /url: /players/7-fm-262/29179241-erling-haaland
+          - generic [ref=e60]: "92"
+          - text: FM 26.2
+      - listitem [ref=e61]:
+        - link "95 FMU 25" [ref=e62] [cursor=pointer]:
+          - /url: /players/6-fmu-25/29179241-erling-haaland
+          - generic [ref=e63]: "95"
+          - text: FMU 25
+      - listitem [ref=e64]:
+        - link "94 FM 24" [ref=e65] [cursor=pointer]:
+          - /url: /players/5-fm-24/29179241-erling-haaland
+          - generic [ref=e66]: "94"
+          - text: FM 24
+      - listitem [ref=e67]:
+        - link "93 FM 23" [ref=e68] [cursor=pointer]:
+          - /url: /players/3-fm-23/29179241-erling-haaland
+          - generic [ref=e69]: "93"
+          - text: FM 23
+      - listitem [ref=e70]:
+        - link "89 FM 22" [ref=e71] [cursor=pointer]:
+          - /url: /players/2-fm-22/29179241-erling-haaland
+          - generic [ref=e72]: "89"
+          - text: FM 22
+      - listitem [ref=e73]:
+        - link "80 FM 21" [ref=e74] [cursor=pointer]:
+          - /url: /players/1-fm-21/29179241-erling-haaland
+          - generic [ref=e75]: "80"
+          - text: FM 21
+    - generic [ref=e76]:
+      - generic [ref=e77]:
+        - generic [ref=e78]:
+          - heading "Erling Haaland" [level=1] [ref=e80]
+          - generic "Doubleclick to like this player" [ref=e81] [cursor=pointer]: Image by DF11 Faces
+          - generic [ref=e83]:
+            - generic [ref=e84]: "92"
+            - generic [ref=e85]: "98"
+            - generic [ref=e86]: €166M - €311M
+            - list [ref=e88]:
+              - listitem [ref=e89]:
+                - link "Manchester City" [ref=e90] [cursor=pointer]:
+                  - /url: /clubs/7-fm-262/679-manchester-city
+              - listitem [ref=e92]:
+                - link "Norway" [ref=e94] [cursor=pointer]:
+                  - /url: /players/no
+              - listitem [ref=e96]:
+                - generic [ref=e97]: ST
+        - generic [ref=e99]:
+          - heading "Player info" [level=2] [ref=e100]
+          - list [ref=e101]:
+            - listitem [ref=e102]:
+              - generic [ref=e103]: Name
+              - generic [ref=e104]: Erling Haaland
+            - listitem [ref=e105]:
+              - generic [ref=e106]: Age
+              - generic [ref=e107]: "25"
+            - listitem [ref=e108]:
+              - generic [ref=e109]: Position(s)
+              - generic [ref=e110]: ST
+            - listitem [ref=e112]:
+              - generic [ref=e113]: Left foot
+              - generic [ref=e114]: "100"
+            - listitem [ref=e116]:
+              - generic [ref=e117]: Right foot
+              - generic [ref=e118]: "55"
+            - listitem [ref=e120]:
+              - generic [ref=e121]: Height
+              - generic [ref=e122]: 195 CM
+            - listitem [ref=e123]:
+              - generic [ref=e124]: Caps / Goals
+              - generic [ref=e125]: 43 / 42
+        - generic [ref=e126]:
+          - heading "Contract" [level=2] [ref=e127]
+          - list [ref=e128]:
+            - listitem [ref=e129]:
+              - generic [ref=e130]: Club
+              - link "Manchester City" [ref=e132] [cursor=pointer]:
+                - /url: /clubs/7-fm-262/679-manchester-city
+            - listitem [ref=e133]:
+              - generic [ref=e134]: Sell value
+              - generic [ref=e135]: € 207,137,946
+            - listitem [ref=e136]:
+              - generic [ref=e137]: Wages
+              - generic [ref=e138]: € 520,709 pw
+            - listitem [ref=e139]:
+              - generic [ref=e140]: Contract end
+              - generic [ref=e141]: 2034-06-30
+        - generic [ref=e142]:
+          - heading "Best in posession roles" [level=2] [ref=e143]:
+            - text: Best in posession roles
+            - link:
+              - /url: "#"
+          - list [ref=e144]:
+            - listitem [ref=e145]:
+              - text: Channel Forward
+              - generic [ref=e146]: "79"
+            - listitem [ref=e147]:
+              - text: Target Forward
+              - generic [ref=e148]: "78.7"
+            - listitem [ref=e149]:
+              - text: Poacher
+              - generic [ref=e150]: "76.5"
+            - listitem [ref=e151]:
+              - text: Centre Forward
+              - generic [ref=e152]: "76.5"
+            - listitem [ref=e153]:
+              - text: False Nine
+              - generic [ref=e154]: "71.7"
+            - listitem [ref=e155]:
+              - combobox [ref=e156]:
+                - option "Deep-Lying Forward - 70.6" [selected]
+        - generic [ref=e157]:
+          - heading "Best out posession roles" [level=2] [ref=e158]:
+            - text: Best out posession roles
+            - link:
+              - /url: "#"
+          - list [ref=e159]:
+            - listitem [ref=e160]:
+              - text: Centre Forward
+              - generic [ref=e161]: "82.9"
+            - listitem [ref=e162]:
+              - text: Splitting Outlet Centre Forward
+              - generic [ref=e163]: "80.3"
+            - listitem [ref=e164]:
+              - text: Central Outlet Centre Forward
+              - generic [ref=e165]: "79.5"
+            - listitem [ref=e166]:
+              - text: Tracking Centre Forward
+              - generic [ref=e167]: "77.3"
+      - generic [ref=e168]:
+        - generic [ref=e169]:
+          - generic [ref=e170]:
+            - heading "Attributes" [level=1] [ref=e171]
+            - generic [ref=e172]: All of our stats have been normalized 0-99
+          - generic [ref=e174]:
+            - heading "Technical" [level=3] [ref=e175]
+            - table [ref=e176]:
+              - rowgroup [ref=e177]:
+                - row [ref=e178]:
+                  - cell "Crossing" [ref=e179]
+                  - cell "50" [ref=e180]
+                - row [ref=e181]:
+                  - cell "Dribbling" [ref=e182]
+                  - cell "70" [ref=e183]
+                - row [ref=e184]:
+                  - cell "Finishing" [ref=e185]
+                  - cell "90" [ref=e186]
+                - row [ref=e187]:
+                  - cell "First Touch" [ref=e188]
+                  - cell "65" [ref=e189]
+                - row [ref=e190]:
+                  - cell "Heading" [ref=e191]
+                  - cell "75" [ref=e192]
+                - row [ref=e193]:
+                  - cell "Long Shots" [ref=e194]
+                  - cell "65" [ref=e195]
+                - row [ref=e196]:
+                  - cell "Marking" [ref=e197]
+                  - cell "30" [ref=e198]
+                - row [ref=e199]:
+                  - cell "Passing" [ref=e200]
+                  - cell "65" [ref=e201]
+                - row [ref=e202]:
+                  - cell "Tackling" [ref=e203]
+                  - cell "35" [ref=e204]
+                - row [ref=e205]:
+                  - cell "Technique" [ref=e206]
+                  - cell "70" [ref=e207]
+          - generic [ref=e208]:
+            - heading "Mental" [level=3] [ref=e209]
+            - table [ref=e210]:
+              - rowgroup [ref=e211]:
+                - row [ref=e212]:
+                  - cell "Aggression" [ref=e213]
+                  - cell "75" [ref=e214]
+                - row [ref=e215]:
+                  - cell "Anticipation" [ref=e216]
+                  - cell "95" [ref=e217]
+                - row [ref=e218]:
+                  - cell "Bravery" [ref=e219]
+                  - cell "75" [ref=e220]
+                - row [ref=e221]:
+                  - cell "Composure" [ref=e222]
+                  - cell "85" [ref=e223]
+                - row [ref=e224]:
+                  - cell "Concentration" [ref=e225]
+                  - cell "75" [ref=e226]
+                - row [ref=e227]:
+                  - cell "Decisions" [ref=e228]
+                  - cell "75" [ref=e229]
+                - row [ref=e230]:
+                  - cell "Determination" [ref=e231]
+                  - cell "99" [ref=e232]
+                - row [ref=e233]:
+                  - cell "Flair" [ref=e234]
+                  - cell "80" [ref=e235]
+                - row [ref=e236]:
+                  - cell "Leadership" [ref=e237]
+                  - cell "65" [ref=e238]
+                - row [ref=e239]:
+                  - cell "Off the Ball" [ref=e240]
+                  - cell "90" [ref=e241]
+                - row [ref=e242]:
+                  - cell "Positioning" [ref=e243]
+                  - cell "35" [ref=e244]
+                - row [ref=e245]:
+                  - cell "Teamwork" [ref=e246]
+                  - cell "70" [ref=e247]
+                - row [ref=e248]:
+                  - cell "Vision" [ref=e249]
+                  - cell "70" [ref=e250]
+                - row [ref=e251]:
+                  - cell "Work Rate" [ref=e252]
+                  - cell "65" [ref=e253]
+          - generic [ref=e254]:
+            - heading "Physical" [level=3] [ref=e255]
+            - table [ref=e256]:
+              - rowgroup [ref=e257]:
+                - row [ref=e258]:
+                  - cell "Acceleration" [ref=e259]
+                  - cell "85" [ref=e260]
+                - row [ref=e261]:
+                  - cell "Agility" [ref=e262]
+                  - cell "80" [ref=e263]
+                - row [ref=e264]:
+                  - cell "Balance" [ref=e265]
+                  - cell "85" [ref=e266]
+                - row [ref=e267]:
+                  - cell "Jumping Reach" [ref=e268]
+                  - cell "90" [ref=e269]
+                - row [ref=e270]:
+                  - cell "Natural Fitness" [ref=e271]
+                  - cell "95" [ref=e272]
+                - row [ref=e273]:
+                  - cell "Pace" [ref=e274]
+                  - cell "95" [ref=e275]
+                - row [ref=e276]:
+                  - cell "Stamina" [ref=e277]
+                  - cell "70" [ref=e278]
+                - row [ref=e279]:
+                  - cell "Strength" [ref=e280]
+                  - cell "85" [ref=e281]
+            - heading "Set Pieces" [level=3] [ref=e282]
+            - table [ref=e283]:
+              - rowgroup [ref=e284]:
+                - row [ref=e285]:
+                  - cell "Corners" [ref=e286]
+                  - cell "35" [ref=e287]
+                - row [ref=e288]:
+                  - cell "Free Kick Taking" [ref=e289]
+                  - cell "65" [ref=e290]
+                - row [ref=e291]:
+                  - cell "Long Throws" [ref=e292]
+                  - cell "25" [ref=e293]
+                - row [ref=e294]:
+                  - cell "Penalty Taking" [ref=e295]
+                  - cell "85" [ref=e296]
+        - generic [ref=e297]:
+          - heading "Similar player(s)" [level=1] [ref=e298]
+          - generic [ref=e300]:
+            - list [ref=e301]:
+              - listitem "Rating" [ref=e302]
+              - listitem [ref=e303]: name
+              - listitem [ref=e304]: age
+              - listitem [ref=e305]: value
+            - generic [ref=e306]:
+              - list [ref=e307]:
+                - listitem [ref=e308]:
+                  - generic [ref=e309]: "93"
+                  - generic [ref=e310]: "94"
+                - listitem [ref=e311]:
+                  - generic [ref=e313]:
+                    - link "Ousmane Dembélé" [ref=e316] [cursor=pointer]:
+                      - /url: /players/7-fm-26/85140178-ousmane-dembele
+                    - generic [ref=e317]: AMR, AML, ST
+                    - link "PSG" [ref=e318] [cursor=pointer]:
+                      - /url: /clubs/7-fm-26/868-psg
+                - listitem [ref=e320]: "28"
+                - listitem [ref=e321]: €317M
+              - list [ref=e322]:
+                - listitem [ref=e323]:
+                  - generic [ref=e324]: "85"
+                  - generic [ref=e325]: "90"
+                - listitem [ref=e326]:
+                  - generic [ref=e328]:
+                    - link "Julián Álvarez" [ref=e331] [cursor=pointer]:
+                      - /url: /players/7-fm-26/14183207-julian-alvarez
+                    - generic [ref=e332]: AMR, AML, AMC, ST
+                    - link "Atlético Madrid" [ref=e333] [cursor=pointer]:
+                      - /url: /clubs/7-fm-26/1687-atletico-madrid
+                - listitem [ref=e335]: "25"
+                - listitem [ref=e336]:
+                  - generic [ref=e337]: €197M
+                  - generic "Clause" [ref=e338]: €500M
+              - list [ref=e339]:
+                - listitem [ref=e340]:
+                  - generic [ref=e341]: "85"
+                  - generic [ref=e342]: "90"
+                - listitem [ref=e343]:
+                  - generic [ref=e345]:
+                    - link "Alexander Isak" [ref=e348] [cursor=pointer]:
+                      - /url: /players/7-fm-26/93070286-alexander-isak
+                    - generic [ref=e349]: AML, ST
+                    - link "Liverpool" [ref=e350] [cursor=pointer]:
+                      - /url: /clubs/7-fm-26/676-liverpool
+                - listitem [ref=e352]: "26"
+                - listitem [ref=e353]: €288M
+        - generic [ref=e354]:
+          - heading "Comments" [level=1] [ref=e355]
+          - generic [ref=e358]:
+            - generic [ref=e360]:
+              - generic [ref=e361]: Draven#7104478111 Nov 22:44
+              - generic [ref=e362]: This is the reason i can't score with merino upfront against Burnley, what a joker. His heading should be at least 85, shooting is at least 83, and off ball should be 83 at least! This developer never watch his game in the national team and Arsenal. Rubbish
+            - link "Reply" [ref=e363] [cursor=pointer]:
+              - /url: "#"
+            - generic [ref=e364]:
+              - link [ref=e365] [cursor=pointer]:
+                - /url: "#"
+              - text: "9"
+              - link [ref=e366] [cursor=pointer]:
+                - /url: "#"
+          - generic [ref=e368]:
+            - generic [ref=e369]:
+              - generic [ref=e370]: Name
+              - generic [ref=e371]: Pick a name or leave blank to comment as guest
+              - 'textbox "Guest #129571798" [ref=e372]'
+            - generic [ref=e373]:
+              - generic [ref=e374]: Email
+              - generic [ref=e375]: Enter your e-mail to be notified on reply
+              - textbox "Email" [ref=e376]
+            - textbox "Your comment" [ref=e377]
+            - generic [ref=e378]: Be respectful and kind in your comments, failure to do so will result in a permanent ban
+            - link "Submit" [ref=e379] [cursor=pointer]:
+              - /url: "#"
+  - list [ref=e381]:
+    - listitem [ref=e382]:
+      - link "Follow us on Instagram" [ref=e383] [cursor=pointer]:
+        - /url: https://www.instagram.com/fminside/
+    - listitem [ref=e384]:
+      - link "Join us on Facebook" [ref=e385] [cursor=pointer]:
+        - /url: https://www.facebook.com/fminsidefm
+    - listitem [ref=e386]:
+      - link "Stay on top through X" [ref=e387] [cursor=pointer]:
+        - /url: https://twitter.com/fminside
+    - listitem [ref=e388]:
+      - link "Watch us on Youtube" [ref=e389] [cursor=pointer]:
+        - /url: https://www.youtube.com/channel/UCKYHiYV4ZQ1YWy2rgCCYgRA
+  - generic [ref=e391]:
+    - paragraph [ref=e392]:
+      - generic [ref=e393]: Copyright © 2004 - 2026 fminside.net
+      - text: Not affiliated with Sports Interactive or SEGA in any way. All trademarks are property of their respective owners. Our website has been created by and for fans of Football Manager
+    - generic [ref=e395]:
+      - generic [ref=e396]:
+        - generic: More on FMInside
+        - list [ref=e397]:
+          - link:
+            - /url: "#"
+          - listitem [ref=e398]:
+            - link "About us" [ref=e399] [cursor=pointer]:
+              - /url: /about-us
+          - listitem [ref=e400]:
+            - link "Advertise" [ref=e401] [cursor=pointer]:
+              - /url: /advertise-on-fminside
+          - listitem [ref=e402]:
+            - link "Staff" [ref=e403] [cursor=pointer]:
+              - /url: /staff
+          - listitem [ref=e404]:
+            - link "Write for us" [ref=e405] [cursor=pointer]:
+              - /url: /write-for-us
+          - listitem [ref=e406]:
+            - link "Vacancies" [ref=e407] [cursor=pointer]:
+              - /url: /vacancies
+          - listitem [ref=e408]:
+            - link "Links" [ref=e409] [cursor=pointer]:
+              - /url: /links
+          - listitem [ref=e410]:
+            - link "Terms" [ref=e411] [cursor=pointer]:
+              - /url: /terms-of-use
+          - listitem [ref=e412]:
+            - link "Privacy" [ref=e413] [cursor=pointer]:
+              - /url: /privacy-policy
+          - listitem [ref=e414]:
+            - link "Contact" [ref=e415] [cursor=pointer]:
+              - /url: /contact
+      - generic [ref=e416]:
+        - generic: Partners
+        - list [ref=e417]:
+          - listitem [ref=e418]:
+            - link "Playwire" [ref=e419] [cursor=pointer]:
+              - /url: https://www.playwire.com/contact-direct-sales
+          - listitem [ref=e420]:
+            - link "Managers United" [ref=e421] [cursor=pointer]:
+              - /url: https://manutd.nl
+          - listitem [ref=e422]:
+            - link "Ontbrand" [ref=e423] [cursor=pointer]:
+              - /url: https://ontbrand.com

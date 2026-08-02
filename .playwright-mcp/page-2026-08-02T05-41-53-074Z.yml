@@ -1,0 +1,305 @@
+- generic [active] [ref=f108e1]:
+  - banner [ref=f108e2]:
+    - generic [ref=f108e4]:
+      - link [ref=f108e5] [cursor=pointer]:
+        - /url: /
+        - img "EFEM Logo" [ref=f108e6]
+      - list [ref=f108e8]:
+        - listitem [ref=f108e9]:
+          - link "Players" [ref=f108e10] [cursor=pointer]:
+            - /url: /players
+        - listitem [ref=f108e11]:
+          - link "Staff" [ref=f108e12] [cursor=pointer]:
+            - /url: /staff
+        - listitem [ref=f108e13]:
+          - link "Clubs" [ref=f108e14] [cursor=pointer]:
+            - /url: /clubs
+        - listitem [ref=f108e15]:
+          - link "Nations" [ref=f108e16] [cursor=pointer]:
+            - /url: /nations
+        - listitem [ref=f108e17]:
+          - link "Shortlists" [ref=f108e18] [cursor=pointer]:
+            - /url: /shortlists
+        - listitem [ref=f108e19]:
+          - link "Discord Bot" [ref=f108e20] [cursor=pointer]:
+            - /url: /discord-bot
+        - listitem [ref=f108e21]:
+          - link "Personality Calculator" [ref=f108e22] [cursor=pointer]:
+            - /url: /personality-calculator
+        - listitem [ref=f108e23]:
+          - link "Analyse Player" [ref=f108e24] [cursor=pointer]:
+            - /url: /analyse-player
+      - search "Site search" [ref=f108e27]:
+        - combobox "Search players, clubs, staff, and nations" [ref=f108e29]
+  - main [ref=f108e35]:
+    - generic [ref=f108e37]:
+      - generic [ref=f108e38]:
+        - generic [ref=f108e41]:
+          - navigation "Breadcrumb" [ref=f108e42]:
+            - list [ref=f108e43]:
+              - listitem [ref=f108e44]:
+                - link "Home" [ref=f108e45] [cursor=pointer]:
+                  - /url: /
+              - listitem [ref=f108e46]:
+                - text: /
+                - link "Players" [ref=f108e47] [cursor=pointer]:
+                  - /url: /players
+              - listitem [ref=f108e48]: /Erling Haaland
+          - generic [ref=f108e49]:
+            - generic [ref=f108e50]:
+              - generic [ref=f108e51]:
+                - img "Erling Haaland" [ref=f108e53]
+                - generic [ref=f108e54]:
+                  - generic [ref=f108e55]: "Image source:"
+                  - link "DF11Faces.com" [ref=f108e56] [cursor=pointer]:
+                    - /url: https://df11faces.com/
+              - generic [ref=f108e57]:
+                - generic [ref=f108e58]:
+                  - generic [ref=f108e59]: "97"
+                  - heading "Erling Haaland" [level=1] [ref=f108e62]
+                  - generic [ref=f108e63]: Male
+                  - button [ref=f108e64] [cursor=pointer]
+                - generic [ref=f108e67]:
+                  - generic [ref=f108e69]:
+                    - img "Man City" [ref=f108e70]
+                    - link "Man City" [ref=f108e71] [cursor=pointer]:
+                      - /url: /clubs/679-Man-City
+                  - generic [ref=f108e74]:
+                    - img "Norway" [ref=f108e75]
+                    - link "Norway" [ref=f108e76] [cursor=pointer]:
+                      - /url: /nations/786-Norway
+                - generic [ref=f108e77]:
+                  - generic [ref=f108e78]: 24 yrs old
+                  - link "ST" [ref=f108e86] [cursor=pointer]:
+                    - /url: /players?positions=ST
+              - generic [ref=f108e87]:
+                - link "Well Known" [ref=f108e88] [cursor=pointer]:
+                  - /url: /players?tags=WellKnown
+                - link "Penalty Expert" [ref=f108e89] [cursor=pointer]:
+                  - /url: /players?tags=PenaltyExpert
+                - link "Smart" [ref=f108e90] [cursor=pointer]:
+                  - /url: /players?tags=Smart
+                - link "Well Rounded" [ref=f108e91] [cursor=pointer]:
+                  - /url: /players?tags=WellRounded
+                - link "Speedster" [ref=f108e92] [cursor=pointer]:
+                  - /url: /players?tags=Speedster
+                - link "Strong" [ref=f108e93] [cursor=pointer]:
+                  - /url: /players?tags=Strong
+                - link "Elite Mentality" [ref=f108e94] [cursor=pointer]:
+                  - /url: /players?tags=EliteMentality
+                - link "Tireless" [ref=f108e95] [cursor=pointer]:
+                  - /url: /players?tags=Tireless
+                - link "Two Footed" [ref=f108e96] [cursor=pointer]:
+                  - /url: /players?tags=TwoFooted
+                - link "Team Player" [ref=f108e97] [cursor=pointer]:
+                  - /url: /players?tags=TeamPlayer
+                - link "Peaked" [ref=f108e98] [cursor=pointer]:
+                  - /url: /players?tags=Peaked
+                - link "Aerial Threat" [ref=f108e99] [cursor=pointer]:
+                  - /url: /players?tags=AerialThreat
+            - combobox "Select player database version" [ref=f108e101]:
+              - option "26.3.0" [selected]
+              - option "26.2.0"
+              - option "26.0.0"
+              - option "24.3.0"
+        - complementary "Advertisement" [ref=f108e103]
+        - generic [ref=f108e105]:
+          - generic [ref=f108e106]:
+            - paragraph [ref=f108e107]: ⭐ Go Premium
+            - paragraph [ref=f108e108]: Support EFEM.club and remove all ads from the site!
+          - button "Subscribe" [ref=f108e109] [cursor=pointer]
+        - generic [ref=f108e110]:
+          - generic [ref=f108e114]:
+            - button "Overview" [pressed] [ref=f108e115] [cursor=pointer]
+            - button "Attributes" [ref=f108e116] [cursor=pointer]
+            - button "Tactical" [ref=f108e117] [cursor=pointer]
+            - button "Financial" [ref=f108e118] [cursor=pointer]
+          - tabpanel [ref=f108e121]:
+            - generic [ref=f108e122]:
+              - generic [ref=f108e123]:
+                - generic [ref=f108e124]:
+                  - heading "Pros" [level=3] [ref=f108e125]
+                  - list [ref=f108e127]:
+                    - listitem [ref=f108e128]:
+                      - generic [ref=f108e129]: ✔
+                      - generic "Elite Current Ability" [ref=f108e130]
+                    - listitem [ref=f108e131]:
+                      - generic [ref=f108e132]: ✔
+                      - generic "Elite Potential Ability" [ref=f108e133]
+                    - listitem [ref=f108e134]:
+                      - generic [ref=f108e135]: ✔
+                      - generic "Fantastic playing as a Striker" [ref=f108e136]
+                    - listitem [ref=f108e137]:
+                      - generic [ref=f108e138]: ✔
+                      - generic "Fantastic Physical attributes" [ref=f108e139]
+                    - listitem [ref=f108e140]:
+                      - generic [ref=f108e141]: ✔
+                      - generic "Fantastic Shooting attributes" [ref=f108e142]
+                - generic [ref=f108e143]:
+                  - heading "Cons" [level=3] [ref=f108e144]
+                  - list [ref=f108e146]:
+                    - listitem [ref=f108e147]:
+                      - generic [ref=f108e148]: ✖
+                      - generic "Can only play one position" [ref=f108e149]
+                    - listitem [ref=f108e150]:
+                      - generic [ref=f108e151]: ✖
+                      - generic "Very one-dimensional attributes" [ref=f108e152]
+                    - listitem [ref=f108e153]:
+                      - generic [ref=f108e154]: ✖
+                      - generic "Terrible Defending attributes" [ref=f108e155]
+                    - listitem [ref=f108e156]:
+                      - generic [ref=f108e157]: ✖
+                      - generic "Bad at Marking" [ref=f108e158]
+                    - listitem [ref=f108e159]:
+                      - generic [ref=f108e160]: ✖
+                      - generic "Bad at Tackling" [ref=f108e161]
+              - generic [ref=f108e162]:
+                - generic [ref=f108e163]:
+                  - heading "Player Details" [level=3] [ref=f108e164]
+                  - generic [ref=f108e166]:
+                    - generic [ref=f108e167]:
+                      - term [ref=f108e168]: Strong Foot
+                      - definition [ref=f108e169]: Left
+                    - generic [ref=f108e170]:
+                      - term [ref=f108e171]: Height
+                      - definition [ref=f108e172]: 195 cm
+                    - generic [ref=f108e173]:
+                      - term [ref=f108e174]: Contract Expiry Date
+                      - definition [ref=f108e175]: 30-06-2034
+                    - generic [ref=f108e176]:
+                      - term [ref=f108e177]: Wage per Week
+                      - definition [ref=f108e178]: £450k
+                    - generic [ref=f108e179]:
+                      - term [ref=f108e180]: On Loan From
+                      - definition [ref=f108e181]: "-"
+                - generic [ref=f108e182]:
+                  - heading "Ability & Value" [level=3] [ref=f108e183]
+                  - generic [ref=f108e185]:
+                    - generic [ref=f108e187]:
+                      - generic [ref=f108e188]:
+                        - text: Current Ability
+                        - 'button "Info: Current Ability" [ref=f108e189] [cursor=pointer]': i
+                      - generic [ref=f108e190]: "94"
+                    - generic [ref=f108e194]:
+                      - generic [ref=f108e195]:
+                        - text: Predicted Potential
+                        - 'button "Info: Predicted Potential" [ref=f108e196] [cursor=pointer]': i
+                      - generic [ref=f108e197]: "97"
+                    - generic [ref=f108e201]:
+                      - generic [ref=f108e202]: Estimated Buy Price
+                      - generic [ref=f108e203]: £179.0M
+                    - generic [ref=f108e205]:
+                      - generic [ref=f108e206]:
+                        - text: Recommended Buy Price
+                        - 'button "Info: Recommended Buy Price" [ref=f108e207] [cursor=pointer]': i
+                      - generic [ref=f108e208]: £147.3M
+              - generic [ref=f108e209]:
+                - heading "Top Positions" [level=3] [ref=f108e210]
+                - generic [ref=f108e212]:
+                  - generic [ref=f108e213]:
+                    - generic [ref=f108e214]: ST
+                    - generic [ref=f108e215]: "99"
+                  - generic [ref=f108e219]:
+                    - generic [ref=f108e220]: RW
+                    - generic [ref=f108e221]: "45"
+                  - generic [ref=f108e225]:
+                    - generic [ref=f108e226]: LW
+                    - generic [ref=f108e227]: "45"
+                  - generic [ref=f108e231]:
+                    - generic [ref=f108e232]: AM
+                    - generic [ref=f108e233]: "44"
+                  - link "View All Positions" [ref=f108e237] [cursor=pointer]:
+                    - /url: "#panel-tactical"
+              - generic [ref=f108e238]:
+                - heading "Attributes" [level=3] [ref=f108e239]
+                - generic [ref=f108e241]:
+                  - generic [ref=f108e243]:
+                    - generic [ref=f108e244]: Playmaking
+                    - generic [ref=f108e245]: "75"
+                  - generic [ref=f108e249]:
+                    - generic [ref=f108e250]: Shooting
+                    - generic [ref=f108e251]: "89"
+                  - generic [ref=f108e255]:
+                    - generic [ref=f108e256]: Defending
+                    - generic [ref=f108e257]: "48"
+                  - generic [ref=f108e261]:
+                    - generic [ref=f108e262]: Ball Control
+                    - generic [ref=f108e263]: "82"
+                  - generic [ref=f108e267]:
+                    - generic [ref=f108e268]: Mental
+                    - generic [ref=f108e269]: "83"
+                  - generic [ref=f108e273]:
+                    - generic [ref=f108e274]: Personality
+                    - generic [ref=f108e275]: "78"
+                  - generic [ref=f108e279]:
+                    - generic [ref=f108e280]: Aerial
+                    - generic [ref=f108e281]: "85"
+                  - generic [ref=f108e285]:
+                    - generic [ref=f108e286]: Physical
+                    - generic [ref=f108e287]: "86"
+                  - generic [ref=f108e291]:
+                    - generic [ref=f108e292]: Set Piece
+                    - generic [ref=f108e293]: "69"
+                - button "View All Attributes" [ref=f108e297] [cursor=pointer]
+      - complementary [ref=f108e298]:
+        - generic [ref=f108e299]:
+          - complementary "Advertisement" [ref=f108e300]
+          - complementary "Advertisement" [ref=f108e302]
+  - contentinfo [ref=f108e304]:
+    - generic [ref=f108e305]:
+      - generic [ref=f108e306]:
+        - generic [ref=f108e307]:
+          - heading "Quick Links" [level=3] [ref=f108e308]
+          - list [ref=f108e309]:
+            - listitem [ref=f108e310]:
+              - link "Players" [ref=f108e311] [cursor=pointer]:
+                - /url: /players
+            - listitem [ref=f108e312]:
+              - link "Clubs" [ref=f108e313] [cursor=pointer]:
+                - /url: /clubs
+            - listitem [ref=f108e314]:
+              - link "Nations" [ref=f108e315] [cursor=pointer]:
+                - /url: /nations
+            - listitem [ref=f108e316]:
+              - link "Staff" [ref=f108e317] [cursor=pointer]:
+                - /url: /staff
+            - listitem [ref=f108e318]:
+              - link "Shortlists" [ref=f108e319] [cursor=pointer]:
+                - /url: /shortlists
+        - generic [ref=f108e320]:
+          - heading "Tools" [level=3] [ref=f108e321]
+          - list [ref=f108e322]:
+            - listitem [ref=f108e323]:
+              - link "Personality Calculator" [ref=f108e324] [cursor=pointer]:
+                - /url: /personality-calculator
+            - listitem [ref=f108e325]:
+              - link "Analyse Player" [ref=f108e326] [cursor=pointer]:
+                - /url: /analyse-player
+            - listitem [ref=f108e327]:
+              - link "Discord Bot" [ref=f108e328] [cursor=pointer]:
+                - /url: /discord-bot
+        - generic [ref=f108e329]:
+          - heading "Connect" [level=3] [ref=f108e330]
+          - list [ref=f108e331]:
+            - listitem [ref=f108e332]:
+              - link "Discord" [ref=f108e333] [cursor=pointer]:
+                - /url: https://discord.gg/BmQBvKmxwG
+            - listitem [ref=f108e336]:
+              - link "X (Twitter)" [ref=f108e337] [cursor=pointer]:
+                - /url: https://x.com/WeAreEFEM
+            - listitem [ref=f108e340]:
+              - link "Instagram" [ref=f108e341] [cursor=pointer]:
+                - /url: https://instagram.com/efemclub
+      - generic [ref=f108e344]:
+        - generic [ref=f108e345]:
+          - link "Privacy Policy" [ref=f108e346] [cursor=pointer]:
+            - /url: /privacy-policy
+          - link "Terms of Use" [ref=f108e347] [cursor=pointer]:
+            - /url: /terms-of-use
+          - link "About Us" [ref=f108e348] [cursor=pointer]:
+            - /url: /about-us
+          - link "Contact" [ref=f108e349] [cursor=pointer]:
+            - /url: /contact
+        - paragraph [ref=f108e350]: © EFEM.club. All rights reserved.
+        - paragraph [ref=f108e351]: EFEM.club is an unofficial fan site and is not affiliated with or endorsed by Sports Interactive or SEGA. The content on this site is for entertainment purposes only and reflects the personal views of individual contributors, not those of Sports Interactive or SEGA.
+  - alert [ref=f108e352]

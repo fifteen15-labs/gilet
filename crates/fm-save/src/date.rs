@@ -52,6 +52,21 @@ impl Date {
         let had_birthday = (on.month, on.day) >= (self.month, self.day);
         on.year.saturating_sub(self.year).saturating_sub(u16::from(!had_birthday))
     }
+
+    /// The 1-based day-of-year this date falls on — the inverse of
+    /// [`Date::from_day_of_year`], for writing dates back in FM's encoding.
+    #[must_use]
+    pub fn day_of_year(&self) -> u16 {
+        let leap = is_leap_year(self.year);
+        let mut total = u16::from(self.day);
+        for (index, base) in DAYS_IN_MONTH.iter().enumerate() {
+            if index + 1 >= usize::from(self.month) {
+                break;
+            }
+            total += u16::from(*base) + u16::from(index == 1 && leap);
+        }
+        total
+    }
 }
 
 fn is_leap_year(year: u16) -> bool {
@@ -76,6 +91,14 @@ mod tests {
         for (doy, year, day, month, who) in cases {
             let d = Date::from_day_of_year(doy, year).unwrap();
             assert_eq!((d.day, d.month, d.year), (day, month, year), "{who}");
+        }
+    }
+
+    #[test]
+    fn day_of_year_inverts_from_day_of_year() {
+        for (doy, year) in [(1u16, 2003u16), (60, 2000), (60, 1900), (203, 2000), (365, 2003), (366, 2000)] {
+            let date = Date::from_day_of_year(doy, year).unwrap();
+            assert_eq!(date.day_of_year(), doy, "{year}-{doy}");
         }
     }
 

@@ -245,11 +245,13 @@ fn a_goalkeepers_report_confirms_the_goalkeeping_set() {
         ],
     );
 
-    // The four unseparated goalkeeping indices all read 15 on his screen —
-    // Aerial Reach, Communication, Handling and Reflexes in some order.
-    for index in [11, 12, 14, 21] {
-        assert_eq!(fm_save::ability::attribute_name(index), None);
-        assert_eq!(ability.attributes[index], 15, "index {index}");
+    // His screen shows Aerial Reach, Communication, Handling and Reflexes
+    // all at 15 — which is why this report alone could not separate them.
+    // The split came from Donnarumma's published block instead (see
+    // `published_keeper_attributes_split_the_last_four`); this report still
+    // pins all four values.
+    for name in ["Handling", "Aerial Reach", "Communication", "Reflexes"] {
+        assert_eq!(value_of(ability, name), 15, "{name}");
     }
 
     // Outfielders score near nothing on the goalkeeping set — the property
@@ -280,6 +282,80 @@ fn an_aged_save_reads_its_own_date() {
     // true 28 May 2035.
     assert_eq!(date.year, 2035);
     assert_eq!(date.month, 5);
+}
+
+/// The Afan Lido career regressed two ways at once: its week stamp carries
+/// junk in the high bits (0x1A9F, not a day of year until masked), and the
+/// men's Tottenham club record reads flags 0x12, which dropped the club and
+/// left its whole squad showing no club.
+#[test]
+fn a_262_career_reads_its_date_and_flagged_clubs() {
+    let Some(save) = load_named("Paul Dolden - Afan Lido.fm") else {
+        eprintln!("skipped: no Afan Lido save on this machine");
+        return;
+    };
+
+    // Day 159 of 2026, confirmed by the current-date stamps repeated through
+    // the save's competition frames.
+    let date = save.game_date.expect("masked week stamp should read");
+    assert_eq!(date, fm_save::Date { year: 2026, month: 6, day: 8 });
+
+    // The men's Tottenham record (eid 418) must exist alongside the women's
+    // (eid 15924), and its squad must resolve — Pape Matar Sarr was one of
+    // the contracted players showing no club.
+    let spurs: Vec<_> = save
+        .clubs
+        .iter()
+        .filter(|c| c.name == "Tottenham Hotspur")
+        .collect();
+    assert!(spurs.iter().any(|c| c.eid == Some(418)), "men's Spurs record missing");
+    let squad = save
+        .squads
+        .iter()
+        .find(|s| s.club_eid == 418)
+        .expect("men's Spurs squad missing");
+    let sarr = save
+        .people
+        .iter()
+        .find(|p| p.full_name == "Pape Matar Sarr")
+        .expect("Sarr missing");
+    assert!(squad.player_eids.contains(&sarr.eid.unwrap()));
+    assert_eq!(sarr.club_eid, Some(418));
+
+    // Chelsea also reads flags 0x12 in this save; it must be present.
+    assert!(save.clubs.iter().any(|c| c.name == "Chelsea" && c.eid.is_some()));
+}
+
+/// The last four goalkeeping indices were separated by published FM 26 data
+/// rather than an in-game screen: fminside.net serves the 26.2 database with
+/// display×5 values (the same source class as the FM Scout wage check), and
+/// Donnarumma's page splits all four — Handling 80, Aerial Reach 75,
+/// Communication 70, Reflexes 90 — where the one in-game keeper report read
+/// 15 across the board. His decoded block matches that split (16/15/14/18),
+/// and Alisson's is consistent with his page (85/70/70/85 → 17/14/14/17).
+#[test]
+fn published_keeper_attributes_split_the_last_four() {
+    let save = save_or_skip!();
+
+    let block = |name: &str| -> &fm_save::Ability {
+        save.people
+            .iter()
+            .find(|p| p.full_name == name)
+            .and_then(|p| p.ability.as_ref())
+            .unwrap_or_else(|| panic!("{name} should be a player"))
+    };
+
+    let donnarumma = block("Gianluigi Donnarumma");
+    assert_eq!(value_of(donnarumma, "Handling"), 16);
+    assert_eq!(value_of(donnarumma, "Aerial Reach"), 15);
+    assert_eq!(value_of(donnarumma, "Communication"), 14);
+    assert_eq!(value_of(donnarumma, "Reflexes"), 18);
+
+    let alisson = block("Alisson Ramsés Becker");
+    assert_eq!(value_of(alisson, "Handling"), 17);
+    assert_eq!(value_of(alisson, "Aerial Reach"), 14);
+    assert_eq!(value_of(alisson, "Communication"), 14);
+    assert_eq!(value_of(alisson, "Reflexes"), 17);
 }
 
 /// The eight-byte run after the nation marker is the hidden personality set.
@@ -324,4 +400,112 @@ fn hidden_personality_matches_the_in_game_labels() {
         "only {with} of {} adults have personality",
         adults.len()
     );
+}
+
+/// The probe save was made after creating shortlists whose contents are
+/// known exactly — the ground truth that unlocked `scout_man.dat`.
+#[test]
+fn probe_save_reads_the_in_game_shortlists() {
+    let Some(save) = load_named("Probe.fm") else {
+        eprintln!("skipped: no Probe.fm on this machine");
+        return;
+    };
+
+    let names_in = |list: &fm_save::GameShortlist| -> Vec<String> {
+        list.person_eids
+            .iter()
+            .map(|&eid| {
+                save.people
+                    .iter()
+                    .find(|p| p.eid == Some(eid))
+                    .unwrap_or_else(|| panic!("shortlist eid {eid} resolves to nobody"))
+                    .full_name
+                    .clone()
+            })
+            .collect()
+    };
+
+    let list = |name: &str| -> &fm_save::GameShortlist {
+        save.shortlists
+            .iter()
+            .find(|s| s.name.as_deref() == Some(name))
+            .unwrap_or_else(|| panic!("no shortlist named {name}"))
+    };
+
+    // Created in FM as ZZPROBE with exactly these three, in this order.
+    assert_eq!(
+        names_in(list("ZZPROBE")),
+        vec!["Virgil van Dijk", "Florian Richard Wirtz", "Mohamed Salah Ghaly"]
+    );
+    // WirtzNew was imported back into the career from its .fmf export.
+    assert_eq!(
+        names_in(list("WirtzNew")),
+        vec!["Florian Richard Wirtz", "Roberto Firmino Barbosa de Oliveira", "Mohamed Salah Ghaly"]
+    );
+    // The career's unnamed default list exists and resolves too.
+    let unnamed = save.shortlists.iter().find(|s| s.name.is_none());
+    assert!(unnamed.is_some(), "the unnamed default shortlist should parse");
+}
+
+/// The writer's safety proof, against the real probe save: taking the file
+/// apart and reassembling it unchanged must reproduce it byte for byte, and
+/// an in-memory shortlist edit must survive a full reparse. No file on disk
+/// is touched.
+#[test]
+fn probe_save_survives_reassembly_and_a_shortlist_edit() {
+    let Some(bytes) = ({
+        std::env::var_os("HOME").and_then(|home| {
+            std::fs::read(
+                std::path::PathBuf::from(home)
+                    .join("Library/Application Support/Sports Interactive/Football Manager 26/games")
+                    .join("Probe.fm"),
+            )
+            .ok()
+        })
+    }) else {
+        eprintln!("skipped: no Probe.fm on this machine");
+        return;
+    };
+
+    // Identity: decompose + assemble with nothing changed is the same file.
+    let d = fm_save::archive::decompose(&bytes).unwrap();
+    let rebuilt =
+        fm_save::archive::assemble(d.header, d.body, d.inner_header, d.manifest_frame).unwrap();
+    assert_eq!(rebuilt, bytes, "identity reassembly must be byte-identical");
+
+    // Edit: put Haaland on ZZPROBE, rebuild, reparse the whole save.
+    let save = fm_save::Save::parse(&bytes).unwrap();
+    let haaland = save
+        .people
+        .iter()
+        .find(|p| p.full_name == "Erling Braut Haaland")
+        .and_then(|p| p.eid)
+        .expect("Haaland should have an entity id");
+
+    let scout = fm_save::archive::member_plaintext(&bytes, "scout_man.dat").unwrap();
+    // Date-added bytes observed in this save's own entries — the low half of
+    // the field is undecoded, so nothing is invented here.
+    let date = [0x9F, 0x1A, 0xEA, 0x07];
+    let edited = fm_save::shortlist::add_entry(&scout, Some("ZZPROBE"), haaland, date).unwrap();
+    let written = fm_save::archive::replace_member(&bytes, "scout_man.dat", &edited).unwrap();
+
+    let reparsed = fm_save::Save::parse(&written).unwrap();
+    let zzprobe = reparsed
+        .shortlists
+        .iter()
+        .find(|s| s.name.as_deref() == Some("ZZPROBE"))
+        .expect("ZZPROBE should still parse after the rewrite");
+    assert_eq!(zzprobe.person_eids.len(), 4);
+    assert_eq!(zzprobe.person_eids.last().copied(), Some(haaland));
+
+    // The rest of the save is untouched by the edit: same people, same
+    // captain, same other lists.
+    assert_eq!(reparsed.people.len(), save.people.len());
+    let wirtznew = |s: &fm_save::Save| {
+        s.shortlists
+            .iter()
+            .find(|l| l.name.as_deref() == Some("WirtzNew"))
+            .map(|l| l.person_eids.clone())
+    };
+    assert_eq!(wirtznew(&reparsed), wirtznew(&save));
 }

@@ -13,12 +13,15 @@
 //! ```
 
 pub mod ability;
+pub mod archive;
 pub mod club;
 pub mod container;
 pub mod date;
 pub mod error;
 pub mod gamedate;
+pub mod manifest;
 pub mod person;
+pub mod shortlist;
 pub mod squad;
 pub mod strings;
 
@@ -28,6 +31,7 @@ pub use container::Frame;
 pub use date::Date;
 pub use error::{Error, Result};
 pub use person::Person;
+pub use shortlist::GameShortlist;
 pub use squad::Squad;
 
 /// A parsed save.
@@ -38,9 +42,13 @@ pub struct Save {
     /// One record per club that fields a first-team squad, referencing people
     /// by entity id. `Person::club_eid` is the same link from the other side.
     pub squads: Vec<Squad>,
-    /// The save's own in-game date, when it can be read. `None` for FM 26.2.0
-    /// saves, which encode it differently.
+    /// The save's own in-game date, when it can be read: the header pair on
+    /// 26.0.0, the main frame's masked week stamp on 26.2.0 (at most a week
+    /// stale). `None` only when neither source decodes.
     pub game_date: Option<Date>,
+    /// The human manager's in-game shortlists, from the `scout_man.dat`
+    /// member. Empty when the save's manifest or that member cannot be read.
+    pub shortlists: Vec<GameShortlist>,
     /// Decompressed size of every frame, kept so the UI can report what was
     /// read without holding 187 MB of frame payloads alive.
     pub frame_sizes: Vec<usize>,
@@ -192,11 +200,23 @@ impl Save {
         // The in-game date lives in the small header frame on 26.0.0; on
         // 26.2.0 it moved, and the main frame's week stamp stands in — at
         // most a week stale, against years wrong from a system-clock
-        // fallback.
-        let game_date = frames
-            .first()
+        // fallback. The stamp is only decoded on 26.2-format saves: 26.0.0
+        // keeps a different quantity at the same offset that masks to a
+        // valid-looking wrong date.
+        let header = frames.first();
+        let game_date = header
             .and_then(|f| gamedate::find_game_date(&f.data))
-            .or_else(|| main.and_then(|f| gamedate::find_main_frame_date(&f.data)));
+            .or_else(|| {
+                let (major, minor) = header.and_then(|f| gamedate::format_version(&f.data))?;
+                if major != 26 || minor < 2 {
+                    return None;
+                }
+                main.and_then(|f| gamedate::find_main_frame_date(&f.data))
+            });
+
+        let shortlists = scout_man_frame(&frames)
+            .map(|f| shortlist::scan_shortlists(&f.data))
+            .unwrap_or_default();
 
         on_stage(Stage::Done);
         Ok(Self {
@@ -204,6 +224,7 @@ impl Save {
             clubs,
             squads,
             game_date,
+            shortlists,
             frame_sizes,
         })
     }
@@ -216,6 +237,19 @@ impl Save {
 /// whose prefix went undetected, and resolving through the chain still lands
 /// on the right record. Resolution is by containing record — the person whose
 /// prefix is the last one before the block.
+/// The decompressed `scout_man.dat` frame, located through the manifest in
+/// the final frame. The manifest's sorted position is the frame index, and
+/// the member's plaintext length must match the frame byte-for-byte — a
+/// mismatch means the mapping is wrong, and no shortlist is better than one
+/// read out of someone else's bytes.
+fn scout_man_frame(frames: &[Frame]) -> Option<&Frame> {
+    let members = manifest::read_manifest(&frames.last()?.data)?;
+    let index = manifest::frame_index_of(&members, "scout_man.dat")?;
+    let frame = frames.get(index)?;
+    let plain = members.get(index).map(|m| m.plain)?;
+    (frame.data.len() as u64 == plain).then_some(frame)
+}
+
 fn link_members(people: &mut [Person], squads: &[squad::Squad], chain: &[person::Identity]) {
     let offsets: Vec<usize> = people.iter().map(|p| p.offset).collect();
     let mut eid_to_person: std::collections::HashMap<u32, usize> = std::collections::HashMap::new();

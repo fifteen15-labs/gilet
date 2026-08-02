@@ -56,11 +56,17 @@ pub fn is_goalkeeping(index: usize) -> bool {
 /// five reports reads 20 at index 24 and 9 at index 25, matching his "Very
 /// Strong" left foot and "Reasonable" right.
 ///
-/// Unnamed: four goalkeeping core skills — 11, 12, 14 and 21 hold Aerial
-/// Reach, Communication, Handling and Reflexes in some order, all reading 15
-/// for the one keeper seen, so a second keeper report separates them — and
-/// five hidden attributes at 41, 44, 47, 48 and 49, which no player screen
-/// ever shows.
+/// The last four goalkeeping skills — 11 Handling, 12 Aerial Reach,
+/// 14 Communication, 21 Reflexes — were separated by a second keeper:
+/// Donnarumma's published FM 26.2 attributes (fminside.net, display×5, the
+/// same source class as the FM Scout wage check) split all four exactly
+/// against his decoded block (16/15/14/18), with Alisson consistent
+/// (17/14/14/17). The same source re-confirmed the tendency trio and the
+/// Bravery/Concentration and Passing/First Touch splits.
+///
+/// Unnamed: five hidden attributes at 41, 44, 47, 48 and 49, which no player
+/// screen ever shows and no trustworthy published source pins (see
+/// `OPEN_PROBLEMS.md` §2).
 #[must_use]
 pub fn attribute_name(index: usize) -> Option<&'static str> {
     match index {
@@ -75,13 +81,17 @@ pub fn attribute_name(index: usize) -> Option<&'static str> {
         8 => Some("Penalty Taking"),
         9 => Some("Tackling"),
         10 => Some("Vision"),
+        11 => Some("Handling"),
+        12 => Some("Aerial Reach"),
         13 => Some("Command of Area"),
+        14 => Some("Communication"),
         15 => Some("Kicking"),
         16 => Some("Throwing"),
         17 => Some("Anticipation"),
         18 => Some("Decisions"),
         19 => Some("One on Ones"),
         20 => Some("Positioning"),
+        21 => Some("Reflexes"),
         22 => Some("First Touch"),
         23 => Some("Technique"),
         24 => Some("Left Foot"),
@@ -475,16 +485,16 @@ mod tests {
         // are right-footed and read 20 there.
         assert_eq!(attribute_name(25), Some("Right Foot"));
 
-        // Every goalkeeping index is either named or explicitly one of the
-        // four the single keeper report could not separate.
+        // Every goalkeeping index is named; the last four fell to
+        // Donnarumma's published block, which splits what the one in-game
+        // keeper report showed as four fifteens.
         for index in GOALKEEPING_INDICES {
-            let named = attribute_name(index).is_some();
-            assert_eq!(
-                named,
-                !matches!(index, 11 | 12 | 14 | 21),
-                "goalkeeping index {index}"
-            );
+            assert!(attribute_name(index).is_some(), "goalkeeping index {index}");
         }
+        assert_eq!(attribute_name(11), Some("Handling"));
+        assert_eq!(attribute_name(12), Some("Aerial Reach"));
+        assert_eq!(attribute_name(14), Some("Communication"));
+        assert_eq!(attribute_name(21), Some("Reflexes"));
     }
 
     #[test]

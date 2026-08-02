@@ -34,6 +34,7 @@ pub fn run() {
             commands::open_save,
             commands::export_csv,
             commands::import_csv,
+            commands::edit_game_shortlist,
             shortlist::load_shortlists,
             shortlist::save_shortlists,
             shortlist::load_filters,

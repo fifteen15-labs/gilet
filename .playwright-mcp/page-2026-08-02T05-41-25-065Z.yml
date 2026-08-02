@@ -1,0 +1,488 @@
+- generic [active] [ref=f63e1]:
+  - generic [ref=f63e4]:
+    - link "FMINSIDE .NET" [ref=f63e6] [cursor=pointer]:
+      - /url: /
+      - text: FMINSIDE
+      - generic [ref=f63e7]: .NET
+    - generic:
+      - generic:
+        - link:
+          - /url: "#"
+      - list [ref=f63e8]:
+        - listitem [ref=f63e9]:
+          - link "Buy FM26" [ref=f63e10] [cursor=pointer]:
+            - /url: /news/802-buy-football-manager-26
+      - list [ref=f63e11]:
+        - link:
+          - /url: "#"
+        - listitem [ref=f63e12]:
+          - link "Players" [ref=f63e13] [cursor=pointer]:
+            - /url: /players
+        - listitem [ref=f63e14]:
+          - link "Clubs" [ref=f63e15] [cursor=pointer]:
+            - /url: /clubs
+        - listitem [ref=f63e16]:
+          - link "Downloads" [ref=f63e17] [cursor=pointer]:
+            - /url: /downloads
+        - listitem [ref=f63e18]:
+          - link "FMUpdate" [ref=f63e19] [cursor=pointer]:
+            - /url: /fmi-update
+        - listitem [ref=f63e20]:
+          - link "News" [ref=f63e21] [cursor=pointer]:
+            - /url: /news
+        - listitem [ref=f63e22]:
+          - link "Articles" [ref=f63e23] [cursor=pointer]:
+            - /url: /articles
+        - listitem [ref=f63e24]:
+          - link "Shortlists" [ref=f63e25] [cursor=pointer]:
+            - /url: /shortlists
+        - listitem [ref=f63e26]:
+          - link "Guides" [ref=f63e27] [cursor=pointer]:
+            - /url: /guides
+        - listitem [ref=f63e28]:
+          - link "Challenges" [ref=f63e29] [cursor=pointer]:
+            - /url: /challenges
+        - listitem [ref=f63e30]:
+          - link "Videos" [ref=f63e31] [cursor=pointer]:
+            - /url: /videos
+  - list [ref=f63e34]:
+    - listitem [ref=f63e35]: "Essentials:"
+    - listitem [ref=f63e36]:
+      - link "FM26 Wonderkids" [ref=f63e37] [cursor=pointer]:
+        - /url: /players/wonderkids
+    - listitem [ref=f63e38]:
+      - link "FM26 Free transfers" [ref=f63e39] [cursor=pointer]:
+        - /url: /players/free-transfers
+    - listitem [ref=f63e40]:
+      - link "Best Bargains FM26" [ref=f63e41] [cursor=pointer]:
+        - /url: /players/best-bargains
+    - listitem [ref=f63e42]:
+      - link "Contract expiring" [ref=f63e43] [cursor=pointer]:
+        - /url: /players/contract-expiring
+    - listitem [ref=f63e44]:
+      - link "Richest clubs in FM26" [ref=f63e45] [cursor=pointer]:
+        - /url: /clubs/richest/
+    - listitem [ref=f63e46]:
+      - link "FMUpdate" [ref=f63e47] [cursor=pointer]:
+        - /url: /update
+  - generic [ref=f63e49]:
+    - generic [ref=f63e50]:
+      - link "Home/" [ref=f63e51] [cursor=pointer]:
+        - /url: /
+      - link "Players/" [ref=f63e52] [cursor=pointer]:
+        - /url: /players
+      - link "Football Manager 26.2/" [ref=f63e53] [cursor=pointer]:
+        - /url: /players
+      - link "Gianluigi Donnarumma" [ref=f63e54] [cursor=pointer]:
+        - /url: /players/7-fm-26/43252073-gianluigi-donnarumma
+    - generic [ref=f63e55]:
+      - generic "upvote player" [ref=f63e56] [cursor=pointer]
+      - text: 11 likes
+    - list [ref=f63e57]:
+      - listitem [ref=f63e58]:
+        - link "85 FM 26.2" [ref=f63e59] [cursor=pointer]:
+          - /url: /players/7-fm-262/43252073-gianluigi-donnarumma
+          - generic [ref=f63e60]: "85"
+          - text: FM 26.2
+      - listitem [ref=f63e61]:
+        - link "81 FMU 25" [ref=f63e62] [cursor=pointer]:
+          - /url: /players/6-fmu-25/43252073-gianluigi-donnarumma
+          - generic [ref=f63e63]: "81"
+          - text: FMU 25
+      - listitem [ref=f63e64]:
+        - link "81 FM 24" [ref=f63e65] [cursor=pointer]:
+          - /url: /players/5-fm-24/43252073-gianluigi-donnarumma
+          - generic [ref=f63e66]: "81"
+          - text: FM 24
+      - listitem [ref=f63e67]:
+        - link "81 FM 23" [ref=f63e68] [cursor=pointer]:
+          - /url: /players/3-fm-23/43252073-gianluigi-donnarumma
+          - generic [ref=f63e69]: "81"
+          - text: FM 23
+      - listitem [ref=f63e70]:
+        - link "81 FM 22" [ref=f63e71] [cursor=pointer]:
+          - /url: /players/2-fm-22/43252073-gianluigi-donnarumma
+          - generic [ref=f63e72]: "81"
+          - text: FM 22
+      - listitem [ref=f63e73]:
+        - link "78 FM 21" [ref=f63e74] [cursor=pointer]:
+          - /url: /players/1-fm-21/43252073-gianluigi-donnarumma
+          - generic [ref=f63e75]: "78"
+          - text: FM 21
+    - generic [ref=f63e76]:
+      - generic [ref=f63e77]:
+        - generic [ref=f63e78]:
+          - heading "Gianluigi Donnarumma" [level=1] [ref=f63e80]
+          - generic "Doubleclick to like this player" [ref=f63e81] [cursor=pointer]: Image by DF11 Faces
+          - generic [ref=f63e83]:
+            - generic [ref=f63e84]: "85"
+            - generic [ref=f63e85]: "85"
+            - generic [ref=f63e86]: €82M - €155M
+            - list [ref=f63e88]:
+              - listitem [ref=f63e89]:
+                - link "Manchester City" [ref=f63e90] [cursor=pointer]:
+                  - /url: /clubs/7-fm-262/679-manchester-city
+              - listitem [ref=f63e92]:
+                - link "Italy" [ref=f63e94] [cursor=pointer]:
+                  - /url: /players/it
+              - listitem [ref=f63e96]:
+                - generic [ref=f63e97]: GK
+        - generic [ref=f63e99]:
+          - heading "Player info" [level=2] [ref=f63e100]
+          - list [ref=f63e101]:
+            - listitem [ref=f63e102]:
+              - generic [ref=f63e103]: Name
+              - generic [ref=f63e104]: Gianluigi Donnarumma
+            - listitem [ref=f63e105]:
+              - generic [ref=f63e106]: Age
+              - generic [ref=f63e107]: "26"
+            - listitem [ref=f63e108]:
+              - generic [ref=f63e109]: Position(s)
+              - generic [ref=f63e110]: GK
+            - listitem [ref=f63e112]:
+              - generic [ref=f63e113]: Left foot
+              - generic [ref=f63e114]: "40"
+            - listitem [ref=f63e116]:
+              - generic [ref=f63e117]: Right foot
+              - generic [ref=f63e118]: "100"
+            - listitem [ref=f63e120]:
+              - generic [ref=f63e121]: Height
+              - generic [ref=f63e122]: 196 CM
+            - listitem [ref=f63e123]:
+              - generic [ref=f63e124]: Caps / Goals
+              - generic [ref=f63e125]: 74 / 0
+        - generic [ref=f63e126]:
+          - heading "Contract" [level=2] [ref=f63e127]
+          - list [ref=f63e128]:
+            - listitem [ref=f63e129]:
+              - generic [ref=f63e130]: Club
+              - link "Manchester City" [ref=f63e132] [cursor=pointer]:
+                - /url: /clubs/7-fm-262/679-manchester-city
+            - listitem [ref=f63e133]:
+              - generic [ref=f63e134]: Sell value
+              - generic [ref=f63e135]: € 103,100,326
+            - listitem [ref=f63e136]:
+              - generic [ref=f63e137]: Wages
+              - generic [ref=f63e138]: € 289,283 pw
+            - listitem [ref=f63e139]:
+              - generic [ref=f63e140]: Contract end
+              - generic [ref=f63e141]: 2030-06-30
+        - generic [ref=f63e142]:
+          - heading "Best in posession roles" [level=2] [ref=f63e143]:
+            - text: Best in posession roles
+            - link:
+              - /url: "#"
+          - list [ref=f63e144]:
+            - listitem [ref=f63e145]:
+              - text: Goalkeeper
+              - generic [ref=f63e146]: "76.9"
+            - listitem [ref=f63e147]:
+              - text: No-Nonsense Goalkeeper
+              - generic [ref=f63e148]: "76.1"
+            - listitem [ref=f63e149]:
+              - text: Ball-Playing Goalkeeper
+              - generic [ref=f63e150]: "72.7"
+        - generic [ref=f63e151]:
+          - heading "Best out posession roles" [level=2] [ref=f63e152]:
+            - text: Best out posession roles
+            - link:
+              - /url: "#"
+          - list [ref=f63e153]:
+            - listitem [ref=f63e154]:
+              - text: Goalkeeper
+              - generic [ref=f63e155]: "78.8"
+            - listitem [ref=f63e156]:
+              - text: Line-Holding Goalkeeper
+              - generic [ref=f63e157]: "78.4"
+            - listitem [ref=f63e158]:
+              - text: Sweeper Keeper
+              - generic [ref=f63e159]: "67"
+      - generic [ref=f63e160]:
+        - generic [ref=f63e161]:
+          - generic [ref=f63e162]:
+            - heading "Attributes" [level=1] [ref=f63e163]
+            - generic [ref=f63e164]: All of our stats have been normalized 0-99
+          - generic [ref=f63e166]:
+            - heading "Goalkeeping" [level=3] [ref=f63e167]
+            - table [ref=f63e168]:
+              - rowgroup [ref=f63e169]:
+                - row [ref=f63e170]:
+                  - cell "Aerial Reach" [ref=f63e171]
+                  - cell "75" [ref=f63e172]
+                - row [ref=f63e173]:
+                  - cell "Command of Area" [ref=f63e174]
+                  - cell "75" [ref=f63e175]
+                - row [ref=f63e176]:
+                  - cell "Communication" [ref=f63e177]
+                  - cell "70" [ref=f63e178]
+                - row [ref=f63e179]:
+                  - cell "Eccentricity" [ref=f63e180]
+                  - cell "45" [ref=f63e181]
+                - row [ref=f63e182]:
+                  - cell "First Touch" [ref=f63e183]
+                  - cell "45" [ref=f63e184]
+                - row [ref=f63e185]:
+                  - cell "Handling" [ref=f63e186]
+                  - cell "80" [ref=f63e187]
+                - row [ref=f63e188]:
+                  - cell "Kicking" [ref=f63e189]
+                  - cell "70" [ref=f63e190]
+                - row [ref=f63e191]:
+                  - cell "One on Ones" [ref=f63e192]
+                  - cell "85" [ref=f63e193]
+                - row [ref=f63e194]:
+                  - cell "Passing" [ref=f63e195]
+                  - cell "60" [ref=f63e196]
+                - row [ref=f63e197]:
+                  - cell "Punching (Tendency)" [ref=f63e198]
+                  - cell "75" [ref=f63e199]
+                - row [ref=f63e200]:
+                  - cell "Reflexes" [ref=f63e201]
+                  - cell "90" [ref=f63e202]
+                - row [ref=f63e203]:
+                  - cell "Rushing Out (Tendency)" [ref=f63e204]
+                  - cell "55" [ref=f63e205]
+                - row [ref=f63e206]:
+                  - cell "Throwing" [ref=f63e207]
+                  - cell "65" [ref=f63e208]
+          - generic [ref=f63e209]:
+            - heading "Mental" [level=3] [ref=f63e210]
+            - table [ref=f63e211]:
+              - rowgroup [ref=f63e212]:
+                - row [ref=f63e213]:
+                  - cell "Aggression" [ref=f63e214]
+                  - cell "60" [ref=f63e215]
+                - row [ref=f63e216]:
+                  - cell "Anticipation" [ref=f63e217]
+                  - cell "80" [ref=f63e218]
+                - row [ref=f63e219]:
+                  - cell "Bravery" [ref=f63e220]
+                  - cell "80" [ref=f63e221]
+                - row [ref=f63e222]:
+                  - cell "Composure" [ref=f63e223]
+                  - cell "70" [ref=f63e224]
+                - row [ref=f63e225]:
+                  - cell "Concentration" [ref=f63e226]
+                  - cell "75" [ref=f63e227]
+                - row [ref=f63e228]:
+                  - cell "Decisions" [ref=f63e229]
+                  - cell "75" [ref=f63e230]
+                - row [ref=f63e231]:
+                  - cell "Determination" [ref=f63e232]
+                  - cell "75" [ref=f63e233]
+                - row [ref=f63e234]:
+                  - cell "Flair" [ref=f63e235]
+                  - cell "30" [ref=f63e236]
+                - row [ref=f63e237]:
+                  - cell "Leadership" [ref=f63e238]
+                  - cell "70" [ref=f63e239]
+                - row [ref=f63e240]:
+                  - cell "Off the Ball" [ref=f63e241]
+                  - cell "10" [ref=f63e242]
+                - row [ref=f63e243]:
+                  - cell "Positioning" [ref=f63e244]
+                  - cell "80" [ref=f63e245]
+                - row [ref=f63e246]:
+                  - cell "Teamwork" [ref=f63e247]
+                  - cell "75" [ref=f63e248]
+                - row [ref=f63e249]:
+                  - cell "Vision" [ref=f63e250]
+                  - cell "40" [ref=f63e251]
+                - row [ref=f63e252]:
+                  - cell "Work Rate" [ref=f63e253]
+                  - cell "65" [ref=f63e254]
+          - generic [ref=f63e255]:
+            - heading "Physical" [level=3] [ref=f63e256]
+            - table [ref=f63e257]:
+              - rowgroup [ref=f63e258]:
+                - row [ref=f63e259]:
+                  - cell "Acceleration" [ref=f63e260]
+                  - cell "50" [ref=f63e261]
+                - row [ref=f63e262]:
+                  - cell "Agility" [ref=f63e263]
+                  - cell "80" [ref=f63e264]
+                - row [ref=f63e265]:
+                  - cell "Balance" [ref=f63e266]
+                  - cell "85" [ref=f63e267]
+                - row [ref=f63e268]:
+                  - cell "Jumping Reach" [ref=f63e269]
+                  - cell "90" [ref=f63e270]
+                - row [ref=f63e271]:
+                  - cell "Natural Fitness" [ref=f63e272]
+                  - cell "75" [ref=f63e273]
+                - row [ref=f63e274]:
+                  - cell "Pace" [ref=f63e275]
+                  - cell "55" [ref=f63e276]
+                - row [ref=f63e277]:
+                  - cell "Stamina" [ref=f63e278]
+                  - cell "75" [ref=f63e279]
+                - row [ref=f63e280]:
+                  - cell "Strength" [ref=f63e281]
+                  - cell "80" [ref=f63e282]
+            - heading "Technical" [level=3] [ref=f63e283]
+            - table [ref=f63e284]:
+              - rowgroup [ref=f63e285]:
+                - row [ref=f63e286]:
+                  - cell "Technique" [ref=f63e287]
+                  - cell "30" [ref=f63e288]
+        - generic [ref=f63e289]:
+          - heading "Similar player(s)" [level=1] [ref=f63e290]
+          - generic [ref=f63e292]:
+            - list [ref=f63e293]:
+              - listitem "Rating" [ref=f63e294]
+              - listitem [ref=f63e295]: name
+              - listitem [ref=f63e296]: age
+              - listitem [ref=f63e297]: value
+            - generic [ref=f63e298]:
+              - list [ref=f63e299]:
+                - listitem [ref=f63e300]:
+                  - generic [ref=f63e301]: "81"
+                  - generic [ref=f63e302]: "83"
+                - listitem [ref=f63e303]:
+                  - generic [ref=f63e305]:
+                    - link "Gregor Kobel" [ref=f63e308] [cursor=pointer]:
+                      - /url: /players/7-fm-26/98040383-gregor-kobel
+                    - generic [ref=f63e309]: GK
+                    - link "Borussia Dortmund" [ref=f63e310] [cursor=pointer]:
+                      - /url: /clubs/7-fm-26/907-borussia-dortmund
+                - listitem [ref=f63e312]: "28"
+                - listitem [ref=f63e313]: €100M
+              - list [ref=f63e314]:
+                - listitem [ref=f63e315]:
+                  - generic [ref=f63e316]: "80"
+                  - generic [ref=f63e317]: "88"
+                - listitem [ref=f63e318]:
+                  - generic [ref=f63e320]:
+                    - link "Joan García" [ref=f63e323] [cursor=pointer]:
+                      - /url: /players/7-fm-26/67277675-joan-garcia
+                    - generic [ref=f63e324]: GK
+                    - link "FC Barcelona" [ref=f63e325] [cursor=pointer]:
+                      - /url: /clubs/7-fm-26/1708-fc-barcelona
+                - listitem [ref=f63e327]: "24"
+                - listitem [ref=f63e328]:
+                  - generic [ref=f63e329]: €83M
+                  - generic "Clause" [ref=f63e330]: €435M
+              - list [ref=f63e331]:
+                - listitem [ref=f63e332]:
+                  - generic [ref=f63e333]: "80"
+                  - generic [ref=f63e334]: "84"
+                - listitem [ref=f63e335]:
+                  - generic [ref=f63e337]:
+                    - link "Unai Simón" [ref=f63e340] [cursor=pointer]:
+                      - /url: /players/7-fm-26/67200923-unai-simon
+                    - generic [ref=f63e341]: GK
+                    - link "Athletic Bilbao" [ref=f63e342] [cursor=pointer]:
+                      - /url: /clubs/7-fm-26/1664-athletic-bilbao
+                - listitem [ref=f63e344]: "28"
+                - listitem [ref=f63e345]:
+                  - generic [ref=f63e346]: €223M
+                  - generic "Clause" [ref=f63e347]: €864M
+              - list [ref=f63e348]:
+                - listitem [ref=f63e349]:
+                  - generic [ref=f63e350]: "80"
+                  - generic [ref=f63e351]: "83"
+                - listitem [ref=f63e352]:
+                  - generic [ref=f63e354]:
+                    - link "Diogo Costa" [ref=f63e357] [cursor=pointer]:
+                      - /url: /players/7-fm-26/83169226-diogo-costa
+                    - generic [ref=f63e358]: GK
+                    - link "FC Porto" [ref=f63e359] [cursor=pointer]:
+                      - /url: /clubs/7-fm-26/1478-fc-porto
+                - listitem [ref=f63e361]: "26"
+                - listitem [ref=f63e362]:
+                  - generic [ref=f63e363]: €60M
+                  - generic "Clause" [ref=f63e364]: €52M
+              - list [ref=f63e365]:
+                - listitem [ref=f63e366]:
+                  - generic [ref=f63e367]: "78"
+                  - generic [ref=f63e368]: "85"
+                - listitem [ref=f63e369]:
+                  - generic [ref=f63e371]:
+                    - link "Giorgi Mamardashvili" [ref=f63e374] [cursor=pointer]:
+                      - /url: /players/7-fm-26/59138294-giorgi-mamardashvili
+                    - generic [ref=f63e375]: GK
+                    - link "Liverpool" [ref=f63e376] [cursor=pointer]:
+                      - /url: /clubs/7-fm-26/676-liverpool
+                - listitem [ref=f63e378]: "25"
+                - listitem [ref=f63e379]: €61M
+        - generic [ref=f63e380]:
+          - heading "Comments" [level=1] [ref=f63e381]
+          - paragraph [ref=f63e383]: No comments yet, be the first!
+          - generic [ref=f63e385]:
+            - generic [ref=f63e386]:
+              - generic [ref=f63e387]: Name
+              - generic [ref=f63e388]: Pick a name or leave blank to comment as guest
+              - 'textbox "Guest #129568058" [ref=f63e389]'
+            - generic [ref=f63e390]:
+              - generic [ref=f63e391]: Email
+              - generic [ref=f63e392]: Enter your e-mail to be notified on reply
+              - textbox "Email" [ref=f63e393]
+            - textbox "Your comment" [ref=f63e394]
+            - generic [ref=f63e395]: Be respectful and kind in your comments, failure to do so will result in a permanent ban
+            - link "Submit" [ref=f63e396] [cursor=pointer]:
+              - /url: "#"
+  - list [ref=f63e398]:
+    - listitem [ref=f63e399]:
+      - link "Follow us on Instagram" [ref=f63e400] [cursor=pointer]:
+        - /url: https://www.instagram.com/fminside/
+    - listitem [ref=f63e401]:
+      - link "Join us on Facebook" [ref=f63e402] [cursor=pointer]:
+        - /url: https://www.facebook.com/fminsidefm
+    - listitem [ref=f63e403]:
+      - link "Stay on top through X" [ref=f63e404] [cursor=pointer]:
+        - /url: https://twitter.com/fminside
+    - listitem [ref=f63e405]:
+      - link "Watch us on Youtube" [ref=f63e406] [cursor=pointer]:
+        - /url: https://www.youtube.com/channel/UCKYHiYV4ZQ1YWy2rgCCYgRA
+  - generic [ref=f63e408]:
+    - paragraph [ref=f63e409]:
+      - generic [ref=f63e410]: Copyright © 2004 - 2026 fminside.net
+      - text: Not affiliated with Sports Interactive or SEGA in any way. All trademarks are property of their respective owners. Our website has been created by and for fans of Football Manager
+    - generic [ref=f63e412]:
+      - generic [ref=f63e413]:
+        - generic: More on FMInside
+        - list [ref=f63e414]:
+          - link:
+            - /url: "#"
+          - listitem [ref=f63e415]:
+            - link "About us" [ref=f63e416] [cursor=pointer]:
+              - /url: /about-us
+          - listitem [ref=f63e417]:
+            - link "Advertise" [ref=f63e418] [cursor=pointer]:
+              - /url: /advertise-on-fminside
+          - listitem [ref=f63e419]:
+            - link "Staff" [ref=f63e420] [cursor=pointer]:
+              - /url: /staff
+          - listitem [ref=f63e421]:
+            - link "Write for us" [ref=f63e422] [cursor=pointer]:
+              - /url: /write-for-us
+          - listitem [ref=f63e423]:
+            - link "Vacancies" [ref=f63e424] [cursor=pointer]:
+              - /url: /vacancies
+          - listitem [ref=f63e425]:
+            - link "Links" [ref=f63e426] [cursor=pointer]:
+              - /url: /links
+          - listitem [ref=f63e427]:
+            - link "Terms" [ref=f63e428] [cursor=pointer]:
+              - /url: /terms-of-use
+          - listitem [ref=f63e429]:
+            - link "Privacy" [ref=f63e430] [cursor=pointer]:
+              - /url: /privacy-policy
+          - listitem [ref=f63e431]:
+            - link "Contact" [ref=f63e432] [cursor=pointer]:
+              - /url: /contact
+      - generic [ref=f63e433]:
+        - generic: Partners
+        - list [ref=f63e434]:
+          - listitem [ref=f63e435]:
+            - link "Playwire" [ref=f63e436] [cursor=pointer]:
+              - /url: https://www.playwire.com/contact-direct-sales
+          - listitem [ref=f63e437]:
+            - link "Managers United" [ref=f63e438] [cursor=pointer]:
+              - /url: https://manutd.nl
+          - listitem [ref=f63e439]:
+            - link "Ontbrand" [ref=f63e440] [cursor=pointer]:
+              - /url: https://ontbrand.com
+  - generic [ref=f63e441]: sponsored
+  - generic [ref=f63e442]: sponsored
+  - generic [ref=f63e443]: sponsored
