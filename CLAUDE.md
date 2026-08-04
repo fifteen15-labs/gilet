@@ -133,7 +133,16 @@ now has a kind — a *staff* profile weights the 52-item non-player sheet
 JSON has no kind and deserialises as player (`ProfileKind`, serde default).
 FM's in-save shortlists hold players, so staff rows are skipped by "Add N to
 save" (said in the notice) and the detail panel offers a staff person no add
-button. "Free agents" filters on having neither a contract nor a club: a
+button. Two honesty rules found in the first real staff-scouting session
+(Port Talbot, 2030): FM's non-player CA is **role-weighted**, so an elite
+physio legitimately outranks Klopp on raw CA — ranking coaches needs a staff
+profile, not the CA column — and **the tendency half of the sheet does not
+survive ageing** (Klopp reads 98 where the editor caps at 20; undecoded
+internal scale, `SAVE_FORMAT.md` §6g), so the panel shows no tendency
+numbers on such a sheet and staff scores skip those slots. Staff club and
+wage are genuinely not decoded — no employer id sits anywhere near the staff
+record (`OPEN_PROBLEMS.md` §3c). Stubs sort last under the name key: an
+empty name must not lead the alphabet. "Free agents" filters on having neither a contract nor a club: a
 missing club alone is a parser gap, not unemployment, and £0 at a club is a
 youth deal. Covered by integration tests in `src-tauri/tests/journeys.rs` and
 `crates/fm-save/tests/real_save.rs` that run against a real save (Liverpool's

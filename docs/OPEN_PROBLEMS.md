@@ -898,6 +898,28 @@ anything coaching-specific.
 
 ---
 
+## 3c. Staff employer and staff contracts — not located
+
+Staff rows show no club and no wage. Both gaps are real absences from the
+decoded structures, not display bugs:
+
+1. **The squad table lists players only**, so the player club link never
+   covers staff.
+2. **The employer id is not near the staff record.** Probed 4 August 2026
+   (`staffclub` example) on Day One.fm with three known employments — Slot
+   at Liverpool, Arteta at Arsenal, Guardiola at Man City: neither the
+   club's eid nor its uid occurs anywhere within the person's record span
+   or the 768 bytes before it, for any of the three. Whatever links a staff
+   member to their club lives elsewhere — most likely a club-side staff
+   list (the club analogue of the squad table, possibly unmaterialised the
+   way out-of-league squads are), or another member frame.
+3. **`bind_contracts` finds no wage for staff** — the eid-anchored wage row
+   players carry is absent or differently shaped before staff records.
+
+Next: sweep the club record's neighbourhood for known staff eids (the
+reverse direction), and grep the member manifest for a contract- or
+staff-flavoured member the way `scout_man.dat` fell.
+
 ## 4. Contracts — wage and expiry solved, the rest of the block open
 
 Wage and contract expiry parse (see `SAVE_FORMAT.md` §6e): the block sits

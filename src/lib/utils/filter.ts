@@ -313,7 +313,15 @@ export function sortPlayers(
 ): Player[] {
 	const factor = direction === 'asc' ? 1 : -1;
 	return [...players].sort((a, b) => {
-		if (key === 'name') return byName.compare(a.name, b.name) * factor;
+		if (key === 'name') {
+			// Stubs have no name, and an empty string must not lead the
+			// alphabet: the nameless sink to the bottom in both directions,
+			// the same way a missing ability does.
+			const aEmpty = a.name === '';
+			const bEmpty = b.name === '';
+			if (aEmpty !== bEmpty) return aEmpty ? 1 : -1;
+			return byName.compare(a.name, b.name) * factor;
+		}
 		const left = value(a, key, scores);
 		const right = value(b, key, scores);
 		if (left === null && right === null) return byName.compare(a.name, b.name);

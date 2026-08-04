@@ -975,12 +975,22 @@ back.
 
 | slots | items | storage |
 |---|---|---|
-| 2-27 | 1-26, Attacking through Width — the tendency half | raw 1-20 |
+| 2-27 | 1-26, Attacking through Width — the tendency half | raw 1-20 **on a day-one save** |
 | 28-53 | 27-52, Coaching through Coaching Set Pieces | raw × 5 |
 
 with a per-person drift of a point or two on the second half, which rounding to
 nearest removes. It is the editor's **raw** column, not its controlled one, and
 the scale is five rather than the four an earlier single-person fit suggested.
+
+**The tendency half does not survive ageing.** In a 2030 career Klopp's low
+slots read up to 98 and Guardiola's up to 88 where the editor caps at 20 — an
+aged save rewrites the tendency half onto an internal scale that is not
+decoded (compare player attributes, whose 1-100 internals only *initialise*
+to display×5). One value past 20 proves the whole half is off the editor
+scale for that person; the UI shows no number there rather than one on an
+unknown scale, and staff scoring skips those slots. The ÷5 coaching half
+still reads 1-20 on aged saves and stays plausible (a generated physio reads
+Physiotherapy 17, coaching 1-2), but has no aged ground truth yet.
 
 Two of the 52 rows the pre-game editor leaves unnamed itself; `staff.rs` keeps
 them `None` rather than guessing.

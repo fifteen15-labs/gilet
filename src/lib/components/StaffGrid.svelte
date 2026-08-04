@@ -18,6 +18,12 @@
 	const COACHING_FROM = 26;
 	const tendencies = $derived(entries.filter((e) => e.index < COACHING_FROM));
 	const coaching = $derived(entries.filter((e) => e.index >= COACHING_FROM));
+	/** The tendency half is stored raw 1-20 on a day-one save, but an aged
+	 * save moves it onto an internal scale nobody has decoded — Klopp reads
+	 * 98 where the editor caps at 20. A value past 20 proves the whole half
+	 * is off the editor scale for this person, and a number on an unknown
+	 * scale is no reading. */
+	const tendenciesDecoded = $derived(tendencies.every((e) => e.value <= 20));
 
 	const standing = $derived([
 		{ label: 'Ability', value: sheet.currentAbility },
@@ -71,7 +77,18 @@
 	</div>
 
 	{@render group('Coaching and knowledge', coaching)}
-	{@render group('Tendencies', tendencies)}
+	{#if tendenciesDecoded}
+		{@render group('Tendencies', tendencies)}
+	{:else}
+		<div class="mb-4">
+			<h4 class="eyebrow mb-1.5">Tendencies</h4>
+			<p class="text-xs leading-relaxed text-[var(--color-faint)]">
+				This save's tendency values have moved off the editor's 1&ndash;20 scale — an aged
+				career rewrites them onto an internal scale that is not yet decoded — so no number
+				here would be honest. The coaching half above still reads on the editor's own scale.
+			</p>
+		</div>
+	{/if}
 
 	<p class="text-xs leading-relaxed text-[var(--color-faint)]">
 		The non-player sheet, on FM's 1-20 scale, in the pre-game editor's own order. Where a person's

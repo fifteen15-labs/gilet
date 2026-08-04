@@ -31,17 +31,28 @@ function valuesFor(player: Player, profile: ScoringProfile): readonly number[] |
  * profile weights nothing, or when none of the weighted indices exist — an
  * unscoreable person is not a zero.
  */
+/** Slots below this index are the staff sheet's tendency half. Stored raw
+ * 1-20 on a day-one save, but an aged career rewrites them onto an internal
+ * scale nobody has decoded — one value past 20 proves the whole half is off
+ * the editor scale for that person. */
+const STAFF_TENDENCY_SLOTS = 26;
+
 export function score(player: Player, profile: ScoringProfile): number | null {
 	const values = valuesFor(player, profile);
 	if (values === null || values.length === 0) return null;
+	// A number on an unknown scale must not enter a 1-20 weighted mean.
+	const tendenciesDecoded =
+		profile.kind !== 'staff' ||
+		values.slice(0, STAFF_TENDENCY_SLOTS).every((v) => v <= 20);
 
 	let total = 0;
 	let weight = 0;
 	for (const [key, w] of Object.entries(profile.weights)) {
 		if (w < MIN_WEIGHT) continue;
 		const index = Number(key);
+		if (profile.kind === 'staff' && index < STAFF_TENDENCY_SLOTS && !tendenciesDecoded) continue;
 		const value = values[index];
-		if (value === undefined) continue;
+		if (value === undefined || value > 20) continue;
 		total += value * w;
 		weight += w;
 	}
