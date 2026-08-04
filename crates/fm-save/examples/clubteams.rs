@@ -39,7 +39,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if let Some(p) = by_eid.get(e) {
                     let age = save
                         .game_date
-                        .map_or(0, |t| p.date_of_birth.age_on(t));
+                        .zip(p.date_of_birth)
+                        .map_or(0, |(t, d)| d.age_on(t));
                     names.push(format!("{} ({age})", p.full_name));
                 }
             }

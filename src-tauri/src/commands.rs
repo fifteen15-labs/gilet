@@ -90,8 +90,9 @@ pub struct PlayerRow {
     pub eid: Option<u32>,
     pub name: String,
     pub born: String,
-    /// Age on the save's own date. `None` for stubs, whose birth date is not
-    /// decoded — an unknown age is not a young one.
+    /// Age on the save's own date. `None` for stubs and compact entries,
+    /// whose birth date the save does not carry — an unknown age is not a
+    /// young one.
     pub age: Option<u16>,
     pub ability: Option<u8>,
     pub potential: Option<u8>,
@@ -99,8 +100,9 @@ pub struct PlayerRow {
     pub is_player: bool,
     /// The 54 attributes on FM's 1-20 scale. Empty for staff.
     pub attributes: Vec<u8>,
-    /// Nation identifier, shared with the club records.
-    pub nation_id: u16,
+    /// Nation identifier, shared with the club records. `None` when the save
+    /// carries none — stubs and compact entries.
+    pub nation_id: Option<u16>,
     /// Nation name where the identifier is confirmed, otherwise empty.
     pub nation: String,
     /// Positions the player is comfortable in, strongest first. Empty for staff.
@@ -444,13 +446,15 @@ fn person_row(
     now: fm_save::Date,
     club_names: &std::collections::HashMap<u32, &str>,
 ) -> PlayerRow {
-    let d = p.date_of_birth;
     PlayerRow {
         id: p.offset,
         eid: p.eid,
         name: p.full_name.clone(),
-        born: format!("{:04}-{:02}-{:02}", d.year, d.month, d.day),
-        age: Some(d.age_on(now)),
+        born: p
+            .date_of_birth
+            .map(|d| format!("{:04}-{:02}-{:02}", d.year, d.month, d.day))
+            .unwrap_or_default(),
+        age: p.date_of_birth.map(|d| d.age_on(now)),
         ability: p.ability.as_ref().map(|a| a.current),
         potential: p.ability.as_ref().map(|a| a.potential),
         is_player: p.is_player(),
@@ -520,7 +524,7 @@ fn stub_rows(
                 potential: None,
                 is_player: true,
                 attributes: Vec::new(),
-                nation_id: 0,
+                nation_id: None,
                 nation: String::new(),
                 positions: Vec::new(),
                 position_ratings: Vec::new(),
@@ -596,9 +600,15 @@ pub fn load_save(
         .filter_map(|c| Some((c.eid?, c.short_name.as_str())))
         .collect();
 
+    // Compact people — the name-and-identity entries aged saves fold
+    // departed people down to (SAVE_FORMAT.md §6d-ter) — are parsed so the
+    // census is honest, but not shown: a row with no age, club, attributes
+    // or contract answers no scouting question and clogs the table.
+    // Owner's call, 4 August 2026.
     let mut players: Vec<PlayerRow> = save
         .people
         .iter()
+        .filter(|p| !p.compact)
         .map(|p| person_row(p, now, &club_names))
         .collect();
     players.extend(stub_rows(&save, &club_names));

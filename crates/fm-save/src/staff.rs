@@ -115,7 +115,7 @@ pub fn attribute_name(index: usize) -> Option<&'static str> {
 /// One person's non-player data.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Staff {
-    /// Offset of the entity object within the frame.
+    /// Offset of the identity triple the block sits behind.
     pub offset: usize,
     /// Entity id of the object, one below the person's own.
     pub eid: u32,
@@ -154,18 +154,28 @@ fn read_u16(b: &[u8], at: usize) -> Option<u16> {
     Some(u16::from_le_bytes(<[u8; 2]>::try_from(s).ok()?))
 }
 
-/// Finds every non-player object in a frame that carries an attribute block.
+/// Entity ids stay comfortably below this, matching the person scan.
+const MAX_EID: u32 = 3_000_000;
+
+/// Finds every attribute block in a frame, each behind an identity triple.
 ///
-/// The object is recognised by its header — a type byte of 0-2, then `0x40` —
-/// and a repeated database id. The five u16s are then found by searching
-/// forward for a reading where both abilities are sane and the 54 bytes eight
-/// past them are all 1-100. A bare run of small numbers is no signature, but
-/// 54 consecutive non-zero bytes under 101 will not occur by chance.
+/// The anchor is the `[eid][uid][uid]` triple itself, accepted with either
+/// an entity object header — a type byte of 0-2, then `0x40`, seven bytes
+/// back — or the three zero bytes every identity block carries. The header
+/// cannot be required: plenty of records write the identity without one
+/// (`person.rs` counts 26,089 on a day-one save), and the sheet behind a
+/// headerless identity was invisible to the old header-first scan — Arne
+/// Slot's CA-165 sheet among them, behind Verberne's headerless triple.
+///
+/// The five u16s are then found by searching forward for a reading where
+/// both abilities are sane and the 54 bytes eight past them are all 1-100.
+/// A bare run of small numbers is no signature, but 54 consecutive non-zero
+/// bytes under 101 will not occur by chance.
 #[must_use]
 pub fn scan_staff(frame: &[u8]) -> Vec<Staff> {
     let mut out = Vec::new();
-    let mut at = 0usize;
-    while at + 24 <= frame.len() {
+    let mut at = 3usize;
+    while at + 17 <= frame.len() {
         let Some(found) = read_object(frame, at) else {
             at += 1;
             continue;
@@ -176,25 +186,30 @@ pub fn scan_staff(frame: &[u8]) -> Vec<Staff> {
     out
 }
 
+/// Reads the block behind the identity triple at `at`, if there is one.
 fn read_object(frame: &[u8], at: usize) -> Option<Staff> {
-    if frame.get(at).is_none_or(|&b| b > 0x02) || frame.get(at + 1) != Some(&0x40) {
+    let headed = at >= 7
+        && frame.get(at - 7).is_some_and(|&b| b <= 0x02)
+        && frame.get(at - 6) == Some(&0x40);
+    let zeroed = frame.get(at.checked_sub(3)?..at) == Some(&[0u8; 3][..]);
+    if !headed && !zeroed {
         return None;
     }
     let (eid, u1, u2) = (
-        read_u32(frame, at + 7)?,
-        read_u32(frame, at + 11)?,
-        read_u32(frame, at + 15)?,
+        read_u32(frame, at)?,
+        read_u32(frame, at + 4)?,
+        read_u32(frame, at + 8)?,
     );
-    if u1 != u2 || u1 == 0 || u1 == u32::MAX || eid == 0 {
+    if u1 != u2 || u1 == 0 || u1 == u32::MAX || eid == 0 || eid >= MAX_EID {
         return None;
     }
-    // Only the non-player object carries the sheet; a person object is tagged
-    // differently and is followed by their record, not by a block.
-    if frame.get(at + 19) != Some(&0x01) {
+    // The sheet-bearing object is tagged `01` after the triple; other tags
+    // (a compact entry's `10`, a reference's flags) carry no block.
+    if frame.get(at + 12) != Some(&0x01) {
         return None;
     }
 
-    (at + 20..at + 20 + FIELD_SEARCH).find_map(|fields| {
+    (at + 13..at + 13 + FIELD_SEARCH).find_map(|fields| {
         let vals: Vec<u16> = (0..5).filter_map(|i| read_u16(frame, fields + i * 2)).collect();
         let (&home, &current, &world, &ca, &pa) = (
             vals.first()?,
@@ -296,6 +311,43 @@ mod tests {
         assert_eq!((s.current_ability, s.potential_ability), (130, 145));
         assert_eq!(s.get("Authority"), Some(17), "the raw half is not rescaled");
         assert_eq!(s.get("Coaching Defending"), Some(16), "78 rounds back to 16");
+    }
+
+    #[test]
+    fn finds_a_block_behind_a_headerless_identity() {
+        // Slot's real shape: the identity in front of his sheet (Verberne's,
+        // eid 2057) carries no object header, only the zero bytes — the old
+        // header-first scan missed it and Slot showed no sheet at all.
+        let with_header = object(
+            2057,
+            601_116,
+            [8250, 8250, 6750, 165, 175],
+            block_with(&[]),
+            0,
+        );
+        let mut buf = vec![0u8; 3];
+        buf.extend_from_slice(&with_header[7..]);
+        let found = scan_staff(&buf);
+        assert_eq!(found.len(), 1);
+        let s = found.first().unwrap();
+        assert_eq!((s.eid, s.uid), (2057, 601_116));
+        assert_eq!((s.current_ability, s.potential_ability), (165, 175));
+    }
+
+    #[test]
+    fn a_bare_triple_with_no_anchor_is_refused() {
+        // No header and no zero bytes in front: the triple alone is not
+        // enough, however plausible the block behind it.
+        let with_header = object(
+            2057,
+            601_116,
+            [8250, 8250, 6750, 165, 175],
+            block_with(&[]),
+            0,
+        );
+        let mut buf = vec![0xAAu8; 3];
+        buf.extend_from_slice(&with_header[7..]);
+        assert!(scan_staff(&buf).is_empty());
     }
 
     #[test]

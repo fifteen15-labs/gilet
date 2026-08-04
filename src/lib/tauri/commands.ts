@@ -30,8 +30,8 @@ export type Player = {
 	eid: number | null;
 	name: string;
 	born: string;
-	/** Age on the save's own date. Null for stubs — an unknown age is not a
-	 * young one. */
+	/** Age on the save's own date. Null for stubs and compact entries, whose
+	 * birth date the save does not carry — an unknown age is not a young one. */
 	age: number | null;
 	/** Current Ability, 1-200. Null for staff, who have no attribute block. */
 	ability: number | null;
@@ -41,8 +41,9 @@ export type Player = {
 	is_player: boolean;
 	/** The 54 attributes on FM's 1-20 scale. Empty for staff. */
 	attributes: number[];
-	/** Nation identifier, shared with the club records. */
-	nation_id: number;
+	/** Nation identifier, shared with the club records. Null when the save
+	 * carries none — stubs and compact entries. */
+	nation_id: number | null;
 	/** Nation name where the identifier is confirmed, otherwise empty. */
 	nation: string;
 	/** Positions the player is comfortable in, strongest first. Empty for staff. */
@@ -73,12 +74,12 @@ export type Player = {
 	temperament: number | null;
 	/** Hidden Controversy, 1-20. */
 	controversy: number | null;
-	/** True for a stub — a non-contract squad filler the save stores without a
-	 * person record. Name, age and attributes are undecoded, not absent. */
 	/** The pre-game editor's "All Attributes" sheet, read from the entity
 	 * object one id below this person's own. Null for anyone with no such
 	 * object, which is most players. */
 	staff: StaffSheet | null;
+	/** True for a stub — a non-contract squad filler the save stores without a
+	 * person record. Name, age and attributes are undecoded, not absent. */
 	stub: boolean;
 };
 

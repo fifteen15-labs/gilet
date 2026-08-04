@@ -113,7 +113,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let abil = if p.ability.is_some() { "player" } else { "staff?" };
                     let age = save
                         .game_date
-                        .map_or("age ?".to_string(), |t| format!("age {}", p.date_of_birth.age_on(t)));
+                        .zip(p.date_of_birth)
+                        .map_or("age ?".to_string(), |(t, d)| format!("age {}", d.age_on(t)));
                     println!("    {e:>8}  {:32}  {abil:7} {age:7} {wage:12} {until}", p.full_name);
                 }
                 None => println!("    {e:>8}  ?"),

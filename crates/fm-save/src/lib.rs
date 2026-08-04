@@ -214,6 +214,22 @@ impl Save {
                     person.ability = Some(ability.clone());
                 }
             }
+
+            // Compact entries — people aged saves fold down to a name and an
+            // identity (person.rs, `scan_compact`) — join last, after every
+            // offset-based pass: their offsets sit inside other people's
+            // records, and letting them into the earlier passes would shift
+            // record boundaries and hand them a neighbour's contract. An eid
+            // a full record already claims stays with the record.
+            if let Some(table) = &table {
+                let claimed: std::collections::HashSet<u32> =
+                    people.iter().filter_map(|p| p.eid).collect();
+                people.extend(
+                    person::scan_compact(&frame.data, table, table.end_offset)
+                        .into_iter()
+                        .filter(|p| p.eid.is_some_and(|e| !claimed.contains(&e))),
+                );
+            }
         }
 
         // The in-game date lives in the small header frame on 26.0.0; on

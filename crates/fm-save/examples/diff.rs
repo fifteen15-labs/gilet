@@ -86,7 +86,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for (p, q) in &pairs {
         let pa = p.offset + PREFIX + p.full_name.len();
         let qa = q.offset + PREFIX + q.full_name.len();
-        let year = p.date_of_birth.year;
+        let Some(year) = p.date_of_birth.map(|d| d.year) else {
+            continue;
+        };
         for k in 0..WINDOW {
             let (Some(&x), Some(&y)) = (a.frame.get(pa + k), b.frame.get(qa + k)) else {
                 continue;

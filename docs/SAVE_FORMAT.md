@@ -787,6 +787,44 @@ resolves in all three name pools at once — overlapping id spaces make that
 ambiguous, so no name is shown. FM displays real generated names for these
 players, so the ids exist somewhere; finding the name link is open.
 
+## 6d-ter. Compact people — folded out of the loaded world, SOLVED
+
+An aged save loses people. Kylian Mbappé parses from every day-one save and
+is absent from the 2035 one — and his uid (85139014, FM's public database id
+for him) occurs exactly **once** in that save's main frame, in a 30-byte
+entry that is not a person record:
+
+```text
+10 00  [forename id u32] [surname id u32]  01
+[00-02] 40 [flags]  04 00 00 00  [eid u32] [uid u32] [uid u32]
+```
+
+A name reference, then the same entity-object header and doubled-uid triple
+every identity carries (§3; the type and flags bytes vary exactly as they do
+there). The entries sit **in the person table in eid order, embedded between
+full records** — Ongoing.fm runs …22278 (full, Mandréa), 22279 (compact,
+Mbappé), 22280-22282 (compact), 22283 (full, Wissa)… — so this is the person
+table's own storage for people who have left the loaded game world (retired,
+or playing beyond the simulated leagues), not a reference list. There is no
+record prefix, no inline name, no date of birth and no attribute block; the
+name ids resolve in the ordinary forename and surname pools (his read
+"Kylian" + "Mbappé" — the surname pool's plain entry, where his full record
+carried the inline "Kylian Mbappé Lottin").
+
+Population confirms the ageing story: Day One.fm and the Afan Lido save hold
+**zero** compact entries, the 2030 Benchmark 180, Port Talbot (v03) 233, the
+2035 save 976 — every one with both name ids resolving, and none of them
+referenced by any squad list.
+
+`person::scan_compact` reads them with the same acceptance a full record
+gets (both name ids must resolve, the uid must be doubled), and `Save::parse`
+appends them **after every offset-based pass** — their offsets sit inside
+other people's records, and letting them into the identity, contract or
+ability passes would shift record boundaries and hand them a neighbour's
+data. An eid a full record already claims stays with the record (one or two
+per aged save). `Person::compact` marks them; every field beyond name, eid
+and uid is `None`, because the save genuinely does not store it.
+
 ## 6e. Contracts — wage and expiry SOLVED
 
 The contract lives in the bytes immediately **before** the person's record
@@ -889,18 +927,35 @@ strings anywhere.
 
 ## 6g. Non-player attributes — SOLVED, on the object one eid below
 
-Every person carries **two entity objects**: a non-player one, then the person
-object inside their name record. Sterling's pair is eid 8401 then 8402;
-Fradley's sheet sits under 20129 while he is 20130. The non-player object holds
-the sheet the pre-game editor calls "All Attributes".
+A person's sheet — the one the pre-game editor calls "All Attributes" — sits
+in the **tail of the previous person's record**, behind an identity triple,
+exactly the arrangement player attribute blocks use (§6: "blocks sit ahead of
+the person they belong to"). Sterling's sheet is behind the triple reading
+eid 8401 while he is 8402; Fradley's behind 20129 while he is 20130; Slot's
+behind 2057 (Verberne) while he is 2058. The triple in front is nearly always
+the *previous person's own identity* — on a day-one save 18,202 of 18,247
+sheet-bearing triples match a person's exact (eid, uid) pair — so binding by
+`triple eid + 1` covers 18,245 of them.
 
 ```text
-[type 00-02] 40 [flags] [u32] [eid u32] [uid u32] [uid u32] [tag 01]
+( entity object header [type 00-02] 40 [flags] [u32] — OR nothing at all )
+[eid u32] [uid u32] [uid u32] [tag 01]
   ( optional preamble of 8-byte rows )
   [home rep u16] [current rep u16] [world rep u16] [CA u16] [PA u16]
   [8 bytes filler]
   [54 values, each 1-100]
 ```
+
+**The header is optional and cannot be required.** Plenty of records write
+the identity bare — three zero bytes, then the triple — and requiring the
+header cost 7,447 sheets on a day-one save (10,800 found against 18,247).
+Arne Slot's CA-165 sheet was one of them, behind Verberne's headerless
+identity, which is what "staff profiles show nothing" reports trace to. The
+same headerless shape also defeats the shadow-hit test that relies on the
+header (`person.rs`): the one-byte-early read binds `eid << 8` / `uid << 8`
+(Verberne read as 526592 / 153885696), so the scanner now also drops a hit
+whose ids both end in a zero byte when the next offset reads them shifted
+back.
 
 * **Reputations are the database's own numbers**, scaled to 10000 as the
   editor shows them — divide by 50 for the 0-200 value. Order is
@@ -936,7 +991,8 @@ match no editor page. Gerig's thirty-nine editor values are all 0 and his block
 is dense.
 
 Verified in `real_save::staff_sheets_match_the_editor`: 34 values across
-Nikolić and Fradley, reputations included, every one exact.
+Nikolić and Fradley, reputations included, every one exact — plus Slot's
+CA/PA and reputations from behind the headerless identity.
 
 ## 7. Prior art
 

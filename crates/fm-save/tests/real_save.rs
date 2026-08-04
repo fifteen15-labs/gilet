@@ -197,6 +197,47 @@ fn an_aged_save_decodes_against_the_in_game_report() {
     assert_eq!((until.year, until.month, until.day), (2037, 6, 30));
 }
 
+/// People who leave the loaded game world are folded down to compact entries
+/// — a name reference and an identity, no record prefix — and an aged save
+/// accumulates hundreds of them. Kylian Mbappé is stored that way in the 2035
+/// save: before the compact scan he was simply missing from the parse, while
+/// day-one saves hold his full record (uid 85139014 in both, FM's public
+/// database id for him).
+#[test]
+fn an_aged_save_keeps_its_compacted_people() {
+    let Some(save) = load_named("Ongoing.fm") else {
+        eprintln!("skipped: no Ongoing.fm on this machine");
+        return;
+    };
+
+    let mbappe = save
+        .people
+        .iter()
+        .find(|p| p.uid == Some(85_139_014))
+        .expect("Kylian Mbappé should parse from his compact entry");
+    assert_eq!(mbappe.full_name, "Kylian Mbappé");
+    assert!(mbappe.compact);
+    // A compact entry carries nothing beyond name and identity, and the
+    // fields must say so rather than carry a neighbour's values.
+    assert_eq!(mbappe.date_of_birth, None);
+    assert_eq!(mbappe.nation_id, None);
+    assert_eq!(mbappe.wage, None);
+    assert!(mbappe.ability.is_none());
+
+    // The save holds hundreds of compacted people, and none of them may
+    // shadow an eid a full record already claims.
+    let compact_count = save.people.iter().filter(|p| p.compact).count();
+    assert!(
+        compact_count > 900,
+        "expected the 2035 save's compact population, found {compact_count}"
+    );
+    let mut eids: Vec<u32> = save.people.iter().filter_map(|p| p.eid).collect();
+    let total = eids.len();
+    eids.sort_unstable();
+    eids.dedup();
+    assert_eq!(eids.len(), total, "an eid is bound to two people");
+}
+
 /// The goalkeeping attributes are invisible on an outfielder's report, so a
 /// keeper is the only way to check them. Values from Lucas Chevalier's
 /// in-game report in the same 2035 save.
@@ -447,7 +488,10 @@ fn hidden_personality_matches_the_in_game_labels() {
     let adults: Vec<_> = save
         .people
         .iter()
-        .filter(|p| p.nation_id <= 250 && p.date_of_birth.year < 2020)
+        .filter(|p| {
+            p.nation_id.is_some_and(|n| n <= 250)
+                && p.date_of_birth.is_some_and(|d| d.year < 2020)
+        })
         .collect();
     let with = adults.iter().filter(|p| p.personality.is_some()).count();
     assert!(
@@ -629,6 +673,28 @@ fn staff_sheets_match_the_editor() {
     ] {
         assert_eq!(nikolic.get(name), Some(expected), "Nikolić {name}");
     }
+
+    // Arne Slot's sheet sits behind Maurice Verberne's identity block, which
+    // carries no object header — the header-first scan missed it entirely
+    // (Slot showed no sheet), and the value-shifted shadow had bound Verberne
+    // himself to eid 526592 (2057 << 8). Both fixed 4 August 2026.
+    let verberne = save
+        .people
+        .iter()
+        .find(|p| p.full_name == "Maurice Verberne")
+        .expect("Verberne is in the save");
+    assert_eq!(
+        (verberne.eid, verberne.uid),
+        (Some(2057), Some(601_116)),
+        "the headerless shadow must not win"
+    );
+    let slot = sheet("Arend Martijn Slot");
+    assert_eq!(slot.eid, 2057, "Slot's sheet sits behind Verberne's identity");
+    assert_eq!((slot.current_ability, slot.potential_ability), (165, 175));
+    assert_eq!(
+        (slot.home_reputation, slot.current_reputation, slot.world_reputation),
+        (165, 165, 135)
+    );
 
     // Editor: CA 140, PA 150, Current Reputation 140, World 110, Home 127.
     let fradley = sheet("Daniel Fradley");

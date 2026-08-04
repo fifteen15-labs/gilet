@@ -26,15 +26,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let today = fm_save::Date { year: 2026, month: 8, day: 1 };
     println!("\nfirst 10 people:");
     for p in save.people.iter().take(10) {
-        let d = p.date_of_birth;
-        println!(
-            "  {:<34} {:04}-{:02}-{:02}  age {}",
-            p.full_name,
-            d.year,
-            d.month,
-            d.day,
-            d.age_on(today)
-        );
+        match p.date_of_birth {
+            Some(d) => println!(
+                "  {:<34} {:04}-{:02}-{:02}  age {}",
+                p.full_name,
+                d.year,
+                d.month,
+                d.day,
+                d.age_on(today)
+            ),
+            None => println!("  {:<34} compact (no birth date)", p.full_name),
+        }
     }
 
     println!();
@@ -47,12 +49,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ] {
         match save.people.iter().find(|p| p.full_name == probe) {
             Some(p) => {
-                let d = p.date_of_birth;
+                let born = p.date_of_birth.map_or_else(
+                    || "compact".to_owned(),
+                    |d| format!("{:04}-{:02}-{:02}", d.year, d.month, d.day),
+                );
                 let ability = p.ability.as_ref().map_or_else(
                     || "staff (no attribute block)".to_owned(),
                     |a| format!("CA {} / PA {}  {}", a.current, a.potential, a.natural_positions().join(", ")),
                 );
-                println!("  {:<32} {:04}-{:02}-{:02}  {ability}", p.full_name, d.year, d.month, d.day);
+                println!("  {:<32} {born:>10}  {ability}", p.full_name);
             }
             None => println!("  MISSING {probe}"),
         }
@@ -80,9 +85,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     best.sort_by_key(|(a, _)| std::cmp::Reverse(a.potential));
     println!("\nhighest potential in the save:");
     for (a, p) in best.iter().take(8) {
+        let age = p
+            .date_of_birth
+            .map_or("?".to_owned(), |d| d.age_on(today).to_string());
         println!(
-            "  PA {:>3}  CA {:>3}  age {:>2}  {:<12} {}",
-            a.potential, a.current, p.date_of_birth.age_on(today),
+            "  PA {:>3}  CA {:>3}  age {age:>2}  {:<12} {}",
+            a.potential, a.current,
             a.natural_positions().join(","), p.full_name
         );
     }

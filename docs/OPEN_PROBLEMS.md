@@ -43,11 +43,26 @@ The scan now accepts any flags byte when the entity head validates; the fix
 recovered ~1,050 clubs and 77 squads in that save. Diagnose this class of
 problem with `research/clubsig.py` and the `diagnose` example.
 
+**Whole people can be missing, not just links — SOLVED 4 August 2026.**
+"Sometimes players are missing, like Mbappé" was not flakiness: aged saves
+fold people who leave the loaded game world down to 30-byte **compact
+entries** — a name-id pair and an entity object, embedded in the person
+table between full records, with no record prefix for `scan_people` to find
+(`SAVE_FORMAT.md` §6d-ter). Kylian Mbappé is one of 976 in the 2035 save
+(day-one saves hold none, the 2030 Benchmark 180), and his uid appears
+nowhere else in the frame — that entry *is* his storage.
+`person::scan_compact` now reads them into `Save::people`, marked compact,
+everything beyond name and identity honestly `None`. The UI deliberately
+does not show them (owner's call, 4 August 2026): a row with no age, club,
+attributes or contract answers no scouting question. None of them are
+squad-referenced, so the residuals below are untouched by the fix.
+
 **Residuals, in order of value:**
 
 1. **Players at clubs outside the loaded leagues have no squad list at all.**
    In the Afan Lido save 6,585 of 27,483 contracted players resolve to no
-   club, and probing (diagnose example, "where do the orphans' squad lists
+   club (8,179 of 27,640 in the aged Ongoing.fm), and probing (diagnose
+   example, "where do the orphans' squad lists
    hide") shows their eids and uids appear in *no* FF-marked count list in
    `game_db` — Brazilian, Argentine and MLS squads among them (Willian,
    Calleri, Acosta). The squad table only materialises for active divisions;
@@ -222,6 +237,17 @@ nearest, and binds each sheet to the person one eid up. `Person::staff` exposes
 it. With rounding the recovery is exact, not approximate — every non-blank item
 on both editor sheets reads back byte for byte, and
 `real_save::staff_sheets_match_the_editor` asserts 34 of them.
+
+**4 August 2026 — the header requirement was hiding 40% of the sheets.** The
+sheet-bearing triple is nearly always the *previous* person's own identity
+(18,202 of 18,247 exact eid+uid matches on Day One), and identities are often
+written with no object header at all. `scan_staff` required the header, so
+Arne Slot, Arteta and ~7,400 others showed no sheet; anchoring on the triple
+(header **or** the identity's three zero bytes) lifts Day One from 10,800 to
+18,245 bound sheets. The headerless shape also slipped past the shadow drop —
+Verberne bound as eid 526592 (2057 << 8) — closed with a value-shape test in
+`scan_triples` (both ids end in a zero byte, next offset reads them shifted
+back). Both locked by `real_save` assertions on Slot and Verberne.
 
 **What this retires:** the ×4 scale, the "controlled column" reading, "career
 start rewrites reputation", "the block is generated for everyone", and the

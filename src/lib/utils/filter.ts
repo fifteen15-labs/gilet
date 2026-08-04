@@ -204,6 +204,8 @@ export type NationOption = { id: number; name: string };
 export function nationsIn(players: readonly Player[]): NationOption[] {
 	const seen = new Map<number, string>();
 	for (const p of players) {
+		// Stubs and compact entries carry no nation at all — nothing to list.
+		if (p.nation_id === null) continue;
 		if (!seen.has(p.nation_id)) seen.set(p.nation_id, p.nation);
 	}
 	const named: NationOption[] = [];

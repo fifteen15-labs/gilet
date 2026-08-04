@@ -45,8 +45,11 @@
 	</td>
 	<td class="pr-4 text-xs text-[var(--color-mist)]">{player.club}</td>
 	<td class="pr-4 text-xs text-[var(--color-mist)]">{player.positions.slice(0, 3).join(', ')}</td>
-	<td class="pr-4 text-xs text-[var(--color-faint)]" title="Nation {player.nation_id}">
-		{player.nation || player.nation_id}
+	<td
+		class="pr-4 text-xs text-[var(--color-faint)]"
+		title={player.nation_id === null ? '' : `Nation ${player.nation_id}`}
+	>
+		{player.nation || (player.nation_id ?? '')}
 	</td>
 	<td class="tabular pr-4 text-sm text-[var(--color-mist)]">{player.age ?? ''}</td>
 	<td class="tabular pr-4 text-right text-xs text-[var(--color-mist)]" title={player.contract_until ? `Contract until ${player.contract_until}` : ''}>

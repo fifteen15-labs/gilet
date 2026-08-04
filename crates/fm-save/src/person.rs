@@ -20,10 +20,13 @@ pub struct Person {
     /// `"forename surname"`; otherwise composed from the string table, which
     /// is how "Virgil van Dijk" and every other plainly-named person is held.
     pub full_name: String,
-    pub date_of_birth: Date,
+    /// `None` for compact entries, which carry no birth date at all.
+    pub date_of_birth: Option<Date>,
     /// Nation identifier, e.g. 139 for England. Shares the numbering the club
-    /// records use, so a club's nation and a player's match.
-    pub nation_id: u16,
+    /// records use, so a club's nation and a player's match. `None` when the
+    /// record does not carry one — compact entries, and records truncated at
+    /// the end of the frame.
+    pub nation_id: Option<u16>,
     /// The person's database entity id — what squad lists reference.
     /// `None` when no identity block was found in the record.
     pub eid: Option<u32>,
@@ -56,6 +59,11 @@ pub struct Person {
     /// the entity object one eid below this person's own. `None` when no such
     /// object carries a block, which is most players.
     pub staff: Option<crate::staff::Staff>,
+    /// True for a compact entry: aged saves fold people who have left the
+    /// loaded game world down to a name reference and an identity, so only
+    /// `full_name`, `eid` and `uid` are real. Everything else is genuinely
+    /// absent from the save, not undecoded.
+    pub compact: bool,
 }
 
 impl Person {
@@ -123,7 +131,7 @@ impl Person {
     /// The nation's name, for the identifiers confirmed so far.
     #[must_use]
     pub fn nation(&self) -> Option<&'static str> {
-        nation_name(self.nation_id)
+        self.nation_id.and_then(nation_name)
     }
 }
 
@@ -391,8 +399,8 @@ fn parse_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<(Person, u
 
     // Nationality sits further out, so a record truncated at the end of the
     // frame still parses — it is descriptive, not part of the acceptance test.
-    let nation_id = read_u16(frame, body + NATION_OFFSET).unwrap_or_default();
-    let personality = find_personality(frame, body, nation_id);
+    let nation_id = read_u16(frame, body + NATION_OFFSET);
+    let personality = nation_id.and_then(|n| find_personality(frame, body, n));
 
     Some((
         Person {
@@ -401,7 +409,7 @@ fn parse_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<(Person, u
             surname_id,
             common_name_id: (common_raw != NO_COMMON_NAME).then_some(common_raw),
             full_name,
-            date_of_birth,
+            date_of_birth: Some(date_of_birth),
             nation_id,
             eid: None,
             uid: None,
@@ -414,6 +422,7 @@ fn parse_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<(Person, u
             // both scans have run.
             ability: None,
             staff: None,
+            compact: false,
         },
         body + 4,
     ))
@@ -446,6 +455,91 @@ fn find_personality(frame: &[u8], body: usize, nation_id: u16) -> Option<[u8; 8]
         }
     }
     None
+}
+
+/// Length of one compact person entry.
+const COMPACT_LEN: usize = 30;
+
+/// Scans a frame for compact person entries:
+///
+/// ```text
+/// 10 00 [forename id u32] [surname id u32] 01 [type] 40 [flags] 04 00 00 00 [eid][uid][uid]
+/// ```
+///
+/// Aged saves fold people who have left the loaded game world — retired, or
+/// moved beyond the simulated leagues — down to this: a name reference and an
+/// entity object, sitting in the person table in eid order between full
+/// records but carrying no record prefix of their own. Kylian Mbappé is
+/// stored this way in a 2035 save (976 entries, every name resolving); a
+/// day-one save has none. The type byte is 0-2 and the flags byte varies,
+/// exactly as on the other entity object headers (`SAVE_FORMAT.md` §3).
+///
+/// Acceptance is the doubled uid plus **both name ids resolving in their
+/// pools** — the same test a full record must pass — so a chance `10 00` in
+/// record data does not fabricate a person. Everything beyond name and
+/// identity is genuinely absent, so the person is marked [`Person::compact`]
+/// and every other field stays `None`.
+#[must_use]
+pub fn scan_compact(frame: &[u8], strings: &StringTable, start: usize) -> Vec<Person> {
+    let mut out = Vec::new();
+    let mut at = start;
+    while at.saturating_add(COMPACT_LEN) <= frame.len() {
+        match compact_at(frame, at, strings) {
+            Some(person) => {
+                out.push(person);
+                at += COMPACT_LEN;
+            }
+            None => at += 1,
+        }
+    }
+    out
+}
+
+fn compact_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<Person> {
+    if frame.get(at)? != &0x10 || frame.get(at + 1)? != &0x00 {
+        return None;
+    }
+    if frame.get(at + 10)? != &0x01 {
+        return None;
+    }
+    if *frame.get(at + 11)? > 0x02 || frame.get(at + 12)? != &0x40 {
+        return None;
+    }
+    if frame.get(at + 14..at + 18)? != [0x04, 0x00, 0x00, 0x00] {
+        return None;
+    }
+    let eid = read_u32(frame, at + 18)?;
+    let uid = read_u32(frame, at + 22)?;
+    if read_u32(frame, at + 26)? != uid || uid == 0 || uid == u32::MAX {
+        return None;
+    }
+    if eid == 0 || eid >= MAX_EID {
+        return None;
+    }
+    let first_name_id = read_u32(frame, at + 2)?;
+    let surname_id = read_u32(frame, at + 6)?;
+    let forename = strings.forenames.get(&first_name_id)?;
+    let surname = strings.surnames.get(&surname_id)?;
+
+    Some(Person {
+        offset: at,
+        first_name_id,
+        surname_id,
+        common_name_id: None,
+        full_name: format!("{forename} {surname}"),
+        date_of_birth: None,
+        nation_id: None,
+        eid: Some(eid),
+        uid: Some(uid),
+        club_eid: None,
+        female: None,
+        personality: None,
+        wage: None,
+        contract_until: None,
+        ability: None,
+        staff: None,
+        compact: true,
+    })
 }
 
 /// An identity block: `[eid u32][uid u32][uid u32]`, the uid repeated.
@@ -748,6 +842,18 @@ fn scan_triples(frame: &[u8], start: usize) -> Vec<Identity> {
             at += 1;
             continue;
         }
+        // The header tell misses identities written without one. The values
+        // are their own tell there: a shadow's eid and uid both end in a zero
+        // byte, and the very next offset reads them shifted back — Verberne,
+        // really eid 2057 / uid 601116, was bound as 526592 / 153885696 and
+        // took the staff sheet behind his record down with him.
+        if eid.trailing_zeros() >= 8
+            && uid.trailing_zeros() >= 8
+            && read_triple(frame, at + 1) == Some((eid >> 8, uid >> 8))
+        {
+            at += 1;
+            continue;
+        }
         out.push(Identity {
             offset: at,
             eid,
@@ -867,7 +973,8 @@ mod tests {
         assert_eq!(p.first_name_id, 100);
         assert_eq!(p.surname_id, 200);
         assert_eq!(p.common_name_id, None);
-        assert_eq!((p.date_of_birth.day, p.date_of_birth.month), (21, 7));
+        let dob = p.date_of_birth.unwrap();
+        assert_eq!((dob.day, dob.month), (21, 7));
     }
 
     #[test]
@@ -901,7 +1008,7 @@ mod tests {
         buf.extend_from_slice(&[0u8; 9]);
         buf.extend_from_slice(&139u16.to_le_bytes());
         let found = scan_people(&buf, &table());
-        assert_eq!(found.first().unwrap().nation_id, 139);
+        assert_eq!(found.first().unwrap().nation_id, Some(139));
         assert_eq!(found.first().unwrap().nation(), Some("England"));
     }
 
@@ -951,6 +1058,52 @@ mod tests {
         assert_eq!(found.get(1).unwrap().full_name, "Virgil van Dijk");
     }
 
+    /// A compact entry as it sits on disk: `10 00`, the two name ids, `01`,
+    /// then the entity object header and the doubled-uid triple.
+    fn compact_entry(first: u32, surname: u32, eid: u32, uid: u32, uid2: u32) -> Vec<u8> {
+        let mut v = vec![0x10, 0x00];
+        v.extend_from_slice(&first.to_le_bytes());
+        v.extend_from_slice(&surname.to_le_bytes());
+        v.extend_from_slice(&[0x01, 0x02, 0x40, 0x18, 0x04, 0x00, 0x00, 0x00]);
+        v.extend_from_slice(&eid.to_le_bytes());
+        v.extend_from_slice(&uid.to_le_bytes());
+        v.extend_from_slice(&uid2.to_le_bytes());
+        v
+    }
+
+    #[test]
+    fn reads_a_compact_entry() {
+        // Mbappé's real shape in a 2035 save: name ids and identity, no
+        // record prefix, no date of birth, nothing else.
+        let mut buf = vec![0u8; 4];
+        buf.extend(compact_entry(100, 200, 22279, 85_139_014, 85_139_014));
+        let found = scan_compact(&buf, &table(), 0);
+        assert_eq!(found.len(), 1);
+        let p = found.first().unwrap();
+        assert_eq!(p.full_name, "Erling Haaland");
+        assert_eq!(p.eid, Some(22279));
+        assert_eq!(p.uid, Some(85_139_014));
+        assert!(p.compact);
+        assert_eq!(p.date_of_birth, None);
+        assert_eq!(p.nation_id, None);
+        assert_eq!(p.offset, 4);
+    }
+
+    #[test]
+    fn rejects_compact_decoys() {
+        let mut buf = Vec::new();
+        // Name ids that resolve in no pool.
+        buf.extend(compact_entry(999, 200, 22280, 7, 7));
+        buf.extend(compact_entry(100, 999, 22281, 8, 8));
+        // A uid that is not doubled, and the two reserved uids.
+        buf.extend(compact_entry(100, 200, 22282, 9, 10));
+        buf.extend(compact_entry(100, 200, 22283, 0, 0));
+        buf.extend(compact_entry(100, 200, 22284, u32::MAX, u32::MAX));
+        // An entity id out of range.
+        buf.extend(compact_entry(100, 200, MAX_EID, 11, 11));
+        assert!(scan_compact(&buf, &table(), 0).is_empty());
+    }
+
     /// An identity as it sits on disk: the seven-byte entity object header —
     /// type byte, `0x40`, flags, then four zeros — and the triple after it.
     fn identity_block(eid: u32, uid: u32) -> Vec<u8> {
@@ -994,6 +1147,27 @@ mod tests {
         let bound = people.first().unwrap();
         assert_eq!(bound.eid, Some(5156), "the shadow at eid << 8 must not win");
         assert_eq!(bound.uid, Some(5_790_125));
+    }
+
+    #[test]
+    fn a_headerless_shadow_is_told_by_its_values() {
+        // Verberne's shape: the identity block carries no object header, so
+        // the header tell cannot flag the short read one byte before it.
+        // Really eid 2057 / uid 601116; the shadow reads 526592 / 153885696.
+        // Four zeros ahead of the triple, as on disk, so the short read one
+        // byte early passes the zeros test too and the tie is real.
+        let mut buf = record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000);
+        buf.extend_from_slice(&[0u8; 4]);
+        buf.extend_from_slice(&2057u32.to_le_bytes());
+        buf.extend_from_slice(&601_116u32.to_le_bytes());
+        buf.extend_from_slice(&601_116u32.to_le_bytes());
+
+        let mut people = scan_people(&buf, &table());
+        bind_identities(&buf, &mut people, 0);
+
+        let bound = people.first().unwrap();
+        assert_eq!(bound.eid, Some(2057), "the value-shifted shadow must not win");
+        assert_eq!(bound.uid, Some(601_116));
     }
 
     #[test]

@@ -36,10 +36,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
 
     for p in found {
-        let d = p.date_of_birth;
         println!("\n=== {} ===", p.full_name);
-        println!("born      {:04}-{:02}-{:02}", d.year, d.month, d.day);
-        println!("nation    {} ({})", p.nation().unwrap_or("?"), p.nation_id);
+        match p.date_of_birth {
+            Some(d) => println!("born      {:04}-{:02}-{:02}", d.year, d.month, d.day),
+            None => println!("born      ? (compact entry)"),
+        }
+        println!("nation    {} ({:?})", p.nation().unwrap_or("?"), p.nation_id);
         println!("eid/uid   {:?} / {:?}", p.eid, p.uid);
         println!(
             "club      {}",

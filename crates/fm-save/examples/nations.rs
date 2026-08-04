@@ -16,9 +16,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut by_nation: std::collections::HashMap<u16, Vec<(&str, u8)>> = std::collections::HashMap::new();
     for p in &save.people {
-        if let Some(a) = &p.ability {
+        if let (Some(a), Some(nation)) = (&p.ability, p.nation_id) {
             by_nation
-                .entry(p.nation_id)
+                .entry(nation)
                 .or_default()
                 .push((p.full_name.as_str(), a.current));
         }

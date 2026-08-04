@@ -198,6 +198,20 @@ bytes of the record prefix. Unbound people on a day-one save: 5,530 → 1,095, a
 no cost in parse time. `staffmap` anchors on the header rather than an 8×FF run
 and finds 10,422 blocks against the old 1,975.
 
+**The staff scan lost 40% of the sheets to a required header** (fixed 4 Aug
+2026, chasing "staff profiles show nothing"). A sheet sits in the tail of the
+*previous* person's record behind that person's identity triple — the same
+blocks-ahead arrangement player attributes use — and plenty of identities are
+written headerless (three zero bytes, no `[type] 40`). `scan_staff` demanded
+the header, so every sheet behind a headerless identity vanished: Arne Slot
+(CA 165 behind Verberne's bare triple), Arteta, ~7,400 more on Day One —
+10,800 → 18,245 sheets bound once the anchor accepts either the header or the
+zero bytes. The same headerless shape also dodged the shadow-hit test, which
+leaned on the header: Verberne himself was bound to `eid << 8` (526592 for
+2057), so `scan_triples` now also drops a hit whose eid and uid both end in a
+zero byte when the next offset reads them shifted back. Slot's sheet and
+Verberne's true ids are locked in `real_save.rs`.
+
 **All eight hidden personality slots are
 named** (Adaptability, Ambition, Loyalty, Pressure, Professionalism,
 Sportsmanship, Temperament, Controversy — Guardiola's editor sheet matched
@@ -210,6 +224,21 @@ stubs now surface as undecoded rows ("Unnamed — non-contract", no age or
 attributes) instead of silently missing from their club's squad; age is
 `Option` end-to-end so an unknown age fails an age cap rather than passing
 it. Stub name/age fields are not yet decoded (`OPEN_PROBLEMS.md`).
+
+**Compact people parse** (4 Aug 2026): aged saves fold people who leave the
+loaded game world — retired, or playing beyond the simulated leagues — down
+to a 30-byte entry (`10 00 [forename id][surname id] 01` + entity object)
+embedded in the person table with no record prefix, which is why Kylian
+Mbappé "went missing" from the 2035 save while day-one saves held him (976
+entries there, 0 on day one; `SAVE_FORMAT.md` §6d-ter). `scan_compact` reads
+them with the full-record acceptance test (both name ids must resolve, uid
+doubled) and they join `Save::people` after every offset-based pass, marked
+`Person::compact`, name and identity real and every other field `None` —
+`date_of_birth` and `nation_id` went `Option` across the crate to keep that
+honest. **The UI does not show them** — a row with no age, club, attributes
+or contract answers no scouting question and clogs the table (owner's call,
+4 Aug 2026); `commands.rs` filters `Person::compact` out of the row set, so
+they exist only in `Save::people` and the format docs.
 
 Not yet located: the full nation-name table, the last few attribute names,
 and the club link for players outside the loaded leagues (their squads are
