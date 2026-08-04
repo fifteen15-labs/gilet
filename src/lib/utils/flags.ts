@@ -229,10 +229,28 @@ export function riskCount(player: Player): number {
 }
 
 /**
- * Room left to grow: potential minus current ability, on the same 1-200 scale.
- * Null when either end is undecoded — a missing potential is not "no headroom".
+ * The row's Current Ability on the 0-200 scale: a player's own, or the
+ * non-player CA from the staff sheet — both read straight from the save and
+ * editor-verified. Null when neither is decoded (stubs), which is not a low
+ * one. A player-coach reads as a player: the table is a scouting table first.
+ */
+export function abilityOf(player: Player): number | null {
+	return player.ability ?? player.staff?.currentAbility ?? null;
+}
+
+/** The row's Potential Ability, resolved the same way as {@link abilityOf}. */
+export function potentialOf(player: Player): number | null {
+	return player.potential ?? player.staff?.potentialAbility ?? null;
+}
+
+/**
+ * Room left to grow: potential minus current ability, on the same 1-200 scale,
+ * for players and staff alike — a young coach has headroom too. Null when
+ * either end is undecoded — a missing potential is not "no headroom".
  */
 export function headroom(player: Player): number | null {
-	if (player.ability === null || player.potential === null) return null;
-	return player.potential - player.ability;
+	const current = abilityOf(player);
+	const potential = potentialOf(player);
+	if (current === null || potential === null) return null;
+	return potential - current;
 }

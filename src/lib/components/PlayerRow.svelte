@@ -1,7 +1,7 @@
 <script lang="ts">
 	import AbilityBar from './AbilityBar.svelte';
 	import { scout } from '$lib/classes/Scout.svelte';
-	import { flagsFor, headroom } from '$lib/utils/flags';
+	import { abilityOf, flagsFor, headroom, potentialOf } from '$lib/utils/flags';
 	import type { Player } from '$lib/tauri/commands';
 
 	type Props = {
@@ -14,6 +14,10 @@
 	const { player, score }: Props = $props();
 
 	const room = $derived(headroom(player));
+	/** A player's own ability, or the staff sheet's non-player CA/PA — same
+	 * 0-200 scale, both the save's own numbers. */
+	const current = $derived(abilityOf(player));
+	const potential = $derived(potentialOf(player));
 	const flags = $derived(flagsFor(player));
 	const risks = $derived(flags.filter((f) => f.tone === 'risk'));
 	const strengths = $derived(flags.filter((f) => f.tone === 'strength'));
@@ -55,8 +59,18 @@
 	<td class="tabular pr-4 text-right text-xs text-[var(--color-mist)]" title={player.contract_until ? `Contract until ${player.contract_until}` : ''}>
 		{formatWage(player.wage)}
 	</td>
-	<td class="tabular pr-4 text-sm text-[var(--color-bright)]">{player.ability ?? ''}</td>
-	<td class="tabular pr-4 text-sm text-[var(--color-signal)]">{player.potential ?? ''}</td>
+	<td
+		class="tabular pr-4 text-sm text-[var(--color-bright)]"
+		title={player.is_player || current === null ? '' : 'Non-player ability'}
+	>
+		{current ?? ''}
+	</td>
+	<td
+		class="tabular pr-4 text-sm text-[var(--color-signal)]"
+		title={player.is_player || potential === null ? '' : 'Non-player potential'}
+	>
+		{potential ?? ''}
+	</td>
 	<td class="tabular pr-4 text-sm text-[var(--color-mist)]">{room === null ? '' : `+${room}`}</td>
 	{#if score !== undefined}
 		<td class="tabular pr-4 text-sm text-[var(--color-bright)]">{score ?? ''}</td>
@@ -70,6 +84,6 @@
 		{/if}
 	</td>
 	<td class="pr-3">
-		<AbilityBar ability={player.ability} potential={player.potential} />
+		<AbilityBar ability={current} potential={potential} />
 	</td>
 </tr>

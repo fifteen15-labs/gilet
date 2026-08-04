@@ -138,7 +138,9 @@
 				>
 					<option value="">No score</option>
 					{#each profiles.list as profile (profile.name)}
-						<option value={profile.name}>{profile.name}</option>
+						<option value={profile.name}>
+							{profile.name}{profile.kind === 'staff' ? ' · staff' : ''}
+						</option>
 					{/each}
 				</select>
 				<button

@@ -159,8 +159,12 @@ export type SavedFilter = {
  */
 export type ScoringProfile = {
 	name: string;
-	/** Attribute index (as a string key) to weight. */
+	/** Attribute index (as a string key) to weight. For a 'staff' profile the
+	 * indices point into the 52-item non-player sheet instead. */
 	weights: Record<string, number>;
+	/** Which sheet the weights index. Absent on profiles saved before staff
+	 * scoring existed — treat as 'player'. */
+	kind?: 'player' | 'staff';
 };
 
 /** How far through parsing the backend is, as it reports it. */

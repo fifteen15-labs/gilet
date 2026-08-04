@@ -28,17 +28,30 @@ pub struct SavedFilter {
     pub filters: serde_json::Value,
 }
 
+/// Which attribute sheet a profile weights. Profiles saved before staff
+/// scoring existed carry no kind and default to player.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ProfileKind {
+    #[default]
+    Player,
+    Staff,
+}
+
 /// A user-defined weighting over attribute indices, used to rank players by
 /// what the user is actually looking for.
 ///
 /// The weights are the user's own. Gilet ships none: FM's role ratings are
 /// computed from weights SI does not publish, and inventing a table of them
 /// would be inventing numbers. Keyed by attribute index as a string, because
-/// that is what JSON object keys are.
+/// that is what JSON object keys are. A `staff` profile's keys index the
+/// 52-item non-player sheet instead of the player block.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScoringProfile {
     pub name: String,
     pub weights: std::collections::BTreeMap<String, f64>,
+    #[serde(default)]
+    pub kind: ProfileKind,
 }
 
 /// Gilet's files live in Football Manager's own `shortlists` folder, next to
@@ -214,4 +227,30 @@ pub fn save_shortlists(app: tauri::AppHandle, lists: Vec<Shortlist>) -> Result<(
         path: path.display().to_string(),
         message: e.to_string(),
     })
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_profile_saved_before_kinds_existed_loads_as_a_player_profile() {
+        let old = r#"{"name":"Wingers","weights":{"34":5}}"#;
+        let profile: ScoringProfile = serde_json::from_str(old).unwrap();
+        assert_eq!(profile.kind, ProfileKind::Player);
+    }
+
+    #[test]
+    fn a_staff_profile_round_trips() {
+        let profile = ScoringProfile {
+            name: "Scouts".to_owned(),
+            weights: std::collections::BTreeMap::from([("28".to_owned(), 5.0)]),
+            kind: ProfileKind::Staff,
+        };
+        let text = serde_json::to_string(&profile).unwrap();
+        assert!(text.contains(r#""kind":"staff""#));
+        let back: ScoringProfile = serde_json::from_str(&text).unwrap();
+        assert_eq!(back.kind, ProfileKind::Staff);
+    }
 }

@@ -247,7 +247,11 @@ class Scout {
 	async addResultsToGameShortlist(list: GameShortlist): Promise<void> {
 		if (!this.summary || !this.summary.game_date) return;
 		const [year, month, day] = this.summary.game_date.split('-').map(Number);
-		const rows = this.results.filter((p) => p.eid !== null);
+		// FM's in-save shortlists hold players; a staff row filtered in under
+		// a staff search must not be written into one.
+		const rows = this.results.filter(
+			(p) => p.eid !== null && (p.is_player || p.staff === null)
+		);
 		const eids = rows.map((p) => p.eid ?? 0);
 		if (eids.length === 0) return;
 		this.error = null;
@@ -263,7 +267,9 @@ class Scout {
 			const skipped = this.results.length - rows.length;
 			this.notice =
 				`Added ${added.toLocaleString()} to ${list.name ?? '(unnamed)'} in the save.` +
-				(skipped > 0 ? ` ${skipped} had no entity id and were skipped.` : '');
+				(skipped > 0
+					? ` ${skipped} skipped — staff, or no entity id: FM's shortlists hold players.`
+					: '');
 		} catch (e) {
 			this.error = e instanceof Error ? e.message : String(e);
 		}

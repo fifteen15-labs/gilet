@@ -198,8 +198,9 @@
 				</div>
 
 				<!-- Actions sit above the attribute grid: below it they were past
-					the fold on every save, and nobody found them. -->
-				{#if gameLists.length > 0 && player.eid !== null}
+					the fold on every save, and nobody found them. FM's in-save
+					shortlists hold players, so a staff person gets no add button. -->
+				{#if gameLists.length > 0 && player.eid !== null && (player.is_player || player.staff === null)}
 					<div class="mb-4">
 						<h4
 							class="eyebrow mb-1.5"

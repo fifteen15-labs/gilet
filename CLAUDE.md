@@ -125,7 +125,15 @@ weights, ranking players by the weighted average — are back in full: the
 sidebar picks one, `ProfileEditor.svelte` weights any named attribute 0-5, and
 the score is a table column. Gilet still ships no role weights, because FM's
 own are unpublished and a guessed table would be an invented number wearing a
-familiar name. "Free agents" filters on having neither a contract nor a club: a
+familiar name. **Staff scout the same way** (4 Aug 2026): the table's CA/PA
+columns and ability bar read the non-player CA/PA for staff rows (same 0-200
+scale, editor-verified), the ability bounds and sort follow, and a profile
+now has a kind — a *staff* profile weights the 52-item non-player sheet
+(grouped as the editor groups it) and scores staff rows instead. Old profile
+JSON has no kind and deserialises as player (`ProfileKind`, serde default).
+FM's in-save shortlists hold players, so staff rows are skipped by "Add N to
+save" (said in the notice) and the detail panel offers a staff person no add
+button. "Free agents" filters on having neither a contract nor a club: a
 missing club alone is a parser gap, not unemployment, and £0 at a club is a
 youth deal. Covered by integration tests in `src-tauri/tests/journeys.rs` and
 `crates/fm-save/tests/real_save.rs` that run against a real save (Liverpool's

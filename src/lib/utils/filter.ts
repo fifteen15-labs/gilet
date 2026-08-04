@@ -1,6 +1,6 @@
 import type { Club, Player } from '$lib/tauri/commands';
 import { SET_PIECES, setPieceIndex, VERSATILITY } from '$lib/utils/attributes';
-import { hasFlagData, headroom, riskCount } from '$lib/utils/flags';
+import { abilityOf, hasFlagData, headroom, potentialOf, riskCount } from '$lib/utils/flags';
 import { coverage } from '$lib/utils/positions';
 
 export type SortKey = 'name' | 'age' | 'ability' | 'potential' | 'score' | 'headroom';
@@ -9,11 +9,13 @@ export type SortDirection = 'asc' | 'desc';
 export type Filters = {
 	query: string;
 	maxAge: number | null;
-	/** Minimum Current Ability, 1-200. Excludes staff, who have no ability. */
+	/** Minimum Current Ability, 1-200 — a player's own, or the non-player CA
+	 * for staff, so "CA 150+" finds elite coaches under the Staff kind too.
+	 * Excludes anyone with neither decoded. */
 	minAbility: number | null;
 	/** Maximum Current Ability, 1-200. Finds the affordable end of a bracket. */
 	maxAbility: number | null;
-	/** Minimum Potential Ability, 1-200. Excludes staff. */
+	/** Minimum Potential Ability, 1-200, player or staff. */
 	minPotential: number | null;
 	/** Maximum Potential Ability, 1-200. Rules out the ones already at the top. */
 	maxPotential: number | null;
@@ -130,18 +132,22 @@ export function matches(
 	// fillers) have no birth date, and an age cap must not sweep them in.
 	if (filters.maxAge !== null && (player.age === null || player.age > filters.maxAge))
 		return false;
-	// Staff have no ability, and an unknown is not a low score — an ability
-	// filter therefore excludes them rather than treating them as zero. That
-	// holds for an upper bound too: an unknown is not "safely under 120".
+	// Ability bounds read whichever ability the row carries — a player's own,
+	// or the non-player CA/PA from the staff sheet. An unknown is not a low
+	// score, so a row with neither fails the bound rather than passing at
+	// zero; that holds for an upper bound too: an unknown is not "safely
+	// under 120".
 	if (filters.minAbility !== null || filters.maxAbility !== null) {
-		if (player.ability === null) return false;
-		if (filters.minAbility !== null && player.ability < filters.minAbility) return false;
-		if (filters.maxAbility !== null && player.ability > filters.maxAbility) return false;
+		const current = abilityOf(player);
+		if (current === null) return false;
+		if (filters.minAbility !== null && current < filters.minAbility) return false;
+		if (filters.maxAbility !== null && current > filters.maxAbility) return false;
 	}
 	if (filters.minPotential !== null || filters.maxPotential !== null) {
-		if (player.potential === null) return false;
-		if (filters.minPotential !== null && player.potential < filters.minPotential) return false;
-		if (filters.maxPotential !== null && player.potential > filters.maxPotential) return false;
+		const potential = potentialOf(player);
+		if (potential === null) return false;
+		if (filters.minPotential !== null && potential < filters.minPotential) return false;
+		if (filters.maxPotential !== null && potential > filters.maxPotential) return false;
 	}
 	// An unreadable wage is not a cheap one. Players out of contract have no
 	// wage to cap, and so does every contract layout the parser has not cracked;
@@ -288,6 +294,8 @@ const byName = new Intl.Collator(undefined, { sensitivity: 'base' });
 function value(player: Player, key: SortKey, scores: ReadonlyMap<number, number>): number | null {
 	if (key === 'score') return scores.get(player.id) ?? null;
 	if (key === 'headroom') return headroom(player);
+	if (key === 'ability') return abilityOf(player);
+	if (key === 'potential') return potentialOf(player);
 	if (key === 'name') return null;
 	return player[key];
 }

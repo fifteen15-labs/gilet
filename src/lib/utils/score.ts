@@ -14,23 +14,33 @@ import type { Player, ScoringProfile } from '$lib/tauri/commands';
  * removes the attribute rather than dragging the average down. */
 const MIN_WEIGHT = 0.01;
 
+/** The attribute sheet a profile's indices point into: the player block, or
+ * the 52-item non-player sheet for a staff profile. Null when this person
+ * does not carry that sheet — a player profile cannot score staff and a
+ * staff profile cannot score a sheetless player. */
+function valuesFor(player: Player, profile: ScoringProfile): readonly number[] | null {
+	if (profile.kind === 'staff') return player.staff?.attributes ?? null;
+	return player.attributes.length > 0 ? player.attributes : null;
+}
+
 /**
- * The weighted mean of the player's attributes, on the same 1-20 scale as the
+ * The weighted mean of the person's attributes, on the same 1-20 scale as the
  * attributes themselves, so a score of 15 reads like an attribute of 15.
  *
- * Null when the player has no attribute block (staff), when the profile
- * weights nothing, or when none of the weighted indices exist on this player —
- * an unscoreable player is not a zero.
+ * Null when the person does not carry the sheet the profile weights, when the
+ * profile weights nothing, or when none of the weighted indices exist — an
+ * unscoreable person is not a zero.
  */
 export function score(player: Player, profile: ScoringProfile): number | null {
-	if (player.attributes.length === 0) return null;
+	const values = valuesFor(player, profile);
+	if (values === null || values.length === 0) return null;
 
 	let total = 0;
 	let weight = 0;
 	for (const [key, w] of Object.entries(profile.weights)) {
 		if (w < MIN_WEIGHT) continue;
 		const index = Number(key);
-		const value = player.attributes[index];
+		const value = values[index];
 		if (value === undefined) continue;
 		total += value * w;
 		weight += w;

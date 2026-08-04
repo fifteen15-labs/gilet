@@ -27,10 +27,14 @@ class Profiles {
 
 	/** Saves under `name`, replacing a profile of the same name, and makes it
 	 * the active one so the score column reflects what was just edited. */
-	async save(name: string, weights: Record<string, number>): Promise<void> {
+	async save(
+		name: string,
+		weights: Record<string, number>,
+		kind: 'player' | 'staff' = 'player'
+	): Promise<void> {
 		const trimmed = name.trim();
 		if (trimmed === '') return;
-		const entry: ScoringProfile = { name: trimmed, weights: { ...weights } };
+		const entry: ScoringProfile = { name: trimmed, weights: { ...weights }, kind };
 		const at = this.list.findIndex((p) => p.name === trimmed);
 		this.list = at >= 0 ? this.list.map((p, i) => (i === at ? entry : p)) : [...this.list, entry];
 		this.activeName = trimmed;
