@@ -23,7 +23,9 @@ pub mod manifest;
 pub mod person;
 pub mod shortlist;
 pub mod squad;
+pub mod staff;
 pub mod strings;
+pub mod stub;
 
 pub use ability::Ability;
 pub use club::Club;
@@ -42,6 +44,10 @@ pub struct Save {
     /// One record per club that fields a first-team squad, referencing people
     /// by entity id. `Person::club_eid` is the same link from the other side.
     pub squads: Vec<Squad>,
+    /// Squad fillers with no person record — generated non-contract players
+    /// stored as entity stubs. Only stubs whose entity id no parsed person
+    /// claims are kept, so a squad list can show every member it references.
+    pub stubs: Vec<stub::Stub>,
     /// The save's own in-game date, when it can be read: the header pair on
     /// 26.0.0, the main frame's masked week stamp on 26.2.0 (at most a week
     /// stale). `None` only when neither source decodes.
@@ -182,6 +188,19 @@ impl Save {
                 person::bind_gender(&mut people, boundary);
             }
 
+            // Non-player sheets sit on the entity object one eid below the
+            // person's own, so they are matched by id rather than by position.
+            let mut staff_by_eid: std::collections::HashMap<u32, staff::Staff> =
+                staff::scan_staff(&frame.data)
+                    .into_iter()
+                    .map(|s| (s.eid.saturating_add(1), s))
+                    .collect();
+            for person in &mut people {
+                if let Some(sheet) = person.eid.and_then(|e| staff_by_eid.remove(&e)) {
+                    person.staff = Some(sheet);
+                }
+            }
+
             // Attribute blocks sit ahead of the person they belong to, so they
             // are scanned separately and matched on afterwards.
             on_stage(Stage::ReadingAbility);
@@ -218,11 +237,29 @@ impl Save {
             .map(|f| shortlist::scan_shortlists(&f.data))
             .unwrap_or_default();
 
+        // Stub people are only worth keeping where a squad references an
+        // entity id that no parsed person answers to — those members would
+        // otherwise vanish from squad lists without a trace.
+        let mut stubs = Vec::new();
+        if let Some(frame) = main {
+            let bound: std::collections::HashSet<u32> =
+                people.iter().filter_map(|p| p.eid).collect();
+            let referenced: std::collections::HashSet<u32> = squads
+                .iter()
+                .flat_map(|s| s.player_eids.iter().copied())
+                .collect();
+            stubs = stub::scan_stubs(&frame.data)
+                .into_iter()
+                .filter(|s| referenced.contains(&s.eid) && !bound.contains(&s.eid))
+                .collect();
+        }
+
         on_stage(Stage::Done);
         Ok(Self {
             people,
             clubs,
             squads,
+            stubs,
             game_date,
             shortlists,
             frame_sizes,

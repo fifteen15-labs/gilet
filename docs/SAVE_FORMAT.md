@@ -275,12 +275,16 @@ u16  nation_id           repeated — this is the match's anchor
 8x   personality         each 1-20
 ```
 
-Slot names, each from ground truth: **0 Adaptability** (visible on staff
-reports — Elite reads 20, Outstanding 19, Good 13, three independent
-screens), **1 Loyalty** (a "Fairly Loyal" manager reads 20), **4
-Professionalism** (a "Model Professional" reads 20, a "Model Citizen" 16),
-**7 Controversy** (near-universally low). Slots 2, 3, 5 and 6 hold Ambition,
-Pressure, Sportsmanship and Temperament in an unpinned order.
+All eight slots are named, in storage order: **0 Adaptability, 1 Ambition,
+2 Loyalty, 3 Pressure, 4 Professionalism, 5 Sportsmanship, 6 Temperament,
+7 Controversy**. Slots 0, 4 and 7 came from in-game staff screens (Elite
+reads 20, a "Model Professional" 20, Controversy near-universally low);
+the rest fell on 3 August 2026 to the pre-game editor, whose sheet for
+Guardiola — Adaptability 20, Ambition 20, Loyalty 15, Pressure 18,
+Professionalism 20, Sportsmanship 16, Temperament 14, Controversy 8 —
+matches his run `20 20 15 18 20 16 14 8` exactly, with every ambiguous
+value distinct. (Slot 1 was earlier misread as Loyalty from a screen where
+both were high; the editor separates them.)
 
 Coverage is every adult with a real nation; the misses are the *children*
 an aged save simulates into existence (different layout, junk nation ids)
@@ -313,11 +317,40 @@ reputations order Haaland 96 > Chevalier 70 while the run reads Chevalier
 6400 > Haaland 5250 in the same save. Its semantics are open —
 `OPEN_PROBLEMS.md` §3b has the full evidence.
 
-For pure staff (Emery), the record instead carries an id→value row list
+For pure staff (Emery), the record carries an id→value row list
 (`[u32 id] … [value 1-100] [4f|00] ff` rows) holding coaching badges and
 nation knowledge — Emery's England and Spain rows read 100, matching his
-"Complete" knowledge — with the coaching attributes presumed among the rows.
-Mapping row ids to attribute names is open; see `OPEN_PROBLEMS.md` §3b.
+"Complete" knowledge — and then, after the person object's own
+`02 40 10`-headed identity block at the record tail, **a 54-value attribute
+block of its own**: tag byte `01`, five u16s (5000/5000/1500/125/125 for
+Emery), then 62 bytes whose last 54 end at the record's `8×FF` terminator.
+Anatomy of the 54 bytes, from 942 extracted blocks across a 26.0.0 and a
+26.2.0 save (`staffmap` example): slot 1 is a constant 12 (structure, not
+data); slots 2-27 (except 13 and 15) are twenty-four 1-20 values; slots
+30-42 are a **stable thirteen-slot 1-100 array** that survives across
+saves per person (±drift); slots 43-53 are a **mutable tail whose values
+reshuffle between saves** — a list-like region, not a fixed array. Slots
+0, 15, 28 and 29 are oddballs on their own ranges.
+
+The block holds the pre-game editor's attribute list as the editor's
+**controlled** (effective in-game) values, stored controlled×4 on 1-80
+for CA-weighted attributes and raw 1-20 for weighting-0 ones — with a
+small per-save rebase on top. The five u16s between the identity and
+the block are `[A][B][C][D][E]` with **D ≡ B/50** and A/B/C multiples
+of 50 — three 0-10000 values plus the raw 0-200 B and a second 0-200
+value. The same structure follows *player* identity blocks. Its
+semantics are **open**: for staff the triple shape-matches the editor's
+"Game Reputations" line, but on players the reputation reading is
+contradicted outright (Wissa 9300 vs Haaland 5250 on a day-one save),
+so no reputation label ships from this field. Only **slots 30-42 of the
+block are a stable DB-derived array** (byte-identical for the same
+person across different careers); the 1-20 region and slots 43-53
+**reorder per save** — a serialized list, not a fixed array. Cross-save
+locks: slot 36 = Coaching Possession (controlled-10 → 40 signature
+exact), 34 ≈ Negotiating, 15 ≈ Motivating, 1 ≡ 12. One historical
+negative stands: efem.club's numbers are editor×5, not the save's ×4 —
+fitting against them can never converge. `OPEN_PROBLEMS.md` §3b has the
+full evidence and the tooling.
 
 ## 4. Club record
 
@@ -332,7 +365,7 @@ u32  uid               (repeated)
 u8   00
 u32  nation_id
 u32  0xFFFFFFFF
-u32  nation_id         (repeated)
+u32  location_nation   where the club sits — NOT a repeat, see below
 u32  nation_id         (repeated)
 u32  club_id
 3    UNKNOWN
@@ -368,6 +401,39 @@ consecutive length-prefixed strings is not a specific enough shape on its own �
 the file also contains the commentary word lists, which produce thousands of
 pairs like `("admirable", "amazing")` and `("bewitching", "brilliant")`.
 Requiring an initial capital removes those too.
+
+### The third nation u32 is where the club sits, not a repeat
+
+The head carries the nation id three times — except it does not. The copy at
+−18 from the name length is a **separate value: the country the club is
+physically in**, where the two at −14 and −26 are the pyramid it plays in. On
+99.8% of clubs those are the same country, which is why it read as a third
+repeat for so long.
+
+Requiring all three to match dropped the entity head of every cross-border
+club, and a club with no `eid` cannot be referenced by a squad record — so
+their whole first team showed no club. On a day-one save 39 clubs broke on
+exactly this and nothing else, and the list is a roll-call of the real
+cross-border cases:
+
+| club | plays in | sits in |
+|---|---|---|
+| The New Saints | Wales 175 | England 139 |
+| Cardiff City, Swansea City, Wrexham, Newport County | England 139 | Wales 175 |
+| Derry City | Ireland 163 | Northern Ireland 159 |
+| Berwick Rangers, Tweedmouth Rangers | Scotland 167 | England 139 |
+| F.C. Andorra | Spain 170 | Andorra 127 |
+| Wellington Phoenix | Australia 177 | New Zealand 180 |
+| Bishops Castle Town | Wales 175 | England 139 |
+| six Zanzibar clubs | 239 | Tanzania 43 |
+
+The reader now requires the two copies at −14 and −26 to agree and bounds the
+location field to a plausible nation id rather than demanding it match. On the
+day-one save that took people linked to a club from 27,458 to 27,652 and clubs
+owning a squad from 3,327 to 3,336. `crates/fm-save/examples/clubgap.rs`
+reproduces the survey; the regression test is
+`a_cross_border_club_resolves_its_squad` in `tests/real_save.rs`, which pins
+Jack Sion to The New Saints.
 
 ### The eight u32s after the short name are not teams
 
@@ -552,10 +618,13 @@ same pages re-verified the Passing/First Touch, Bravery/Concentration and
 Vision splits on four players. Locked by
 `published_keeper_attributes_split_the_last_four` in `real_save.rs`.
 
-Unnamed: **41, 44, 47, 48, 49** are the five hidden attributes no player
-screen ever shows (Consistency, Important Matches, Injury Proneness,
-Dirtiness, Versatility in some order — partial evidence in
-`OPEN_PROBLEMS.md` §2).
+The five hidden attributes no player screen ever shows fell on 3 August
+2026 to the pre-game editor: **41 Dirtiness, 44 Consistency, 47 Important
+Matches, 48 Injury Proneness, 49 Versatility**. Haaland's editor sheet
+lists them as 9, 16, 14, 10 and 7 — five distinct values matching his
+decoded block one-for-one, a single possible assignment — with every
+visible attribute on the same sheet matching its named index exactly.
+**All 54 indices are named.**
 
 Two labels the statistical era got wrong, both corrected by ground truth:
 index 40 was "Aggression" and is Leadership (Aggression is 45), and index 10
@@ -649,6 +718,33 @@ Liverpool's list opens 24359, 15005, 10164. What survives ageing is that the
 captain and vice-captain following the list are still members of it, so the
 parser accepts either signal: ascending, or captain-linked.
 
+**A third signal was needed for the club that has neither.** Afan Lido in a
+2027 career reads eighteen valid player eids in an order transfers destroyed —
+4 of the first 6 pairs rising, where the ascending test wants 5 — with *both*
+armband slots at `0xFFFFFFFF`, because no captain had been appointed. Neither
+signal fired and the whole squad was discarded, so a real Cymru South club
+showed no players at all. An unset slot is not a failed one: what identifies a
+real record is that each armband is **either unset or one of the club's own
+players**, which random bytes do not manage. A list naming the same player
+twice is also refused.
+
+The gain scales with how aged the save is, which is what the diagnosis
+predicts — a fresh database is still mostly in ascending order:
+
+| save | squads | players linked |
+|---|---|---|
+| day one | 3,336 → 3,343 | 27,652 → 27,764 |
+| a 2027 career | 2,941 → 2,949 | 22,402 → 22,532 |
+| a 2030 career | 3,720 → 3,965 | 26,039 → **28,249** |
+
+Precision barely moves: on the 2030 save the share of squad members resolving
+to a decoded person goes 99.24% → 99.11%, and squads resolving under half
+their members go 25 → 28 — all foreign clubs outside the loaded leagues, whose
+players have no person record either way.
+`crates/fm-save/examples/squadchain.rs` reproduces the diagnosis: it replays
+the head test, reports which heads the ascending run discards, and prints the
+anchors, rising-pair count and armband slots for any club eid.
+
 Verified against reality on the reference save (October 2025, so with the
 2025 summer window applied): Manchester City's 33 include Haaland, Grealish,
 Foden, Donnarumma, Cherki and Marmoush with Bernardo Silva as captain and
@@ -665,6 +761,31 @@ The four approaches ruled out on the way (a club id inside the person record,
 rare shared values, same-club agreement sweeps, id arrays in the club body)
 are preserved in the git history of this file; the root mistake was assuming
 person records had no identifier — they do, the identity block of section 3.
+
+## 6d-bis. Stub people — squad fillers without person records
+
+Squad lists can reference entity ids that no person record answers to. Those
+members are **stubs**: ~33-byte entries in their own table,
+
+```text
+[01|02] 40 10  00 00 00 00  [eid u32] [uid u32] [uid u32]  07 ...
+```
+
+— the same `40 10`-headed identity shape as the in-record objects of §3,
+distinguished by the `07` kind byte after the doubled uid. The uid sits in
+the generated-player band (~2.0 G). This is how FM stores generated
+non-contract signings — the "pay to play" players that fill lower-league
+squads. Port Talbot (v03).fm holds 8,849 stubs, 8,846 of them unbound to any
+person record; without parsing them, those squad members simply vanish from
+a squad list (found 3 August 2026 chasing exactly that report).
+
+`stub::scan_stubs` reads the table; `Save::stubs` keeps the ones a squad
+references whose eid no parsed person claims, and the UI shows them as
+undecoded members. Fields after the kind byte are **not decoded**: the byte
+at +28 is age-shaped (20-22 for known senior fillers) and the u32 at +29
+resolves in all three name pools at once — overlapping id spaces make that
+ambiguous, so no name is shown. FM displays real generated names for these
+players, so the ids exist somewhere; finding the name link is open.
 
 ## 6e. Contracts — wage and expiry SOLVED
 
@@ -765,6 +886,57 @@ filter block's meaning beyond its nation/division range lists, and everything
 in the 1.6 MB `shortlist_man.dat` member — descending ranked pools of
 `(eid, reputation-like value)` pairs, the AI's candidate lists, with no
 strings anywhere.
+
+## 6g. Non-player attributes — SOLVED, on the object one eid below
+
+Every person carries **two entity objects**: a non-player one, then the person
+object inside their name record. Sterling's pair is eid 8401 then 8402;
+Fradley's sheet sits under 20129 while he is 20130. The non-player object holds
+the sheet the pre-game editor calls "All Attributes".
+
+```text
+[type 00-02] 40 [flags] [u32] [eid u32] [uid u32] [uid u32] [tag 01]
+  ( optional preamble of 8-byte rows )
+  [home rep u16] [current rep u16] [world rep u16] [CA u16] [PA u16]
+  [8 bytes filler]
+  [54 values, each 1-100]
+```
+
+* **Reputations are the database's own numbers**, scaled to 10000 as the
+  editor shows them — divide by 50 for the 0-200 value. Order is
+  **home, current, world**, which is not the order the editor prints. Fradley
+  reads 6350 / 7000 / 5500 against an editor page saying 7000 Current, 6350
+  Home, 5500 World; Nikolić 6250 / 6500 / 4500 against 6500 / 6250 / 4500.
+  Career start does not rewrite them. The earlier conclusion that it did came
+  from reading the neighbouring person's object.
+* **CA and PA follow, 0-200**, and are the same bytes `ability.rs` reads at 39
+  and 37 back from a player's attribute block.
+* **The fields sit at no fixed stride from the tag byte.** Some objects carry a
+  preamble of 8-byte rows first, so they must be found by signature — both
+  abilities sane and the 54 bytes eight past them all 1-100 — not by offset.
+* **The block is the editor's flat 52-item list at slots 2-53.** `s0` is a
+  small enum (14 values seen) and `s1` reads 12 in 97.7% of blocks: a two-byte
+  header, which is exactly the 54 − 52 the item count demands.
+
+| slots | items | storage |
+|---|---|---|
+| 2-27 | 1-26, Attacking through Width — the tendency half | raw 1-20 |
+| 28-53 | 27-52, Coaching through Coaching Set Pieces | raw × 5 |
+
+with a per-person drift of a point or two on the second half, which rounding to
+nearest removes. It is the editor's **raw** column, not its controlled one, and
+the scale is five rather than the four an earlier single-person fit suggested.
+
+Two of the 52 rows the pre-game editor leaves unnamed itself; `staff.rs` keeps
+them `None` rather than guessing.
+
+Where a person's database row is blank — which is most staff — the game
+generates the sheet at career start, so those values are the save's own and
+match no editor page. Gerig's thirty-nine editor values are all 0 and his block
+is dense.
+
+Verified in `real_save::staff_sheets_match_the_editor`: 34 values across
+Nikolić and Fradley, reputations included, every one exact.
 
 ## 7. Prior art
 

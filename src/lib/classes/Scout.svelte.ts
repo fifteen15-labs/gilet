@@ -1,7 +1,8 @@
 import { profiles } from '$lib/classes/Profiles.svelte';
-import { shortlists } from '$lib/classes/Shortlists.svelte';
 import { scoreAll } from '$lib/utils/score';
 import {
+	addPlayersToGameShortlist,
+	clearGameShortlist,
 	editGameShortlist,
 	onParseProgress,
 	openSave,
@@ -28,8 +29,8 @@ export type Tab = 'people' | 'clubs';
  * tells the user what is being held back. */
 const RENDER_LIMIT = 400;
 
-/** Stand-in for the membership set when no filter is consulting it. */
-const NO_MEMBERS: ReadonlySet<string> = new Set();
+/** How many players fit side by side before the columns stop being readable. */
+const COMPARE_LIMIT = 4;
 
 /** Owns the loaded save and how the table is filtered and sorted. */
 class Scout {
@@ -40,6 +41,8 @@ class Scout {
 	/** What the backend is doing right now. */
 	progressLabel = $state('');
 	error = $state<string | null>(null);
+	/** Outcome of the last in-save shortlist write, for the UI to echo. */
+	notice = $state<string | null>(null);
 
 	filters = $state<Filters>({ ...emptyFilters });
 	sortKey = $state<SortKey>('name');
@@ -50,6 +53,10 @@ class Scout {
 	clubSort = $state<'name' | 'strength'>('name');
 	/** Record the detail panel is showing, by row id. */
 	selectedId = $state<number | null>(null);
+	/** Rows pinned for side-by-side comparison, in the order they were added. */
+	pinned = $state<number[]>([]);
+	/** Whether the compare board has the main area instead of the table. */
+	comparing = $state(false);
 
 	get players(): Player[] {
 		return this.summary?.players ?? [];
@@ -89,6 +96,43 @@ class Scout {
 	show(tab: Tab): void {
 		this.tab = tab;
 		this.selectedId = null;
+		this.comparing = false;
+	}
+
+	/** The pinned players, in pin order — the order the columns appear in. */
+	readonly compared: Player[] = $derived(
+		this.pinned
+			.map((id) => this.players.find((p) => p.id === id))
+			.filter((p): p is Player => p !== undefined)
+	);
+
+	get compareLimit(): number {
+		return COMPARE_LIMIT;
+	}
+
+	get compareFull(): boolean {
+		return this.pinned.length >= COMPARE_LIMIT;
+	}
+
+	isPinned(id: number): boolean {
+		return this.pinned.includes(id);
+	}
+
+	/** Pins or unpins a player for comparison. Silently refuses past the limit
+	 * rather than dropping someone the user pinned on purpose. */
+	togglePinned(id: number): void {
+		if (this.pinned.includes(id)) {
+			this.pinned = this.pinned.filter((p) => p !== id);
+			if (this.pinned.length === 0) this.comparing = false;
+			return;
+		}
+		if (this.pinned.length >= COMPARE_LIMIT) return;
+		this.pinned = [...this.pinned, id];
+	}
+
+	clearPinned(): void {
+		this.pinned = [];
+		this.comparing = false;
 	}
 
 	/** Jumps to the people table filtered to one club's squad. The query
@@ -113,11 +157,7 @@ class Scout {
 	readonly scores: ReadonlyMap<number, number> = $derived(scoreAll(this.players, profiles.active));
 
 	readonly results: Player[] = $derived.by(() => {
-		// Only read the shortlist when a filter actually consults it. Reading it
-		// unconditionally made ticking one player re-filter and re-sort all
-		// 49,000, because the membership set had changed.
-		const shortlisted = this.filters.shortlistedOnly ? shortlists.activeMembers : NO_MEMBERS;
-		const found = this.players.filter((p) => matches(p, this.filters, shortlisted, this.scores));
+		const found = this.players.filter((p) => matches(p, this.filters, this.scores));
 		return sortPlayers(found, this.sortKey, this.sortDirection, this.scores);
 	});
 
@@ -178,6 +218,86 @@ class Scout {
 		} catch (e) {
 			this.error = e instanceof Error ? e.message : String(e);
 		}
+	}
+
+	/**
+	 * Empties one in-save shortlist. The list itself survives, so the user can
+	 * refill it; the pre-Gilet save is still on disk as `.gilet.bak`.
+	 */
+	async clearGameShortlist(list: GameShortlist): Promise<void> {
+		if (!this.summary) return;
+		const had = list.players.length;
+		this.error = null;
+		this.notice = null;
+		try {
+			await clearGameShortlist(this.summary.path, list.name);
+			list.players = [];
+			this.notice = `Cleared ${had.toLocaleString()} from ${list.name ?? '(unnamed)'} in the save.`;
+		} catch (e) {
+			this.error = e instanceof Error ? e.message : String(e);
+		}
+	}
+
+	/**
+	 * Writes every current result into one in-save shortlist — the whole point
+	 * of the app: filter, then send the results into the game. One save
+	 * rewrite regardless of how many players; already-listed ones are skipped
+	 * by the backend.
+	 */
+	async addResultsToGameShortlist(list: GameShortlist): Promise<void> {
+		if (!this.summary || !this.summary.game_date) return;
+		const [year, month, day] = this.summary.game_date.split('-').map(Number);
+		const rows = this.results.filter((p) => p.eid !== null);
+		const eids = rows.map((p) => p.eid ?? 0);
+		if (eids.length === 0) return;
+		this.error = null;
+		this.notice = null;
+		try {
+			const added = await addPlayersToGameShortlist(this.summary.path, list.name, eids, [
+				year,
+				month,
+				day
+			]);
+			const have = new Set(list.players);
+			list.players = [...list.players, ...rows.map((p) => p.name).filter((n) => !have.has(n))];
+			const skipped = this.results.length - rows.length;
+			this.notice =
+				`Added ${added.toLocaleString()} to ${list.name ?? '(unnamed)'} in the save.` +
+				(skipped > 0 ? ` ${skipped} had no entity id and were skipped.` : '');
+		} catch (e) {
+			this.error = e instanceof Error ? e.message : String(e);
+		}
+	}
+
+	/**
+	 * Re-reads the save from disk, keeping the current filters. For picking up
+	 * changes FM made after this copy was loaded — record offsets move when the
+	 * game rewrites a save, so the open record is dropped rather than pointed
+	 * at whatever now sits at that offset.
+	 */
+	async reload(): Promise<void> {
+		const path = this.summary?.path;
+		if (!path) return;
+		this.selectedId = null;
+		await this.open(path);
+	}
+
+	/**
+	 * Applies a canned search: the given filters over a cleared bar, ordered by
+	 * the column the search is really about.
+	 *
+	 * Starting from `emptyFilters` rather than patching what is already set is
+	 * the point — a screener the user cannot predict is worse than no screener.
+	 * Everything it sets stays visible in the filter bar afterwards, so the
+	 * button is a shortcut rather than a black box.
+	 */
+	screen(patch: Partial<Filters>, sortKey: SortKey): void {
+		this.filters = { ...emptyFilters, ...patch };
+		this.sortKey = sortKey;
+		this.sortDirection = 'desc';
+		this.selectedId = null;
+		this.tab = 'people';
+		this.comparing = false;
 	}
 
 	/** Clicking a column sorts by it, and clicking the active column reverses. */

@@ -1,43 +1,24 @@
 <script lang="ts">
-	import { shortlists } from '$lib/classes/Shortlists.svelte';
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { profiles } from '$lib/classes/Profiles.svelte';
-	import type { GameShortlist } from '$lib/tauri/commands';
 
-	type Props = {
-		onExport: () => void;
-		onImport: () => void;
-		onEditProfile: () => void;
-		exportDisabled: boolean;
-	};
-	const { onExport, onImport, onEditProfile, exportDisabled }: Props = $props();
+	/** Opens the scoring-profile editor, which takes over the right-hand
+	 * column. The page owns that state because the editor and the detail panel
+	 * are the same column. */
+	type Props = { onEditProfile: () => void };
+	const { onEditProfile }: Props = $props();
 
-	/** Members listed under the active shortlist before it is summarised. A list
-	 * saved from a broad search can hold thousands of names. */
+	/** Members listed under the expanded shortlist before it is summarised. */
 	const MEMBER_LIMIT = 50;
 
-	let draftName = $state('');
-	let adding = $state(false);
 	let collapsed = $state(false);
-	/** List currently being renamed, or null. */
-	let renaming = $state<string | null>(null);
-	let renameDraft = $state('');
+	/** Which in-save list is expanded to show its members, by name key. */
+	let openList = $state<string | null>(null);
+	/** Clearing writes to the save, so it asks first: this holds the list
+	 * awaiting confirmation, by name key. */
+	let confirmingClear = $state<string | null>(null);
 
-	async function submit(event: SubmitEvent) {
-		event.preventDefault();
-		await shortlists.create(draftName);
-		draftName = '';
-		adding = false;
-	}
-
-	async function submitRename(event: SubmitEvent) {
-		event.preventDefault();
-		if (renaming !== null) {
-			await shortlists.rename(renaming, renameDraft);
-		}
-		renaming = null;
-		renameDraft = '';
-	}
+	const inSave = $derived(scout.summary?.game_shortlists ?? []);
 
 	/** Selecting a member in the sidebar opens them in the detail panel. */
 	function open(name: string) {
@@ -46,16 +27,6 @@
 			scout.tab = 'people';
 			scout.selectedId = player.id;
 		}
-	}
-
-	/** Shortlists FM itself stores in the loaded save, importable one click at
-	 * a time. Read-only until imported: the save is never written. */
-	const inSave = $derived(scout.summary?.game_shortlists ?? []);
-
-	/** Copies an in-game shortlist into Gilet's own lists. `saveAs` suffixes
-	 * the name if it clashes, so re-importing never overwrites. */
-	async function importGame(list: GameShortlist) {
-		await shortlists.saveAs(list.name ?? 'FM Shortlist', list.players);
 	}
 </script>
 
@@ -72,83 +43,58 @@
 {:else}
 	<aside class="flex w-56 shrink-0 flex-col border-r border-[var(--color-line)] bg-[var(--color-panel)]">
 		<div class="flex items-center justify-between px-4 pt-4 pb-2">
-			<h2 class="eyebrow">Shortlists</h2>
-			<div class="flex items-center gap-2">
-				<button
-					type="button"
-					class="text-lg leading-none text-[var(--color-faint)] hover:text-[var(--color-hivis)]"
-					aria-label="New shortlist"
-					onclick={() => (adding = true)}>+</button
-				>
-				<button
-					type="button"
-					class="text-[var(--color-faint)] hover:text-[var(--color-bright)]"
-					aria-label="Collapse shortlists"
-					onclick={() => (collapsed = true)}>«</button
-				>
-			</div>
+			<h2 class="eyebrow" title="The shortlists FM stores inside the loaded save">Shortlists in save</h2>
+			<button
+				type="button"
+				class="text-[var(--color-faint)] hover:text-[var(--color-bright)]"
+				aria-label="Collapse shortlists"
+				onclick={() => (collapsed = true)}>«</button
+			>
 		</div>
 
-		{#if adding}
-			<form class="px-3 pb-2" onsubmit={submit}>
-				<!-- svelte-ignore a11y_autofocus -->
-				<input
-					autofocus
-					bind:value={draftName}
-					placeholder="Name this list"
-					class="w-full rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-sm
-						placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none"
-					onblur={() => !draftName && (adding = false)}
-				/>
-			</form>
-		{/if}
-
 		<nav class="flex-1 overflow-y-auto px-2">
-			{#each shortlists.lists as list (list.name)}
+			{#each inSave as list (list)}
+				{@const key = list.name ?? ''}
 				<div class="group flex items-center">
-					{#if renaming === list.name}
-						<form class="flex-1 px-1 py-1" onsubmit={submitRename}>
-							<!-- svelte-ignore a11y_autofocus -->
-							<input
-								autofocus
-								bind:value={renameDraft}
-								class="w-full rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-sm
-									focus:border-[var(--color-hivis)] focus:outline-none"
-								onblur={() => (renaming = null)}
-							/>
-						</form>
-					{:else}
-						<button
-							type="button"
-							class="flex-1 truncate rounded-[2px] px-2 py-1.5 text-left text-sm transition-colors
-								{shortlists.activeName === list.name
-								? 'bg-[var(--color-raised)] text-[var(--color-bright)]'
-								: 'text-[var(--color-mist)] hover:text-[var(--color-bright)]'}"
-							title="Double-click to rename"
-							onclick={() => (shortlists.activeName = list.name)}
-							ondblclick={() => {
-								renaming = list.name;
-								renameDraft = list.name;
-							}}
-						>
-							{#if shortlists.activeName === list.name}
-								<span class="mr-1.5 text-[var(--color-hivis)]">▍</span>
-							{/if}
-							{list.name}
-							<span class="tabular ml-1 text-xs text-[var(--color-faint)]">{list.players.length}</span>
-						</button>
-						<button
-							type="button"
-							class="px-2 text-[var(--color-faint)] opacity-0 group-hover:opacity-100 hover:text-[var(--color-hivis)]"
-							aria-label="Delete {list.name}"
-							onclick={() => shortlists.remove(list.name)}>×</button
-						>
+					<button
+						type="button"
+						class="flex flex-1 items-center rounded-[2px] px-2 py-1.5 text-left text-sm transition-colors
+							{openList === key
+							? 'bg-[var(--color-raised)] text-[var(--color-bright)]'
+							: 'text-[var(--color-mist)] hover:text-[var(--color-bright)]'}"
+						onclick={() => (openList = openList === key ? null : key)}
+					>
+						<span class="flex-1 truncate">{list.name ?? '(unnamed)'}</span>
+						<span class="tabular ml-1 text-xs text-[var(--color-faint)]">{list.players.length}</span>
+					</button>
+					{#if list.players.length > 0}
+						{#if confirmingClear === key}
+							<button
+								type="button"
+								class="px-1.5 text-xs text-[var(--color-hivis)]"
+								title="Remove all {list.players.length} from this shortlist in the save"
+								onclick={() => {
+									confirmingClear = null;
+									void scout.clearGameShortlist(list);
+								}}
+							>
+								Sure?
+							</button>
+						{:else}
+							<button
+								type="button"
+								class="px-1.5 text-xs text-[var(--color-faint)] opacity-0 transition-opacity
+									group-hover:opacity-100 hover:text-[var(--color-hivis)]"
+								title="Empty this shortlist in the save"
+								onclick={() => (confirmingClear = key)}
+							>
+								Clear
+							</button>
+						{/if}
 					{/if}
 				</div>
 
-				{#if shortlists.activeName === list.name && list.players.length > 0}
-					<!-- Capped: a list saved from a broad search can hold thousands of
-						names, and rendering every one of them stalls the whole window. -->
+				{#if openList === key && list.players.length > 0}
 					<ul class="mb-2 ml-3 border-l border-[var(--color-line)] pl-2">
 						{#each list.players.slice(0, MEMBER_LIMIT) as member (member)}
 							<li>
@@ -171,97 +117,54 @@
 				{/if}
 			{:else}
 				<p class="px-2 py-3 text-xs leading-relaxed text-[var(--color-faint)]">
-					No shortlists yet. Create one, then tick players to add them.
+					{scout.loaded
+						? 'This save has no shortlists yet. Create one in FM, save, and reopen it here.'
+						: 'Open a save to see its shortlists.'}
 				</p>
 			{/each}
-
-			{#if inSave.length > 0}
-				<div class="mt-3 border-t border-[var(--color-line)] pt-2 pb-2">
-					<h2 class="eyebrow px-2 pb-1" title="Shortlists FM stores inside the loaded save">
-						In this save
-					</h2>
-					{#each inSave as list (list)}
-						<div class="group flex items-center">
-							<span class="flex-1 truncate px-2 py-1 text-sm text-[var(--color-mist)]">
-								{list.name ?? '(unnamed)'}
-								<span class="tabular ml-1 text-xs text-[var(--color-faint)]">{list.players.length}</span>
-							</span>
-							<button
-								type="button"
-								class="px-2 text-xs text-[var(--color-faint)] opacity-0 transition-colors group-hover:opacity-100
-									hover:text-[var(--color-hivis)] disabled:cursor-not-allowed disabled:opacity-40"
-								disabled={list.players.length === 0}
-								title="Copy into Gilet's shortlists"
-								onclick={() => importGame(list)}
-							>
-								Import
-							</button>
-						</div>
-					{/each}
-				</div>
-			{/if}
 		</nav>
 
-		<div class="space-y-2 border-t border-[var(--color-line)] p-3">
-			<div>
-				<h2 class="eyebrow mb-1.5">Score by</h2>
-				<div class="flex items-center gap-1">
-					<select
-						value={profiles.activeName}
-						aria-label="Scoring profile"
-						class="min-w-0 flex-1 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
-							text-[var(--color-mist)] focus:border-[var(--color-hivis)] focus:outline-none"
-						onchange={(event) => (profiles.activeName = event.currentTarget.value || null)}
-					>
-						<option value="">No score</option>
-						{#each profiles.list as profile (profile.name)}
-							<option value={profile.name}>{profile.name}</option>
-						{/each}
-					</select>
+		<div class="border-t border-[var(--color-line)] p-3">
+			<h2 class="eyebrow mb-1.5" title="Your own attribute weighting, added as a table column">
+				Score by
+			</h2>
+			<div class="flex items-center gap-1">
+				<select
+					value={profiles.activeName}
+					aria-label="Scoring profile"
+					class="min-w-0 flex-1 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+						text-[var(--color-mist)] focus:border-[var(--color-hivis)] focus:outline-none"
+					onchange={(event) => (profiles.activeName = event.currentTarget.value || null)}
+				>
+					<option value="">No score</option>
+					{#each profiles.list as profile (profile.name)}
+						<option value={profile.name}>{profile.name}</option>
+					{/each}
+				</select>
+				<button
+					type="button"
+					class="rounded-[2px] border border-[var(--color-line)] px-2 py-1 text-xs text-[var(--color-mist)]
+						transition-colors hover:border-[var(--color-hivis)] hover:text-[var(--color-hivis)]
+						disabled:cursor-not-allowed disabled:opacity-40"
+					disabled={!scout.loaded}
+					title={scout.loaded
+						? (profiles.active?.name ?? 'Build a scoring profile')
+						: 'Open a save first — the editor weights that save’s own attribute names'}
+					onclick={onEditProfile}
+				>
+					{profiles.active ? 'Edit' : 'New'}
+				</button>
+				{#if profiles.active}
 					<button
 						type="button"
-						class="rounded-[2px] border border-[var(--color-line)] px-2 py-1 text-xs text-[var(--color-mist)]
-							transition-colors hover:border-[var(--color-hivis)] hover:text-[var(--color-hivis)]"
-						title={profiles.active ? `Edit ${profiles.active.name}` : 'Build a scoring profile'}
-						onclick={onEditProfile}
+						class="px-1 text-xs text-[var(--color-faint)] hover:text-[var(--color-hivis)]"
+						aria-label="Delete {profiles.active.name}"
+						onclick={() => profiles.active && profiles.remove(profiles.active.name)}>×</button
 					>
-						{profiles.active ? 'Edit' : 'New'}
-					</button>
-					{#if profiles.active}
-						<button
-							type="button"
-							class="px-1 text-xs text-[var(--color-faint)] hover:text-[var(--color-hivis)]"
-							aria-label="Delete {profiles.active.name}"
-							onclick={() => profiles.active && profiles.remove(profiles.active.name)}>×</button
-						>
-					{/if}
-				</div>
+				{/if}
 			</div>
-
-			<button
-				type="button"
-				class="w-full rounded-[2px] border border-[var(--color-line)] py-1.5 text-xs text-[var(--color-mist)]
-					transition-colors hover:border-[var(--color-hivis)] hover:text-[var(--color-hivis)]
-					disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[var(--color-line)]
-					disabled:hover:text-[var(--color-mist)]"
-				disabled={exportDisabled}
-				onclick={onImport}
-			>
-				Import CSV
-			</button>
-			<button
-				type="button"
-				class="w-full rounded-[2px] border border-[var(--color-line)] py-1.5 text-xs text-[var(--color-mist)]
-					transition-colors hover:border-[var(--color-hivis)] hover:text-[var(--color-hivis)]
-					disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-[var(--color-line)]
-					disabled:hover:text-[var(--color-mist)]"
-				disabled={exportDisabled}
-				onclick={onExport}
-			>
-				Export CSV
-			</button>
-			{#if shortlists.error}
-				<p class="mt-2 text-xs text-[var(--color-hivis)]">{shortlists.error}</p>
+			{#if profiles.error}
+				<p class="mt-2 text-xs leading-relaxed text-[var(--color-hivis)]">{profiles.error}</p>
 			{/if}
 		</div>
 	</aside>

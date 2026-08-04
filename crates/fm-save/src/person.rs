@@ -36,11 +36,13 @@ pub struct Person {
     /// `None` when the save gives no basis for the split — see
     /// [`female_forename_boundary`].
     pub female: Option<bool>,
-    /// The eight hidden personality attributes, 1-20, in storage order.
-    /// Slot 0 is Adaptability, 1 Loyalty, 4 Professionalism, 7 Controversy —
-    /// confirmed against in-game staff screens and personality labels. Slots
-    /// 2, 3, 5 and 6 hold Ambition, Pressure, Sportsmanship and Temperament
-    /// in an order not yet pinned. `None` when the run does not parse.
+    /// The eight hidden personality attributes, 1-20, in storage order:
+    /// Adaptability, Ambition, Loyalty, Pressure, Professionalism,
+    /// Sportsmanship, Temperament, Controversy. Slots 0, 4 and 7 were
+    /// confirmed against in-game staff screens; the rest fell to the
+    /// pre-game editor, whose sheet for Guardiola (20, 20, 15, 18, 20, 16,
+    /// 14, 8) matches his run exactly with every ambiguous value distinct.
+    /// `None` when the run does not parse.
     pub personality: Option<[u8; 8]>,
     /// Weekly wage in the save's display currency, from the contract block.
     /// `None` when no contract parses — the unemployed and the retired.
@@ -50,6 +52,10 @@ pub struct Person {
     /// Ability and attributes, when this person has an attribute block.
     /// `None` means staff: only players carry one.
     pub ability: Option<crate::ability::Ability>,
+    /// Non-player attributes — the editor's "All Attributes" sheet — read from
+    /// the entity object one eid below this person's own. `None` when no such
+    /// object carries a block, which is most players.
+    pub staff: Option<crate::staff::Staff>,
 }
 
 impl Person {
@@ -61,16 +67,32 @@ impl Person {
 
     /// Hidden Adaptability, 1-20. Verified against staff report screens,
     /// where the attribute is visible: Elite reads 20, Outstanding 19,
-    /// Good 13.
+    /// Good 13 — and against the pre-game editor (Guardiola 20).
     #[must_use]
     pub fn adaptability(&self) -> Option<u8> {
         self.personality.as_ref().map(|p| p[0])
     }
 
-    /// Hidden Loyalty, 1-20. A "Fairly Loyal" personality reads 20 here.
+    /// Hidden Ambition, 1-20. Pinned by the pre-game editor: Guardiola's
+    /// editor sheet reads Ambition 20, and his slot 1 is 20 while slot 2
+    /// carries his distinct Loyalty 15. (This slot was earlier misread as
+    /// Loyalty from a screen where both were high.)
+    #[must_use]
+    pub fn ambition(&self) -> Option<u8> {
+        self.personality.as_ref().map(|p| p[1])
+    }
+
+    /// Hidden Loyalty, 1-20. Pinned by the editor: Guardiola Loyalty 15,
+    /// unique in his run at slot 2.
     #[must_use]
     pub fn loyalty(&self) -> Option<u8> {
-        self.personality.as_ref().map(|p| p[1])
+        self.personality.as_ref().map(|p| p[2])
+    }
+
+    /// Hidden Pressure, 1-20. Editor: Guardiola 18, unique at slot 3.
+    #[must_use]
+    pub fn pressure(&self) -> Option<u8> {
+        self.personality.as_ref().map(|p| p[3])
     }
 
     /// Hidden Professionalism, 1-20 — the attribute that drives development.
@@ -78,6 +100,18 @@ impl Person {
     #[must_use]
     pub fn professionalism(&self) -> Option<u8> {
         self.personality.as_ref().map(|p| p[4])
+    }
+
+    /// Hidden Sportsmanship, 1-20. Editor: Guardiola 16, unique at slot 5.
+    #[must_use]
+    pub fn sportsmanship(&self) -> Option<u8> {
+        self.personality.as_ref().map(|p| p[5])
+    }
+
+    /// Hidden Temperament, 1-20. Editor: Guardiola 14, unique at slot 6.
+    #[must_use]
+    pub fn temperament(&self) -> Option<u8> {
+        self.personality.as_ref().map(|p| p[6])
     }
 
     /// Hidden Controversy, 1-20; almost everyone is low.
@@ -379,6 +413,7 @@ fn parse_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<(Person, u
             // Filled in by `Save::parse`, which matches blocks to people once
             // both scans have run.
             ability: None,
+            staff: None,
         },
         body + 4,
     ))
@@ -426,14 +461,33 @@ pub struct Identity {
     pub uid: u32,
 }
 
+/// How far past the record prefix a person's own identity block sits.
+///
+/// Measured on a day-one save (`idgap` example) over the 62,584 identities the
+/// ascending chain binds: median 145 bytes, 99th percentile 402, furthest
+/// 1,180 — and 512 already covers 99.80%. The bound is what keeps the
+/// out-of-order pass honest, because a record can also contain the *next*
+/// person's second object, and that sits late in the span: Sterling's is 631
+/// bytes before his own name. Binding it would name someone with another
+/// person's ids.
+const IDENTITY_WINDOW: usize = 512;
+
 /// Finds identity blocks and attaches them to people.
 ///
 /// Candidates are every `[eid][uid][uid]` triple preceded by three zero bytes.
 /// That shape recurs by chance in contract data, so the true blocks are picked
 /// as the longest strictly-eid-ascending chain — person records are written in
 /// entity-id order, which noise does not follow. Each person takes the first
-/// chain block inside their record; the full chain is returned so that squad
-/// references can also be resolved through blocks that share a record.
+/// chain block inside their record.
+///
+/// Staff eids sit out of that order, so the chain drops them and pure-staff
+/// records read `eid: None` — which left every fit against their attribute
+/// block owned by a span guess rather than a matching id pair
+/// (`OPEN_PROBLEMS.md` §3b). A second pass therefore takes the leftovers by
+/// *shape*: see [`bind_out_of_order`].
+///
+/// Both passes are returned together, in file order, so squad references can
+/// also be resolved through blocks that share a record.
 pub fn bind_identities(frame: &[u8], people: &mut [Person], start: usize) -> Vec<Identity> {
     let candidates = scan_triples(frame, start);
     let chain = longest_ascending(&candidates);
@@ -449,7 +503,74 @@ pub fn bind_identities(frame: &[u8], people: &mut [Person], start: usize) -> Vec
             person.uid = Some(id.uid);
         }
     }
-    chain
+
+    let mut bound = bind_out_of_order(&candidates, people, &offsets);
+    bound.extend_from_slice(&chain);
+    bound.sort_unstable_by_key(|id| id.offset);
+    bound
+}
+
+/// Names the people the ascending chain could not, from the candidates it left
+/// behind.
+///
+/// The chain proves a block by its position in an ordered sequence. That test
+/// is unavailable here, so the block has to prove itself:
+///
+/// 1. **It is inside the record and near its front** — within
+///    [`IDENTITY_WINDOW`], which excludes a neighbour's second object.
+/// 2. **Its ids are unclaimed.** An eid or uid already *bound to a person*
+///    belongs to them, not to this one. The test is against the people, not
+///    against the chain: the chain also holds reference blocks that name
+///    somebody else's entity from inside a third person's record, and those
+///    name nobody — letting them reserve an id would lock the real owner out.
+///    That is what kept Nikolić, Cornelli and Pfannenstiel unbound on the
+///    first attempt.
+/// 3. **It is the first such block in the record.** Candidates arrive in file
+///    order and a person who already has an eid is skipped, so a record
+///    holding two never picks the later one.
+///
+/// A record with nothing that passes keeps `None`. Missing an id is recoverable
+/// downstream; a wrong one is not.
+fn bind_out_of_order(
+    candidates: &[Identity],
+    people: &mut [Person],
+    offsets: &[usize],
+) -> Vec<Identity> {
+    let entity_ids: std::collections::HashSet<u32> = people.iter().filter_map(|p| p.eid).collect();
+    let database_ids: std::collections::HashSet<u32> =
+        people.iter().filter_map(|p| p.uid).collect();
+
+    let mut bound = Vec::new();
+    for cand in candidates {
+        if entity_ids.contains(&cand.eid) || database_ids.contains(&cand.uid) {
+            continue;
+        }
+        let idx = offsets.partition_point(|&o| o <= cand.offset);
+        let Some(i) = idx.checked_sub(1) else { continue };
+        if offsets
+            .get(i)
+            .is_none_or(|&owner| cand.offset.saturating_sub(owner) > IDENTITY_WINDOW)
+        {
+            continue;
+        }
+        let Some(person) = people.get_mut(i) else { continue };
+        if person.eid.is_some() {
+            continue;
+        }
+        person.eid = Some(cand.eid);
+        person.uid = Some(cand.uid);
+        bound.push(*cand);
+    }
+    bound
+}
+
+/// Whether an `[eid][uid][uid]` triple is preceded by an entity object header:
+/// a type byte of 0-2 and then `0x40`, seven bytes back.
+fn has_object_header(frame: &[u8], at: usize) -> bool {
+    let Some(head) = at.checked_sub(7) else {
+        return false;
+    };
+    frame.get(head).is_some_and(|&b| b <= 0x02) && frame.get(head + 1) == Some(&0x40)
 }
 
 /// How far before the record prefix the contract block can sit.
@@ -590,6 +711,23 @@ fn rfind_u32(frame: &[u8], value: u32, lo: usize, hi: usize) -> Option<usize> {
         .map(|(i, _)| lo + i)
 }
 
+/// Finds every `[eid][uid][uid]` triple preceded by three zero bytes, minus
+/// the shadows.
+///
+/// Reading the eid one byte early also passes this test — an entity object
+/// header ends in zero bytes, so the short read gives `eid << 8` with the
+/// repeated uid still lining up. The shadow is a valid-looking candidate
+/// whenever `eid << 8` stays under [`MAX_EID`], i.e. below eid 11,718.
+/// Accepting the shadow consumed the twelve bytes the true block needed, which
+/// is how Nikolić (5156), Cornelli (1389) and Pfannenstiel (1858) went unnamed
+/// while Fradley (20130) and Hutton (33829) survived — their shifted eids
+/// overflow the bound. A hit is therefore dropped when the very next offset
+/// carries a triple proven by an entity object header, `[type 00-02][0x40]`
+/// seven bytes back.
+///
+/// The header cannot simply be *required* of every candidate: on a day-one
+/// save that leaves 26,089 people unnamed against 1,091, so plenty of real
+/// identity blocks are written without one. It only breaks the tie.
 fn scan_triples(frame: &[u8], start: usize) -> Vec<Identity> {
     let mut out = Vec::new();
     let mut at = start.max(3);
@@ -599,25 +737,33 @@ fn scan_triples(frame: &[u8], start: usize) -> Vec<Identity> {
             at += 1;
             continue;
         }
-        let (Some(eid), Some(a), Some(b)) = (
-            read_u32(frame, at),
-            read_u32(frame, at + 4),
-            read_u32(frame, at + 8),
-        ) else {
-            break;
-        };
-        if a == b && a != 0 && a != u32::MAX && eid > 0 && eid < MAX_EID {
-            out.push(Identity {
-                offset: at,
-                eid,
-                uid: a,
-            });
-            at += 12;
-        } else {
+        let Some((eid, uid)) = read_triple(frame, at) else {
             at += 1;
+            continue;
+        };
+        // A shadow sits exactly one byte in front of the block it hides, so
+        // if the next offset carries a header-proven triple this hit is that
+        // short read — step onto the real one instead of over it.
+        if has_object_header(frame, at + 1) && read_triple(frame, at + 1).is_some() {
+            at += 1;
+            continue;
         }
+        out.push(Identity {
+            offset: at,
+            eid,
+            uid,
+        });
+        at += 12;
     }
     out
+}
+
+/// Reads `[eid][uid][uid]` at `at`, if the three words have that shape.
+fn read_triple(frame: &[u8], at: usize) -> Option<(u32, u32)> {
+    let eid = read_u32(frame, at)?;
+    let a = read_u32(frame, at + 4)?;
+    let b = read_u32(frame, at + 8)?;
+    (a == b && a != 0 && a != u32::MAX && eid > 0 && eid < MAX_EID).then_some((eid, a))
 }
 
 /// Longest strictly-increasing-by-eid subsequence, in file order.
@@ -775,8 +921,12 @@ mod tests {
         let p = found.first().unwrap();
         assert_eq!(p.personality, Some([13, 15, 18, 12, 20, 16, 10, 8]));
         assert_eq!(p.adaptability(), Some(13));
-        assert_eq!(p.loyalty(), Some(15));
+        assert_eq!(p.ambition(), Some(15));
+        assert_eq!(p.loyalty(), Some(18));
+        assert_eq!(p.pressure(), Some(12));
         assert_eq!(p.professionalism(), Some(20));
+        assert_eq!(p.sportsmanship(), Some(16));
+        assert_eq!(p.temperament(), Some(10));
         assert_eq!(p.controversy(), Some(8));
     }
 
@@ -801,8 +951,10 @@ mod tests {
         assert_eq!(found.get(1).unwrap().full_name, "Virgil van Dijk");
     }
 
+    /// An identity as it sits on disk: the seven-byte entity object header —
+    /// type byte, `0x40`, flags, then four zeros — and the triple after it.
     fn identity_block(eid: u32, uid: u32) -> Vec<u8> {
-        let mut v = vec![0, 0, 0];
+        let mut v = vec![0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00];
         v.extend_from_slice(&eid.to_le_bytes());
         v.extend_from_slice(&uid.to_le_bytes());
         v.extend_from_slice(&uid.to_le_bytes());
@@ -825,6 +977,84 @@ mod tests {
         assert_eq!(people.get(1).unwrap().eid, Some(51));
         assert_eq!(people.get(1).unwrap().uid, Some(9_000_002));
         assert_eq!(people.get(1).unwrap().offset, second_at);
+    }
+
+    #[test]
+    fn a_low_eid_is_not_swallowed_by_the_shadow_hit_before_it() {
+        // Reading the eid one byte early gives `eid << 8` with the repeated
+        // uid still lining up, and that shadow passes every candidate test
+        // while `eid << 8` stays under MAX_EID. Nikolić's real numbers: eid
+        // 5156 shifts to 1,320,960, well inside the bound.
+        let mut buf = record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000);
+        buf.extend(identity_block(5156, 5_790_125));
+
+        let mut people = scan_people(&buf, &table());
+        bind_identities(&buf, &mut people, 0);
+
+        let bound = people.first().unwrap();
+        assert_eq!(bound.eid, Some(5156), "the shadow at eid << 8 must not win");
+        assert_eq!(bound.uid, Some(5_790_125));
+    }
+
+    #[test]
+    fn an_out_of_order_identity_still_names_its_record() {
+        // Staff eids do not follow the ascending order the chain relies on,
+        // so the second record's block loses the chain race and has to be
+        // taken on shape instead.
+        let mut buf = record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000);
+        buf.extend(identity_block(40_000, 9_000_001));
+        buf.extend(record(101, 201, NO_COMMON_NAME, None, 189, 1991));
+        buf.extend(identity_block(1858, 434_431));
+
+        let mut people = scan_people(&buf, &table());
+        bind_identities(&buf, &mut people, 0);
+
+        assert_eq!(people.first().unwrap().eid, Some(40_000));
+        assert_eq!(people.get(1).unwrap().eid, Some(1858), "descending eid, same record");
+        assert_eq!(people.get(1).unwrap().uid, Some(434_431));
+    }
+
+    #[test]
+    fn an_identity_deep_in_the_record_is_refused() {
+        // A record can hold the *next* person's second object, which sits far
+        // past the front. Binding it would name someone with another person's
+        // ids, so the out-of-order pass leaves anything beyond the window
+        // alone. Two ascending records first, so the chain has a run of its
+        // own and the deep block is genuinely out of order.
+        let mut buf = record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000);
+        buf.extend(identity_block(40_000, 9_000_001));
+        buf.extend(record(101, 201, NO_COMMON_NAME, None, 189, 1991));
+        buf.extend(identity_block(41_000, 9_000_002));
+        buf.extend(record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000));
+        buf.extend(std::iter::repeat_n(0x11u8, IDENTITY_WINDOW + 16));
+        buf.extend(identity_block(1858, 434_431));
+
+        let mut people = scan_people(&buf, &table());
+        bind_identities(&buf, &mut people, 0);
+
+        assert_eq!(people.first().unwrap().eid, Some(40_000));
+        assert_eq!(people.get(1).unwrap().eid, Some(41_000));
+        assert_eq!(people.get(2).unwrap().eid, None, "too deep to be their own");
+    }
+
+    #[test]
+    fn an_out_of_order_pass_never_reuses_a_bound_id() {
+        // The chain names the first two records. The third repeats a uid the
+        // chain already used — a reference, not an identity — and must be
+        // refused rather than give two people the same id.
+        let mut buf = record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000);
+        buf.extend(identity_block(40_000, 9_000_001));
+        buf.extend(record(101, 201, NO_COMMON_NAME, None, 189, 1991));
+        buf.extend(identity_block(41_000, 9_000_002));
+        buf.extend(record(101, 201, NO_COMMON_NAME, None, 189, 1991));
+        buf.extend(identity_block(1858, 9_000_001));
+
+        let mut people = scan_people(&buf, &table());
+        bind_identities(&buf, &mut people, 0);
+
+        assert_eq!(people.first().unwrap().eid, Some(40_000));
+        assert_eq!(people.get(1).unwrap().eid, Some(41_000));
+        assert_eq!(people.get(2).unwrap().eid, None, "the uid is already spoken for");
     }
 
     #[test]

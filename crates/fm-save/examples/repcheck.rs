@@ -107,6 +107,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "Matías Soulé Malvano",
         "Unai Emery",
         "Isaac Leckie",
+        "Kylian Mbappé",
+        "Jude Bellingham",
+        "Mohamed Salah",
+        "Yoane Wissa",
+        "Bruno Guimarães",
+        "Lamine Yamal",
+        "Steven Darren Kirk",
     ] {
         let Some(p) = save.people.iter().find(|p| p.full_name.contains(probe)) else {
             println!("  {probe}: not in save");

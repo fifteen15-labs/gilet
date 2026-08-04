@@ -230,6 +230,19 @@ pub fn remove_entry(frame: &[u8], name: Option<&str>, eid: u32) -> Option<Vec<u8
     Some(out)
 }
 
+/// Returns the frame with every member removed from the named list, leaving
+/// the list itself — its name, filters and column layout — intact. `None`
+/// when no such list exists.
+#[must_use]
+pub fn clear_list(frame: &[u8], name: Option<&str>) -> Option<Vec<u8>> {
+    let list = find_list(frame, name)?;
+    let mut out = Vec::with_capacity(list.count_at + 4 + frame.len() - list.end);
+    out.extend_from_slice(frame.get(..list.count_at)?);
+    out.extend_from_slice(&0u32.to_le_bytes());
+    out.extend_from_slice(frame.get(list.end..)?);
+    Some(out)
+}
+
 fn read_u32(b: &[u8], at: usize) -> Option<u32> {
     let s = b.get(at..at.checked_add(4)?)?;
     Some(u32::from_le_bytes(<[u8; 4]>::try_from(s).ok()?))
@@ -391,6 +404,27 @@ mod tests {
         let buf = record("First", &[100, 200]);
         let added = add_entry(&buf, Some("First"), 999, DATE).unwrap();
         assert_eq!(remove_entry(&added, Some("First"), 999).unwrap(), buf);
+    }
+
+    #[test]
+    fn clear_list_empties_one_list_and_leaves_the_others() {
+        let mut buf = record("First", &[100, 200, 300]);
+        buf.extend(record("Second", &[400]));
+
+        let cleared = clear_list(&buf, Some("First")).unwrap();
+        let lists = scan_shortlists(&cleared);
+        assert_eq!(lists.len(), 2);
+        assert!(lists.first().unwrap().person_eids.is_empty());
+        assert_eq!(lists.first().unwrap().name.as_deref(), Some("First"));
+        assert_eq!(lists.get(1).unwrap().person_eids, vec![400]);
+        assert_eq!(cleared.len(), buf.len() - 3 * ENTRY_LEN);
+    }
+
+    #[test]
+    fn clearing_an_empty_list_changes_nothing_and_a_missing_one_is_none() {
+        let buf = record("Empty", &[]);
+        assert_eq!(clear_list(&buf, Some("Empty")).unwrap(), buf);
+        assert!(clear_list(&buf, Some("Absent")).is_none());
     }
 
     #[test]

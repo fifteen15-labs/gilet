@@ -46,14 +46,26 @@ const CLUB_ID_BACK: usize = 10;
 const NATION_ID_BACK: usize = 14;
 
 /// Offsets back from the name-length field for the entity-id head:
-/// `[eid][uid][uid] 00 [nation] [FFFFFFFF] [nation] [nation] [club_id]`.
+/// `[eid][uid][uid] 00 [nation] [FFFFFFFF] [location] [nation] [club_id]`.
+///
+/// The field at [`NATION_LOCATION_BACK`] was long read as a third copy of the
+/// nation id, and on 99.8% of clubs it is one — but it is a separate value:
+/// the country the club sits in, where the other two are the pyramid it plays
+/// in. Requiring all three to match dropped the entity head of every
+/// cross-border club, and with it the squad link for their whole first team.
 const EID_BACK: usize = 39;
 const UID_BACK: usize = 35;
 const UID2_BACK: usize = 31;
 const HEAD_ZERO_BACK: usize = 27;
 const NATION3_BACK: usize = 26;
 const HEAD_FF_BACK: usize = 22;
-const NATION2_BACK: usize = 18;
+const NATION_LOCATION_BACK: usize = 18;
+
+/// The largest plausible nation id. The location field is no longer required
+/// to equal the club's own nation, so it is bounded instead — that keeps the
+/// head shape discriminating without asserting the two are the same country.
+/// Real ids in a full database run to the low hundreds.
+const MAX_NATION_ID: u32 = 10_000;
 
 /// Scans a decompressed frame for club records.
 ///
@@ -126,11 +138,20 @@ fn parse_at(frame: &[u8], len_at: usize) -> Option<Club> {
 /// gets no entity id rather than a guessed one.
 fn parse_head(frame: &[u8], len_at: usize) -> Option<(u32, u32)> {
     let nation1 = read_u32(frame, len_at.checked_sub(NATION_ID_BACK)?)?;
-    let nation2 = read_u32(frame, len_at.checked_sub(NATION2_BACK)?)?;
+    let location = read_u32(frame, len_at.checked_sub(NATION_LOCATION_BACK)?)?;
     let nation3 = read_u32(frame, len_at.checked_sub(NATION3_BACK)?)?;
     let ff = read_u32(frame, len_at.checked_sub(HEAD_FF_BACK)?)?;
     let zero = *frame.get(len_at.checked_sub(HEAD_ZERO_BACK)?)?;
-    if nation1 != nation2 || nation2 != nation3 || ff != 0xFFFF_FFFF || zero != 0 {
+    // The two copies of the club's own nation must still agree; the location
+    // field only has to be a nation id at all. The New Saints play in Wales
+    // (175) from a ground in England (139), and every cross-border club in a
+    // real save reads the same way round — Cardiff, Swansea and Wrexham in the
+    // English pyramid from Wales, Derry City in the Irish one from Northern
+    // Ireland, Berwick Rangers in the Scottish one from England.
+    if nation1 != nation3 || ff != 0xFFFF_FFFF || zero != 0 {
+        return None;
+    }
+    if location == 0 || location > MAX_NATION_ID {
         return None;
     }
     let uid = read_u32(frame, len_at.checked_sub(UID_BACK)?)?;
@@ -170,8 +191,36 @@ mod tests {
         record_flagged(eid, uid, nation, club_id, name, short, HEADLESS_FLAGS)
     }
 
+    /// A club playing in one nation's pyramid from a ground in another, which
+    /// is what the location field at -18 records.
+    fn record_cross_border(
+        eid: u32,
+        uid: u32,
+        nation: u32,
+        location: u32,
+        club_id: u32,
+        name: &str,
+        short: &str,
+    ) -> Vec<u8> {
+        record_full(eid, uid, nation, location, club_id, name, short, HEADLESS_FLAGS)
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn record_flagged(eid: u32, uid: u32, nation: u32, club_id: u32, name: &str, short: &str, flags: u8) -> Vec<u8> {
+        record_full(eid, uid, nation, nation, club_id, name, short, flags)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn record_full(
+        eid: u32,
+        uid: u32,
+        nation: u32,
+        location: u32,
+        club_id: u32,
+        name: &str,
+        short: &str,
+        flags: u8,
+    ) -> Vec<u8> {
         let mut v = Vec::new();
         v.extend_from_slice(&eid.to_le_bytes());
         v.extend_from_slice(&uid.to_le_bytes());
@@ -179,7 +228,7 @@ mod tests {
         v.push(0);
         v.extend_from_slice(&nation.to_le_bytes());
         v.extend_from_slice(&[0xFF; 4]);
-        v.extend_from_slice(&nation.to_le_bytes());
+        v.extend_from_slice(&location.to_le_bytes());
         v.extend_from_slice(&nation.to_le_bytes());
         v.extend_from_slice(&club_id.to_le_bytes());
         v.extend_from_slice(&[0x00, 0x0A, 0x00]);
@@ -190,6 +239,32 @@ mod tests {
         v.extend_from_slice(&(short.len() as u32).to_le_bytes());
         v.extend_from_slice(short.as_bytes());
         v
+    }
+
+    #[test]
+    fn a_cross_border_club_keeps_its_entity_head() {
+        // The New Saints as a real save holds them: playing in the Welsh
+        // pyramid (175) from a ground in England (139). Requiring the location
+        // field to match the nation dropped this head, and with it the squad
+        // link for the entire first team.
+        let buf = record_cross_border(17656, 2_000_277_593, 175, 139, 1988, "The New Saints", "TNS");
+        let found = scan_clubs(&buf);
+        assert_eq!(found.len(), 1);
+        let c = found.first().unwrap();
+        assert_eq!(c.eid, Some(17656));
+        assert_eq!(c.uid, Some(2_000_277_593));
+        // The club's own nation is still the one it plays in, not where it sits.
+        assert_eq!(c.nation_id, 175);
+    }
+
+    #[test]
+    fn a_location_field_that_is_not_a_nation_id_still_fails_the_head() {
+        // The relaxed check must not turn into no check: a pointer-shaped value
+        // where the location belongs is not a cross-border club.
+        let buf = record_cross_border(17656, 2_000_277_593, 175, 0xDEAD_BEEF, 1988, "Nowhere Town", "Nowhere");
+        let found = scan_clubs(&buf);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found.first().unwrap().eid, None);
     }
 
     #[test]

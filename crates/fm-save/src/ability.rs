@@ -64,9 +64,13 @@ pub fn is_goalkeeping(index: usize) -> bool {
 /// (17/14/14/17). The same source re-confirmed the tendency trio and the
 /// Bravery/Concentration and Passing/First Touch splits.
 ///
-/// Unnamed: five hidden attributes at 41, 44, 47, 48 and 49, which no player
-/// screen ever shows and no trustworthy published source pins (see
-/// `OPEN_PROBLEMS.md` §2).
+/// The last five — the hidden attributes at 41, 44, 47, 48 and 49 — fell to
+/// the pre-game editor on 3 August 2026: Haaland's editor sheet lists
+/// Dirtiness 9, Consistency 16, Important Matches 14, Injury Proneness 10
+/// and Versatility 7 — five distinct values matching his decoded block
+/// one-for-one, leaving a single possible assignment. Every named visible
+/// attribute on the same sheet matched its index exactly, which is what
+/// makes the five trustworthy. All 54 indices are named.
 #[must_use]
 pub fn attribute_name(index: usize) -> Option<&'static str> {
     match index {
@@ -111,10 +115,15 @@ pub fn attribute_name(index: usize) -> Option<&'static str> {
         38 => Some("Pace"),
         39 => Some("Jumping Reach"),
         40 => Some("Leadership"),
+        41 => Some("Dirtiness"),
         42 => Some("Balance"),
         43 => Some("Bravery"),
+        44 => Some("Consistency"),
         45 => Some("Aggression"),
         46 => Some("Agility"),
+        47 => Some("Important Matches"),
+        48 => Some("Injury Proneness"),
+        49 => Some("Versatility"),
         50 => Some("Natural Fitness"),
         51 => Some("Determination"),
         52 => Some("Composure"),

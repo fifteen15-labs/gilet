@@ -48,10 +48,38 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .unwrap_or("(none)")
         );
 
+        if let Some(s) = &p.staff {
+            println!(
+                "staff obj 0x{:x}  eid {}  uid {}",
+                s.offset, s.eid, s.uid
+            );
+            println!(
+                "reputation home {} / current {} / world {}   CA/PA {} / {}",
+                s.home_reputation,
+                s.current_reputation,
+                s.world_reputation,
+                s.current_ability,
+                s.potential_ability
+            );
+            for (i, v) in s.attributes.iter().enumerate() {
+                if let Some(name) = fm_save::staff::attribute_name(i) {
+                    println!("  {i:>2}: {v:>2}  {name}");
+                }
+            }
+        }
+
         let Some(a) = &p.ability else {
             println!("no attribute block — staff");
             continue;
         };
+        // The block sits in front of the name it belongs to; printing both
+        // offsets is how a record that breaks that order gets spotted.
+        println!(
+            "record    0x{:x}   block 0x{:x}  (block is {} bytes earlier)",
+            p.offset,
+            a.block_offset,
+            p.offset.saturating_sub(a.block_offset)
+        );
         println!("CA/PA     {} / {}", a.current, a.potential);
         println!(
             "positions {}",

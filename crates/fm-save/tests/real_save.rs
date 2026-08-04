@@ -326,6 +326,61 @@ fn a_262_career_reads_its_date_and_flagged_clubs() {
     assert!(save.clubs.iter().any(|c| c.name == "Chelsea" && c.eid.is_some()));
 }
 
+/// A club playing in one nation's pyramid from a ground in another kept no
+/// entity id, because the club head's third u32 was read as a repeat of the
+/// nation and required to match. It is not a repeat — it is where the club
+/// sits, and the two differ for every cross-border club in the database.
+///
+/// The New Saints play in Wales (175) from Oswestry, England (139). Without
+/// the entity id no squad record could reference them, so their entire first
+/// team showed no club. The same head shape covers Cardiff, Swansea, Wrexham
+/// and Newport County in the English pyramid, Derry City in the Irish one and
+/// Berwick Rangers in the Scottish one.
+#[test]
+fn a_cross_border_club_resolves_its_squad() {
+    let Some(save) = load_named("Day One.fm") else {
+        eprintln!("skipped: no Day One.fm on this machine");
+        return;
+    };
+
+    let tns: Vec<_> = save.clubs.iter().filter(|c| c.name == "The New Saints").collect();
+    assert!(!tns.is_empty(), "The New Saints missing entirely");
+    assert!(
+        tns.iter().all(|c| c.eid.is_some()),
+        "a cross-border club must still carry an entity id"
+    );
+    // The club's own nation stays the pyramid it plays in, not where it sits.
+    assert!(tns.iter().all(|c| c.nation_id == 175), "TNS should read as Welsh");
+
+    // A day-one squad member rather than one signed later in a career, so the
+    // anchor holds against the static save.
+    let keeper = save
+        .people
+        .iter()
+        .find(|p| p.full_name == "Nathan Shepperd")
+        .expect("Nathan Shepperd missing from the people table");
+    let club_eid = keeper.club_eid.expect("Shepperd should be linked to a club");
+    assert!(
+        tns.iter().any(|c| c.eid == Some(club_eid)),
+        "Shepperd should be linked to The New Saints, got club eid {club_eid}"
+    );
+
+    // The men's squad resolves whole — the failure being pinned here was every
+    // member showing no club, not a few going missing.
+    let squad = save
+        .squads
+        .iter()
+        .find(|s| s.club_eid == 1220)
+        .expect("men's TNS squad missing");
+    assert!(squad.player_eids.len() >= 20, "squad list unexpectedly short");
+    let resolved = squad
+        .player_eids
+        .iter()
+        .filter(|eid| save.people.iter().any(|p| p.eid == Some(**eid)))
+        .count();
+    assert_eq!(resolved, squad.player_eids.len(), "every member should resolve to a person");
+}
+
 /// The last four goalkeeping indices were separated by published FM 26 data
 /// rather than an in-game screen: fminside.net serves the 26.2 database with
 /// display×5 values (the same source class as the FM Scout wage check), and
@@ -508,4 +563,101 @@ fn probe_save_survives_reassembly_and_a_shortlist_edit() {
             .map(|l| l.person_eids.clone())
     };
     assert_eq!(wirtznew(&reparsed), wirtznew(&save));
+}
+
+/// The non-player sheet reads back exactly what the pre-game editor shows.
+///
+/// Both people are checked against their editor "All Attributes" page, and
+/// both matter for a different reason. Nikolić is a manager with a full
+/// database row whose object carries a preamble, so a fixed stride to the five
+/// u16s reads garbage. Fradley is a player-analyst: his own record holds no
+/// sheet at all, and reading the block off the object sharing his eid gives
+/// the next person's numbers — the mistake that defeated every earlier attempt
+/// (`docs/OPEN_PROBLEMS.md` §3b).
+#[test]
+fn staff_sheets_match_the_editor() {
+    let Some(save) = load_named("Day One.fm") else {
+        eprintln!("skipping: no Day One.fm");
+        return;
+    };
+
+    let sheet = |name: &str| {
+        save.people
+            .iter()
+            .find(|p| p.full_name == name)
+            .unwrap_or_else(|| panic!("{name} is not in the save"))
+            .staff
+            .clone()
+            .unwrap_or_else(|| panic!("{name} has no non-player sheet"))
+    };
+
+    // Editor: Current Ability 130, Potential 145, Current Reputation 130,
+    // World 90, Home 125.
+    let nikolic = sheet("Marko Nikolić");
+    assert_eq!(nikolic.eid, 5155, "the sheet is one entity id below the person");
+    assert_eq!((nikolic.current_ability, nikolic.potential_ability), (130, 145));
+    assert_eq!(
+        (
+            nikolic.home_reputation,
+            nikolic.current_reputation,
+            nikolic.world_reputation
+        ),
+        (125, 130, 90),
+        "the triple is home, current, world — not the editor's print order"
+    );
+    for (name, expected) in [
+        ("Attacking", 9),
+        ("Directness", 14),
+        ("Authority", 17),
+        ("Trigger Press", 16),
+        ("Working With Youngsters", 11),
+        ("Buying Players", 10),
+        ("Mind Games", 12),
+        ("Squad Rotation", 8),
+        ("Judging Player Ability", 12),
+        ("Judging Player Potential", 10),
+        ("People Management", 10),
+        ("Motivating", 16),
+        ("Tactical Knowledge", 13),
+        ("Coaching Attacking", 9),
+        ("Coaching Defending", 16),
+        ("Coaching Fitness", 11),
+        ("Coaching Possession", 13),
+        ("Coaching Technical", 13),
+        ("Coaching Tactical", 14),
+        ("Coaching Set Pieces", 12),
+    ] {
+        assert_eq!(nikolic.get(name), Some(expected), "Nikolić {name}");
+    }
+
+    // Editor: CA 140, PA 150, Current Reputation 140, World 110, Home 127.
+    let fradley = sheet("Daniel Fradley");
+    assert_eq!(fradley.eid, 20129);
+    assert_eq!((fradley.current_ability, fradley.potential_ability), (140, 150));
+    assert_eq!(
+        (
+            fradley.home_reputation,
+            fradley.current_reputation,
+            fradley.world_reputation
+        ),
+        (127, 140, 110)
+    );
+    for (name, expected) in [
+        ("Working With Youngsters", 12),
+        ("Judging Player Ability", 12),
+        ("Judging Player Potential", 14),
+        ("Judging Player Data", 16),
+        ("People Management", 12),
+        ("Motivating", 10),
+        ("Tactical Knowledge", 16),
+        ("Coaching Attacking", 5),
+        ("Coaching Defending", 5),
+        ("Coaching Fitness", 1),
+        ("Coaching Possession", 6),
+        ("Coaching Technical", 16),
+        ("Coaching Tactical", 16),
+        ("Coaching Set Pieces", 12),
+    ] {
+        assert_eq!(fradley.get(name), Some(expected), "Fradley {name}");
+    }
 }

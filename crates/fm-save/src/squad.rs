@@ -175,19 +175,52 @@ fn read_list(frame: &[u8], from: usize, end: usize) -> (Vec<u32>, Option<u32>, O
         }
         let captain = read_u32(frame, list_end).filter(|&v| v != u32::MAX && v != 0);
         let vice = read_u32(frame, list_end + 4).filter(|&v| v != u32::MAX && v != 0);
-        // Two shapes prove the list real. A fresh save writes it ascending
+        // Three shapes prove the list real. A fresh save writes it ascending
         // with signings appended; a decade of transfers destroys that order
         // entirely, but the captain and vice that follow are still members of
-        // the list. Either signal is accepted.
+        // the list.
+        //
+        // The third covers the club that has neither: an aged squad with no
+        // captain appointed, which is every club the manager does not run and
+        // the AI has not got to. Afan Lido's eighteen players read as a
+        // shuffled list with both armband slots unset, and were thrown away
+        // whole. An unset slot is not a failed one — what makes a real record
+        // is that each slot is *either* empty or one of the club's own
+        // players, which random bytes do not manage.
+        let armbands_consistent = slot_is_squad_shaped(frame, list_end, &eids)
+            && slot_is_squad_shaped(frame, list_end + 4, &eids);
         let captain_linked = captain.is_some_and(|v| eids.contains(&v))
             || vice.is_some_and(|v| eids.contains(&v));
-        if !mostly_ascending(&eids) && !captain_linked {
+        if !mostly_ascending(&eids) && !captain_linked && !armbands_consistent {
+            at += 1;
+            continue;
+        }
+        // Last, because it is the dearest of the checks and the ones above
+        // reject almost everything: a squad never lists the same player twice.
+        if !all_distinct(&eids) {
             at += 1;
             continue;
         }
         return (eids, captain, vice);
     }
     (Vec::new(), None, None)
+}
+
+/// Whether a captain or vice-captain slot reads as one belonging to this
+/// squad: either unset — `FFFFFFFF` or zero, which is how a club with no
+/// armband appointed stores it — or one of the club's own players.
+fn slot_is_squad_shaped(frame: &[u8], at: usize, eids: &[u32]) -> bool {
+    match read_u32(frame, at) {
+        Some(v) => v == u32::MAX || v == 0 || eids.contains(&v),
+        None => false,
+    }
+}
+
+/// No squad lists a player twice. Quadratic on purpose: a list is capped at
+/// [`MAX_SQUAD`], and at that size the pairwise scan beats building a set,
+/// which allocates on a path the frame walk reaches constantly.
+fn all_distinct(eids: &[u32]) -> bool {
+    eids.iter().enumerate().all(|(i, e)| !eids.get(..i).is_some_and(|prior| prior.contains(e)))
 }
 
 /// The stored list ascends except for signings appended at the tail, so the
@@ -237,6 +270,46 @@ mod tests {
         v.extend_from_slice(&vice.to_le_bytes());
         v.extend_from_slice(&[0u8; 16]);
         v
+    }
+
+    #[test]
+    fn a_shuffled_squad_with_no_captain_still_reads() {
+        // Afan Lido in a 2027 career: eighteen players in an order transfers
+        // destroyed, and no armband appointed — so neither the ascending shape
+        // nor the captain link fires, and the whole squad was thrown away.
+        // Their real first eight entity ids, with both armband slots unset.
+        let clubs = [(1208u32, 1927u32)];
+        let shuffled = [31710, 37425, 32792, 31625, 33581, 84877, 101_170, 11288];
+        let buf = record(1208, 1927, &shuffled, u32::MAX, u32::MAX);
+
+        let squads = scan_squads(&buf, &clubs);
+        assert_eq!(squads.len(), 1, "a captainless shuffled squad must still read");
+        let lido = squads.first().unwrap();
+        assert_eq!(lido.club_eid, 1208);
+        assert_eq!(lido.player_eids, shuffled.to_vec());
+        assert_eq!(lido.captain_eid, None);
+        assert_eq!(lido.vice_captain_eid, None);
+    }
+
+    #[test]
+    fn an_armband_naming_an_outsider_is_not_a_squad() {
+        // The relaxed rule must not become no rule. A slot that is neither
+        // unset nor one of the club's own players is the shape random bytes
+        // take, and the list is refused when nothing else vouches for it.
+        let clubs = [(1208u32, 1927u32)];
+        let shuffled = [31710, 37425, 32792, 31625, 33581, 84877, 101_170, 11288];
+        let buf = record(1208, 1927, &shuffled, 999_999, 888_888);
+
+        assert!(scan_squads(&buf, &clubs).is_empty());
+    }
+
+    #[test]
+    fn a_list_repeating_a_player_is_not_a_squad() {
+        let clubs = [(1208u32, 1927u32)];
+        let repeated = [31710, 37425, 31710, 31625, 33581, 84877, 101_170, 11288];
+        let buf = record(1208, 1927, &repeated, u32::MAX, u32::MAX);
+
+        assert!(scan_squads(&buf, &clubs).is_empty());
     }
 
     #[test]

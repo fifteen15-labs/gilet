@@ -1,17 +1,11 @@
 <script lang="ts">
 	import PlayerRow from './PlayerRow.svelte';
 	import { scout } from '$lib/classes/Scout.svelte';
-	import { shortlists } from '$lib/classes/Shortlists.svelte';
 	import { profiles } from '$lib/classes/Profiles.svelte';
 
-	const members = $derived(shortlists.activeMembers);
 	const profile = $derived(profiles.active);
 	const total = $derived(scout.results.length);
 	const rows = $derived(scout.visibleResults);
-
-	function toggle(name: string) {
-		void shortlists.toggle(name);
-	}
 </script>
 
 <div class="flex min-h-0 flex-1 flex-col">
@@ -19,7 +13,6 @@
 		<table class="w-full border-collapse">
 			<thead class="sticky top-0 z-10 bg-[var(--color-void)]">
 				<tr class="border-b border-[var(--color-line)]">
-					<th class="w-8"></th>
 					<th class="pr-4 pb-2 pl-3 text-left">
 						<button class="eyebrow hover:text-[var(--color-mist)]" onclick={() => scout.sortBy('name')}>
 							Name{scout.sortKey === 'name' ? (scout.sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}
@@ -44,6 +37,19 @@
 							PA{scout.sortKey === 'potential' ? (scout.sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}
 						</button>
 					</th>
+					<th class="w-16 pr-4 pb-2 text-left">
+						<button
+							class="eyebrow hover:text-[var(--color-mist)]"
+							title="Room left to grow — max ability minus current"
+							onclick={() => scout.sortBy('headroom')}
+						>
+							Grow{scout.sortKey === 'headroom'
+								? scout.sortDirection === 'asc'
+									? ' ↑'
+									: ' ↓'
+								: ''}
+						</button>
+					</th>
 					{#if profile}
 						<th class="w-16 pr-4 pb-2 text-left">
 							<button
@@ -59,17 +65,17 @@
 							</button>
 						</th>
 					{/if}
+					<th class="w-16 pr-4 pb-2 text-left">
+						<span class="eyebrow" title="Hidden traits worth knowing. Hover a row for the detail.">
+							Flags
+						</span>
+					</th>
 					<th class="w-40 pr-3 pb-2 text-left"><span class="eyebrow">Ability / max</span></th>
 				</tr>
 			</thead>
 			<tbody>
 				{#each rows as player (player.id)}
-					<PlayerRow
-						{player}
-						shortlisted={members.has(player.name)}
-						score={profile ? (scout.scores.get(player.id) ?? null) : undefined}
-						onToggle={toggle}
-					/>
+					<PlayerRow {player} score={profile ? (scout.scores.get(player.id) ?? null) : undefined} />
 				{/each}
 			</tbody>
 		</table>
@@ -92,10 +98,5 @@
 				{total === 1 ? 'player' : 'players'}
 			{/if}
 		</span>
-		{#if shortlists.active}
-			<span class="tabular">
-				{shortlists.active.name}: {shortlists.active.players.length}
-			</span>
-		{/if}
 	</footer>
 </div>

@@ -1,12 +1,19 @@
 <script lang="ts">
 	import AbilityBar from './AbilityBar.svelte';
 	import AttributeGrid from './AttributeGrid.svelte';
+	import StaffGrid from './StaffGrid.svelte';
+	import PositionStrip from './PositionStrip.svelte';
+	import SquadAudit from './SquadAudit.svelte';
 	import { scout } from '$lib/classes/Scout.svelte';
-	import { shortlists } from '$lib/classes/Shortlists.svelte';
+	import { flagsFor, hasFlagData, headroom } from '$lib/utils/flags';
 
 	const player = $derived(scout.selectedPlayer);
+	const room = $derived(player ? headroom(player) : null);
+	const flags = $derived(player ? flagsFor(player) : []);
+	/** Whether the save said anything at all about this person's traits — the
+	 * difference between a clean report and no report. */
+	const judged = $derived(player !== null && hasFlagData(player));
 	const club = $derived(scout.selectedClub);
-	const shortlisted = $derived(player !== null && shortlists.activeMembers.has(player.name));
 	/** Shortlists stored in the save file itself, editable in place. */
 	const gameLists = $derived(scout.summary?.game_shortlists ?? []);
 </script>
@@ -15,7 +22,11 @@
 	<aside class="flex w-72 shrink-0 flex-col border-l border-[var(--color-line)] bg-[var(--color-panel)]">
 		<div class="flex items-start justify-between gap-2 px-4 pt-4 pb-3">
 			<h2 class="font-display text-lg leading-tight text-[var(--color-bright)]">
-				{player?.name ?? club?.name}
+				{#if player?.stub}
+					<span class="text-[var(--color-faint)] italic">Unnamed — non-contract</span>
+				{:else}
+					{player?.name ?? club?.name}
+				{/if}
 			</h2>
 			<button
 				type="button"
@@ -30,11 +41,11 @@
 				<dl class="mb-4 grid grid-cols-2 gap-x-4 gap-y-3">
 					<div>
 						<dt class="eyebrow">Age</dt>
-						<dd class="tabular text-sm text-[var(--color-bright)]">{player.age}</dd>
+						<dd class="tabular text-sm text-[var(--color-bright)]">{player.age ?? '—'}</dd>
 					</div>
 					<div>
 						<dt class="eyebrow">Born</dt>
-						<dd class="tabular text-sm text-[var(--color-bright)]">{player.born}</dd>
+						<dd class="tabular text-sm text-[var(--color-bright)]">{player.born || '—'}</dd>
 					</div>
 					<div>
 						<dt class="eyebrow">Nation</dt>
@@ -66,11 +77,23 @@
 						<dt class="eyebrow">Max ability</dt>
 						<dd class="tabular text-lg text-[var(--color-signal)]">{player.potential ?? '\u2014'}</dd>
 					</div>
+					{#if room !== null}
+						<div>
+							<dt class="eyebrow">Room to grow</dt>
+							<dd class="tabular text-sm text-[var(--color-bright)]">+{room}</dd>
+						</div>
+					{/if}
 				</dl>
 
 				<div class="mb-4"><AbilityBar ability={player.ability} potential={player.potential} /></div>
 
-				{#if player.positions.length > 0}
+				{#if player.position_ratings.length > 0}
+					<div class="mb-4">
+						<h4 class="eyebrow mb-1.5">Positions</h4>
+						<PositionStrip ratings={player.position_ratings} />
+					</div>
+				{:else if player.positions.length > 0}
+					<!-- No slot ratings decoded, but the naturals list survived. -->
 					<div class="mb-4">
 						<h4 class="eyebrow mb-1.5">Positions</h4>
 						<div class="flex flex-wrap gap-1">
@@ -84,6 +107,38 @@
 					</div>
 				{/if}
 
+				{#if judged}
+					<div class="mb-4">
+						<h4
+							class="eyebrow mb-1.5"
+							title="Gilet's reading of values the save stores. The numbers are FM's; the line each one has to cross to earn a mention is this app's."
+						>
+							Scout's flags
+						</h4>
+						{#if flags.length === 0}
+							<p class="text-xs leading-relaxed text-[var(--color-faint)]">
+								Nothing stands out either way &mdash; no red flags, and no trait strong
+								enough to call a selling point.
+							</p>
+						{:else}
+							<div class="flex flex-wrap gap-1">
+								{#each flags as flag (flag.key)}
+									<span
+										class="rounded-[2px] border px-1.5 py-0.5 text-xs
+											{flag.tone === 'risk'
+											? 'border-[var(--color-hivis-dim)] text-[var(--color-hivis)]'
+											: 'border-[var(--color-signal-dim)] text-[var(--color-signal)]'}"
+										title={flag.note}
+									>
+										{flag.label}
+										<span class="tabular ml-0.5 text-[var(--color-mist)]">{flag.value}</span>
+									</span>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{/if}
+
 				{#if player.professionalism !== null}
 					<div class="mb-4">
 						<h4 class="eyebrow mb-1.5">Hidden personality</h4>
@@ -93,12 +148,28 @@
 								<dd class="tabular text-[var(--color-bright)]">{player.professionalism}</dd>
 							</div>
 							<div class="flex justify-between">
+								<dt class="text-[var(--color-mist)]">Ambition</dt>
+								<dd class="tabular text-[var(--color-bright)]">{player.ambition}</dd>
+							</div>
+							<div class="flex justify-between">
 								<dt class="text-[var(--color-mist)]">Loyalty</dt>
 								<dd class="tabular text-[var(--color-bright)]">{player.loyalty}</dd>
 							</div>
 							<div class="flex justify-between">
+								<dt class="text-[var(--color-mist)]">Pressure</dt>
+								<dd class="tabular text-[var(--color-bright)]">{player.pressure}</dd>
+							</div>
+							<div class="flex justify-between">
 								<dt class="text-[var(--color-mist)]">Adaptability</dt>
 								<dd class="tabular text-[var(--color-bright)]">{player.adaptability}</dd>
+							</div>
+							<div class="flex justify-between">
+								<dt class="text-[var(--color-mist)]">Sportsmanship</dt>
+								<dd class="tabular text-[var(--color-bright)]">{player.sportsmanship}</dd>
+							</div>
+							<div class="flex justify-between">
+								<dt class="text-[var(--color-mist)]">Temperament</dt>
+								<dd class="tabular text-[var(--color-bright)]">{player.temperament}</dd>
 							</div>
 							<div class="flex justify-between">
 								<dt class="text-[var(--color-mist)]">Controversy</dt>
@@ -108,34 +179,33 @@
 					</div>
 				{/if}
 
-				<AttributeGrid attributes={player.attributes} />
+				<div class="mb-4">
+					<button
+						type="button"
+						class="w-full rounded-[2px] border py-1.5 text-xs transition-colors
+							{scout.isPinned(player.id)
+							? 'border-[var(--color-hivis)] text-[var(--color-hivis)]'
+							: 'border-[var(--color-line)] text-[var(--color-mist)] hover:border-[var(--color-hivis)] hover:text-[var(--color-hivis)]'}
+							disabled:cursor-not-allowed disabled:opacity-40"
+						disabled={!scout.isPinned(player.id) && scout.compareFull}
+						title={scout.compareFull && !scout.isPinned(player.id)
+							? `The board holds ${scout.compareLimit}. Remove one first.`
+							: 'Pin this player to the compare board'}
+						onclick={() => scout.togglePinned(player.id)}
+					>
+						{scout.isPinned(player.id) ? '− Remove from compare' : '+ Compare'}
+					</button>
+				</div>
 
-				<button
-					type="button"
-					class="mt-5 w-full rounded-[2px] border py-1.5 text-xs transition-colors
-						{shortlisted
-						? 'border-[var(--color-hivis)] text-[var(--color-hivis)]'
-						: 'border-[var(--color-line)] text-[var(--color-mist)] hover:border-[var(--color-faint)]'}
-						disabled:cursor-not-allowed disabled:opacity-40"
-					disabled={!shortlists.active}
-					onclick={() => shortlists.toggle(player.name)}
-				>
-					{#if !shortlists.active}
-						Create a shortlist first
-					{:else if shortlisted}
-						Remove from {shortlists.active.name}
-					{:else}
-						Add to {shortlists.active.name}
-					{/if}
-				</button>
-
+				<!-- Actions sit above the attribute grid: below it they were past
+					the fold on every save, and nobody found them. -->
 				{#if gameLists.length > 0 && player.eid !== null}
-					<div class="mt-4">
+					<div class="mb-4">
 						<h4
 							class="eyebrow mb-1.5"
-							title="Shortlists inside the save file. Edits write to the save — the untouched original is kept as a .gilet.bak sibling."
+							title="Edits write to the save file — FM sees them on next load. The untouched original is kept as a .gilet.bak sibling."
 						>
-							In-save shortlists
+							Shortlists
 						</h4>
 						{#if !scout.canEditGameShortlists}
 							<p class="text-xs leading-relaxed text-[var(--color-faint)]">
@@ -159,8 +229,25 @@
 									</button>
 								{/each}
 							</div>
+							<!-- A failed write must be said out loud here, where the click
+								happened — the only other error surface is the load screen. -->
+							{#if scout.error}
+								<p class="mt-1.5 text-xs leading-relaxed text-[var(--color-hivis)]">{scout.error}</p>
+							{/if}
 						{/if}
 					</div>
+				{/if}
+
+				{#if player.stub}
+					<p class="text-xs leading-relaxed text-[var(--color-faint)]">
+						The save stores this squad member as a stub — a non-contract signing
+						with no full record. Their name, age and attributes exist in the game
+						but are not yet decoded, so nothing is shown rather than guessed.
+					</p>
+				{:else if player.staff}
+					<StaffGrid sheet={player.staff} />
+				{:else}
+					<AttributeGrid attributes={player.attributes} />
 				{/if}
 
 			{:else if club}
@@ -199,6 +286,7 @@
 				>
 					Show squad
 				</button>
+				<SquadAudit {club} />
 			{/if}
 		</div>
 	</aside>

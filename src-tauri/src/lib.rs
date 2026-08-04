@@ -32,9 +32,12 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::default_locations,
             commands::open_save,
+            commands::staff_attribute_names,
             commands::export_csv,
             commands::import_csv,
             commands::edit_game_shortlist,
+            commands::add_players_to_game_shortlist,
+            commands::clear_game_shortlist,
             shortlist::load_shortlists,
             shortlist::save_shortlists,
             shortlist::load_filters,

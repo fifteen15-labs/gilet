@@ -54,8 +54,13 @@ problem with `research/clubsig.py` and the `diagnose` example.
    FM must derive the rest from something else, likely the contract block,
    whose club link — if it exists — is not yet found. A naive scan of the
    ±384 bytes around the person record for known club eids matches only
-   noise. Next: diff two same-club orphans' full records against a
-   third-club orphan for a shared u32.
+   noise, and the contract anchor's post-eid u32 is not a club id either
+   (Haaland 501, Sarr 550 — no relation to Man City/Spurs ids). One lead:
+   the `used_player_data.dat` member holds one entry per player
+   (`[eid u32][tag u8][year 0x07E9][packed bytes]` — Willian and Calleri
+   both present exactly once), so its packed payload may carry the
+   registration club. Next: decode that member, or diff two same-club
+   orphans' full records against a third-club orphan for a shared u32.
 2. **38 of 15,558 squad-referenced eids do not resolve** (0.24%). They are
    scattered among low eids (1007–1363) plus eid 1 (Maldini — his identity
    block `[1][45][45]` loses the LIS race because his uid, 45, is unusually
@@ -77,7 +82,15 @@ the flags byte fixed, squads parse up to the highest club eid in the table —
 
 ---
 
-## 2. Attribute names — 49 of 54, every visible attribute named
+## 2. Attribute names — SOLVED, all 54 named
+
+The last five — the hidden attributes at 41, 44, 47, 48, 49 — fell on
+3 August 2026 to Haaland's pre-game-editor sheet: Dirtiness 9,
+Consistency 16, Important Matches 14, Injury Proneness 10, Versatility 7,
+five distinct values matching his decoded block one-for-one (single
+possible assignment; every visible attribute on the same sheet matched
+its named index exactly). The UI shows them as their own "Hidden" group.
+The history of the first 49:
 
 Solved by intersecting five in-game player reports (see `SAVE_FORMAT.md`
 §6c), then finished on 2 August 2026 with **published FM 26 databases as a
@@ -156,7 +169,65 @@ the bottom).
 
 ---
 
-## 3b. Staff attributes — structure found, ids unmapped
+## 3b. Staff attributes — SOLVED 3 August 2026
+
+**The 54-value block is the editor's 52-item attribute list at slots 2-53.**
+Three separate errors had to be undone at once, which is why every earlier fit
+failed; the history is kept below because each dead end rules something out.
+
+1. **The block belongs to the object at person eid − 1, not eid n.** A person
+   carries two entity objects — the non-player one first, then the person one
+   inside their name record (Sterling: 8401 then 8402). The staff sheet is on
+   the *first*. Every fit until now compared person X's editor sheet against
+   person X+1's block.
+2. **The five u16s are `[home rep, current rep, world rep, CA, PA]` and they
+   are the database's own numbers.** On the right object they match the editor
+   exactly, five values each: Fradley 6350 / 7000 / 5500 / 140 / 150 against
+   his editor Game Reputations 7000 (Current), 6350 (Home), 5500 (World), CA
+   140, PA 150; Nikolić 6250 / 6500 / 4500 / 130 / 145 against 6500 / 6250 /
+   4500, CA 130, PA 145. **Reputation is not regenerated at career start** —
+   the earlier conclusion was drawn from the neighbouring person's object. The
+   field order is home-first, which the editor prints second.
+3. **The fields are not at a fixed stride from the tag byte.** Nikolić's object
+   carries a preamble of 8-byte rows between tag and fields, so `at + 20 (+2)`
+   lands in the middle of it and reads garbage. Locate the fields by their own
+   signature — three multiples of 50 followed by two 0-200 values — not by
+   offset.
+
+**The map.** Slot = list index + 1, so items 1-52 occupy slots 2-53. `s0` is a
+small enum (14 values seen; 22, 33, 4, 30, 32 the commonest) and `s1` ≡ 12 in
+97.7% of blocks — a two-byte header, exactly as the item count implies.
+
+| slots | items | storage |
+|---|---|---|
+| 2-27 | 1-26 — Attacking through Width, the tendency half | **raw 1-20** |
+| 28-53 | 27-52 — Coaching through Coaching Set Pieces, the coaching and knowledge half | **raw × 5** |
+
+with a small per-person day-one drift of 0 or −2 on the ×5 half. **Not ×4, and
+not the controlled column** — it is the editor's *raw* value throughout.
+
+**Verification.** Nikolić (block at eid 5155): thirteen raw-exact in slots
+2-27 — Attacking 9, Directness 14, Authority 17, Trigger Press 16, Youngsters
+11, Buying Players 10, Mind Games 12, Depth 10, Flexibility 12, Hardness of
+training 15, Squad rotation 8, Tempo 11, Width 10 — and eleven more within 2 of
+raw × 5 in slots 28-53. Fradley (block at eid 20129): all fifteen of his
+non-blank items land within 2, including Coaching Fitness 1 → 5, Coaching
+Attacking 5 → 25, Coaching Possession 6 → 30 and Coaching Technical 16 → 80.
+The twenty-four items blank in the database hold generated values, as the
+Hutton and Gerig sheets predicted.
+
+**It parses.** `staff.rs` scans the objects, locates the five u16s by
+signature rather than stride, converts the coaching half back by rounding to
+nearest, and binds each sheet to the person one eid up. `Person::staff` exposes
+it. With rounding the recovery is exact, not approximate — every non-blank item
+on both editor sheets reads back byte for byte, and
+`real_save::staff_sheets_match_the_editor` asserts 34 of them.
+
+**What this retires:** the ×4 scale, the "controlled column" reading, "career
+start rewrites reputation", "the block is generated for everyone", and the
+Nikolić negative — his sheet *is* in the save, one object earlier.
+
+## 3b (history). Staff attributes — structure found, ids unmapped
 
 Superseded in part: the person record holds a **second entity object** (see
 `SAVE_FORMAT.md` §3), and for player-people it carries a full second 54-byte
@@ -182,11 +253,518 @@ Career.fm, record at `0x413b724`):
    Emery's four value-100 rows are the "Complete" nation knowledge already
    predicted; the ids are entity ids (nations/cities) and the other rows
    hold 40-90 values — knowledge levels.
-3. **A 1-100 run at ~+458 is the likely coaching block** (~24 values,
-   62/67/57/62/10/67/... — two 67s matching Emery's published Set Pieces
-   and GK Shot Stopping, a 10 matching GK Handling). It does not contain
-   his published 92/100 values, so either the scale or the slot map is
-   still wrong — unresolved.
+3. **The 1-100 run at ~+458 is the tail of a 54-value block** — resolved in
+   structure on 3 August 2026, still open in semantics; see below.
+
+**3 August 2026: pure staff carry a 54-value attribute block after their
+person object** (`staffscan`, `staffobj`, `dumpat` examples; Career (v02),
+a 26.0.0-DB save dated 26 Oct 2025, Emery's record at `0x4409931`):
+
+1. **The layout.** At the record's tail sits an object header
+   `02 40 10 [u32 flags] [eid 135][uid 5193][uid 5193]` — the person object
+   itself, uid = the staff DB id efem.club uses — then a tag byte `01`,
+   five u16s reading 5000/5000/1500/125/125, then 62 bytes ending in the
+   record's `8×FF` terminator. The last 54 of those bytes read as an
+   attribute block: counting 54 back from the `FF` run lands on value 22 =
+   Emery's published Adaptability, exactly. Haaland's *non-player* object
+   (external, found by searching his doubled non-player uid 29179299) has
+   the same shape with tag `02`, triple 5350/5350/2750, and a 54-block
+   still sitting on display×5 multiples in this fresh save.
+2. **Slots 30-53 are the old "+458 run"** — 24 values for the 24 published
+   attributes, and the counts matching is the strongest alignment evidence
+   so far.
+3. **The values are not the published values, anywhere, in any scale.** A
+   frame-wide order-blind scan (sorted-multiset distance, `staffscan`) for
+   Emery's efem 26.0.0 sheet — whole 24, the 11 coaching-screen values, the
+   mental five, the knowledge six; raw 1-100 and display 1-20 — found zero
+   matches in every frame of the archive, on the freshest save, where drift
+   cannot be the excuse. The two stray 5-value near-hits were in other
+   people's blocks.
+4. **The transform is systematic and open.** Emery's slots 30-53 read
+   63/68/59/63/10/68/59/55/33/63/50/59/80/60/10/60/25/40/65/10/45/43/61/35.
+   Low published values survive exactly (10, 12, 13, 22, 33 all present);
+   high ones compress (Discipline 100 → max 80, Tactical 92 → ~68). Rank
+   order is roughly preserved, absolute values are not — a concave squash,
+   not a linear rescale. Between the original Career.fm reading and
+   Career (v02) the values crept up +1/+2 with the 10s pinned, so the block
+   is live state on top of whatever the transform is.
+
+**Later on 3 August 2026 — mass extraction, block anatomy, and a hard
+negative on published sheets** (`staffmap` example dumps every extractable
+block as CSV with owners: 259 in Career (v02), 683 in Port Talbot.fm —
+which turned out to be a 26.2.0-DB save, giving a version-matched pair):
+
+**Anatomy, version-independent (942 blocks):** slot 1 ≡ 12 in every block
+(structure, not data); slots 2-27 minus 13/15 are twenty-four 1-20
+values, uncorrelated with the 1-100 region (max r 0.30 over 259 — not a
+display mirror); slot 13 ranges 1-9; slots 0/15/28/29 are oddballs;
+slots 30-42 are a **stable 13-slot 1-100 array** — the same person reads
+near-identical values across both saves (Emery ±2, Zidane exact while
+unemployed); slots 43-53 are a **mutable tail** whose values genuinely
+reshuffle between saves (Zidane s44 reads 70 in one save, 30 in the
+other, with his front array untouched) — list-like state, not a fixed
+array. The 2-August "+458 run" framing and today's earlier "slots 30-53
+are the 24 attributes" framing are both dead: only 13 slots are stable.
+
+**The negative, worth not re-treading:** the block does not hold the
+efem.club attribute sheet under *any* slot assignment. Tested by
+one-to-one assignment fits (L1 and correlation) with eleven fetched
+sheets — Emery, Zidane, Beukenkamp, Mancini, Vulcano, Ibáñez, Le Bris,
+Shin, Caulfield on the 26.0.0 save, then Emery, Zidane, Mancini,
+Caulfield, Maldini, Allegri, Raúl, Hoegee **version-matched on the
+26.2.0 save**. Apparent locks at small n (GK slots at n=2, Judging Staff
+Ability at slot 42 with r=1.00 at n=4) all collapsed by n=8; the
+survivors of the early fits were low-value constants matching low GK
+numbers, and generic-high slots matching whatever was high. Conclusion:
+either the save stores staff numbers efem does not publish (recomputed
+live values on another basis), or the real sheet lives elsewhere — the
+id→value row list in the record body is back to being the prime
+candidate for the coaching data.
+
+Useful side-facts confirmed on the way: the save's staff **uid is
+exactly the efem URL id** (`/staff/5193-Unai-Emery`); efem also lists
+Reputation and 1-100 personality values per staff; and DB revisions
+moved staff numbers hard between 26.0.0 and 26.2.0 (Emery's Analysing
+Data 13 → 60), so any future ground truth must be version-matched.
+
+**Later still on 3 August 2026 — the editor cracks the scale and the
+personality slots** (pre-game editor screenshots of Guardiola against his
+record in Port Talbot (v03).fm at `0x55a1439`):
+
+1. **All eight hidden personality slots are named** (see `SAVE_FORMAT.md`
+   §"hidden personality run") — Pep's editor sheet matches his run exactly,
+   and the old slot-1 = Loyalty claim was wrong (slot 1 is Ambition, Loyalty
+   is slot 2). `Person::loyalty()` was reading the wrong index; fixed, with
+   getters for all eight now.
+2. **Staff attributes are stored on a 1-80 scale: editor value × 4.** Pep's
+   editor 20s sit in his block as 79/79/75/75 (in-save drift −1..−5), his
+   Coaching Defending/Possession 17 → 68 appear as 69/69, Working With
+   Youngsters 16 → 64 exactly, Authority 15 → 60 exactly, Mind Games
+   16 → 64 at slot 42 (65). This dissolves the "compression transform":
+   efem publishes editor×5, the save stores editor×4, so every earlier fit
+   was off by exactly 0.8 — the ratio the first Emery fit actually measured.
+3. **The editor's flat attribute list is 52 items — the 54-slot block is
+   that list.** The mixed scales inside the block follow the editor's
+   weighting column: CA-weighted attributes (Judgement 4, Motivating 4,
+   the coaching set at 3…) store fine-grained 1-80 in slots 30-53;
+   unweighted ones (tactical style: Directness, Tempo, Width…) store raw
+   1-20 in slots 2-27.
+4. **The five u16s after the object tag: the pair is staff CA/PA** on
+   0-200 — Pep 149/160, Emery 125/125, Zidane 109/130, Beukenkamp (free
+   agent) 100/120 — and the triple in front (Pep 7358/7358/6680, Emery
+   5000/5000/1500) is reputation-shaped and back on the table now that
+   the pair anchors the layout.
+5. The object header's third byte varies more than `10|18` — Pep's reads
+   `02 40 1a`. `staffmap` accepts `1a` now; treat the byte as flags.
+
+**And later again on 3 August 2026 — Mancisidor (GK coach) editor sheet
+confirms the reputation triple and lands the first seven slot locks:**
+
+1. **The five u16s are one structure across staff and players, exactly
+   quantized — but their meaning is NOT settled.** Layout:
+   `[u16 A][u16 B][u16 C][u16 D][u16 E]` with **D ≡ B/50** (holds for
+   22,095 people in Day One.fm) and A/B/C always multiples of 50 —
+   i.e. three 0-10000 values that are raw-0-200 × 50, then the raw B,
+   then a second 0-200 value E. For **staff** the triple shape-matches
+   the editor's "Game Reputations (Scaled Up To 10000)" line
+   (Mancisidor: editor 8000/8000/6250, day-one save 6750/6750/4250 —
+   same [current, home, world] shape, not equal; some career-start
+   recalibration). For **players** the reputation label is
+   **contradicted outright** on the same day-one save: Wissa reads
+   9300 and a CA-8 lower-league veteran 9200 while Mbappé reads 6800,
+   Haaland 5250 and Lamine Yamal 2750 — no reputation concept orders
+   these people that way (record-anchored reads, not the noisy sweep).
+   Whatever A/B/C/D/E measure, it is per-universe state with a strong
+   loaded-league flavour, and **must not ship labeled as reputation**.
+   E (Pep 160, Mancisidor 147, Haaland 120, van Dijk 152) is also
+   unidentified.
+2. **The save stores the editor's *controlled* values, not raw DB
+   values** — the effective in-game numbers the editor shows in its
+   "controlled attribute" column (Mancisidor's raw-0 Coaching Possession
+   → controlled 10; his raw-17 GK Coaching → controlled 20). Storage is
+   **controlled × 4** on the 1-100 slots, with a further small per-save
+   rebase for most attributes (Pep's controlled-20s sit at 69-79 on day
+   one, not 80).
+3. **Region anatomy, corrected by the day-one cross-check.** Only
+   **slots 30-42 are a stable, DB-derived array** — Pep's thirteen
+   values are byte-identical across two different careers bar one slot.
+   The 1-20 region (s2-27) and the tail (s43-53) **reorder per save**,
+   so any slot lock made in one save is save-local there. Earlier locks
+   in those regions (Tempo 8, JSA 9, Set Pieces 22, Authority 27,
+   JPP 43) are retracted as fixed positions — right values, save-local
+   ordering.
+4. **Locks that survive cross-save and cross-person:** slot 36 =
+   **Coaching Possession** (day-one exact for both people, including
+   the controlled-10 → 40 signature), slot 34 ≈ Negotiating, slot 15 ≈
+   Motivating, slot 1 ≡ 12. Coaching Goalkeeping is *not* in the stable
+   front — a GK coach's defining attribute lives in the per-save tail.
+
+**Front-13 fit, 3 August 2026 evening** (Day One.fm, Pep + Mancisidor,
+per-person scale fitted — values sit at ~0.87-0.90 of editor
+controlled×4, plausibly CA-linked): **near-locks s31 = Judging Player
+Potential (d 1.7), s32 = Determination (d 1.2), s33 = Judging Player
+Ability (d 4.1), s41 = People Management (d 2.4)** on top of the s34/s36
+locks. Left degenerate: {s30, s35, s37, s39, s40} across {Motivating,
+Tactics, Coaching Attacking/Technical/Tactical, GK Coaching} — and
+Mancisidor reads 50-60 at s30/s37/s40 where his editor coaching values
+are 0, so **front membership may itself be role-dependent**. The earlier
+s15 ≈ Motivating guess is deprecated (Mancisidor s15 = 85 exceeds his
+scaled maximum; s15 is something else). Three contrasting editor sheets
+(a physio, a data analyst, a fitness or assistant coach) break the
+cluster and settle membership.
+
+**Two more editor sheets, 3 August 2026 — a data analyst and a physio.** The
+front-13 fit asked for exactly these contrasts. One of the two people is in no
+local save, and the other turns out to carry no staff block at all, so the
+cluster is not broken yet — but the pair settles the five-u16 run.
+
+Ground truth banked (Editor 26; General, Tactical and Non Tactical pages):
+
+- **Daniel Fradley** — CA 140, PA 150, Recommended CA 143 (Data Analyst /
+  Performance Analyst / Recruitment Analyst), Coaching Style Technical, Current
+  Reputation 140, Home 127, World 110, i.e. "Game Reputations (Scaled Up To
+  10000)" 7000 / 6350 / 5500. Non-tactical in editor order: Buying Players 0,
+  Eccentricity 0, Hardness of Training 0, Judging Player Ability 12, Judging
+  Player Potential 14, Judging Player Data 16, Judging Staff Ability 0,
+  Authority 0, People Management 12, Mind Games 0, Motivating 10, Versatility 0,
+  Squad Rotation 0, Working With Youngsters 12, Coaching Attacking 5, Coaching
+  Defending 5, Coaching Fitness 1, Coaching Goalkeeping 0, Coaching Possession
+  6, Coaching Tactical 16, Coaching Technical 16, Coaching Set Pieces 12,
+  Business 0, Negotiating 0, Interference 0, Patience 0, Resources 0,
+  Physiotherapy 0, Sports Science 0. Tactical: Attacking 0, Depth 0,
+  Determination 13, Directness 0, Physicality Of Play 0, Flexibility 0, Line Of
+  Engagement 0, Tactical Knowledge 16, Tempo 0, Width 0.
+- **Steffen Lutz** — CA 140, PA 148, Recommended CA 180 (Physio), Coaching Style
+  Fitness, Current Reputation 140, Home 140, World 110, Game Reputations
+  7000 / 7000 / 5500. Every tactical and non-tactical value 0 **except Working
+  With Youngsters 15 and Physiotherapy 18** — two non-zero slots out of
+  thirty-nine, the sparsest fingerprint available and the one that would settle
+  membership in a single fit.
+
+1. **Lutz is in none of the twelve local saves** (`findname` example, substring
+   search over parsed people): the only Lutzes anywhere are Lutz Pfannenstiel
+   and Charlie Ethan Lutz. His sheet is banked for a save that loads German
+   staff; the physio contrast is still outstanding.
+2. **Fradley is in three** — Day One.fm `0x534e87e`, Port Talbot (v03).fm
+   `0x6720ead`, Ongoing.fm `0x57fea39` — one uid (72049878) across three
+   independent careers, so his fields can be split into DB-derived and live.
+3. **He has no staff attribute block.** No block among the 1,975 `staffmap`
+   extracts from Day One.fm carries his eid, his triple or his pair, and a
+   multiset fit of his fifteen non-zero editor values at ×4 and ×5 over all
+   1,975 tops out at 12 of 15 on unrelated people — noise, because small ×5
+   values are everywhere. His object at `0x534e8d3` is followed by eight filler
+   bytes, a fifteen-byte 1-20 run and a fifty-four-byte 1-100 run, and that run
+   is not a player block either: on this fresh save every real one is exact
+   display×5 (Sterling's is 65/75/60/…), while his mixes ×5 with ×5+1 and holds
+   his editor sheet at no scale — his four 16s need four 81s and there is one.
+   So **a player-coach's non-player sheet is not adjacent to his person
+   record**. That is a new place to look rather than a new dead end: it is the
+   same "second object elsewhere" arrangement Haaland's non-player block has.
+4. **The five u16s: D and E are exactly what `ability.rs` already reads as CA
+   and PA.** `CA_BACK`/`PA_BACK` (39 and 37 bytes back from a block) land on D
+   and E. Sterling's block at `0x49d3e31` is preceded by an object at
+   `0x49d3df0` holding eid 8401 / uid 28054286 — not his person pair
+   8402 / 28054109 but the consecutive-eid second object — with fields
+   6500/7250/6000/139/180, and 139/180 is the CA/PA the parser reports for him.
+   The triple and the pair are one structure on players as well as staff, and
+   the pair is settled: D = Current Ability, E = Potential Ability.
+5. **The triple is the reputation line by structure and unrecoverable by
+   value.** Across the 1,975 day-one staff blocks: t3 is the smallest of the
+   three in 92.7%, t1 == t2 in 82.9%, all three are multiples of 50 in 68.7%.
+   Both editor sheets have that shape — world lowest, current == home for Lutz.
+   The numbers never survive career start: Fradley's editor 7000/6350/5500
+   against a day-one 5900/6150/4650, Mancisidor's 8000/8000/6250 against
+   6750/6750/4250, Haaland's 9350/9300/9300 against 5250/5250/2250. Fradley is
+   also the only staff member seen so far whose editor current (140) and home
+   (127) differ, and his save reads t1 118 < t2 123 — but all three of his
+   values moved, so that is not evidence of a swapped order. (Partly overturned
+   an hour later — see the Hutton match below, where current and home survive
+   career start byte-exact.) t2 == CA×50 holds in only 40.8% of the population,
+   so `D ≡ B/50` stays an initialisation artifact, not a derivation.
+6. **`staffmap`'s census undercounts.** Its 8×FF anchor requires the block to
+   end at the record terminator. Fradley's object is followed by more record
+   body and only a 5×FF run, so he is extracted as nothing — as is every record
+   shaped like his. Relax the anchor before trusting the denominator of any
+   population fit.
+
+**Three more editor sheets the same afternoon — and the reason every fit has
+failed.** Picked from Day One.fm by their *save* fronts: near one-hot blocks,
+each spiking a different unmapped slot, exactly the contrast the front-13 fit
+wanted. The picks were self-defeating, and finding out why is the result.
+
+| person | editor CA/PA | editor reps (cur/home/world ×50) | save eid/uid | save p1/p2 | save t1/t2/t3 | save front s30-42 |
+|---|---|---|---|---|---|---|
+| Tom Hutton | 100 / **-7** | 5000 / 5000 / 1750 | 33829 / 2000219276 | **100** / 110 | **5000 / 5000** / 1250 | 58,58,83,98,5,26,26,26,26,100,26,26,95 |
+| Hansueli Gerig | 80 / 95 | 4000 / 4000 / 2000 | 47036 / 2000432645 | 100 / 120 | 4896 / 4896 / 2966 | 36,36,100,92,5,36,36,36,36,100,36,36,70 |
+| Joel Cornelli | 81 / 89 | 1150 / 1150 / 500 | 1389 / 308959 | 135 / 155 | 6000 / 5500 / 3750 | 64,54,29,81,5,64,24,100,50,81,14,91,70 |
+
+Their editor sheets, in full: **Gerig** — every one of the thirty-nine tactical
+and non-tactical values 0. **Hutton** — all 0 except Working With Youngsters 12.
+**Cornelli** — all 0 except Directness 5, Tempo 4, Width 6.
+
+1. **`staffmap`'s owner column is right, at least for records of this shape.**
+   Hutton's and Gerig's blocks carry an object whose eid *and* uid equal the
+   person's own pair as `bind_identities` resolved it — 33829 / 2000219276 and
+   47036 / 2000432645. Attribution by containing record survives the check.
+   (Cornelli's identity is unbound, `eid: None`, so his row stays unverified and
+   his wild mismatch may just be the wrong person.)
+2. **First exact editor-to-save reputation hit.** Hutton's DB Game Reputations
+   5000 (Current) and 5000 (Home) are in the save byte-for-byte as t1 and t2,
+   with his DB CA 100 sitting in p1. So career start does **not** always rewrite
+   the triple — the field really is that line. His **world value misses**
+   (editor 1750, save 1250), and Gerig's and Cornelli's miss on all three. One
+   clean survivor in four staff checked; whatever chooses between preserved and
+   recalculated is unknown, and until it is known nothing here is shippable.
+3. **PA in the database can be a negative random range.** Hutton's editor PA is
+   **-7**; the save holds 110. So p2 is a value resolved at career start, not a
+   DB copy — which also explains Fradley (editor 150, save 138) without needing
+   a version skew.
+4. **The 54-block is generated, not copied — and that is why every fit has
+   failed.** Gerig's DB row is *empty*, all thirty-nine values 0, and his save
+   block is dense: a flat floor of 36 with spikes of 100/92/70. Hutton's row has
+   one non-zero value and his block is a flat 26 with spikes of 100/98/95/83/58.
+   The game synthesises a staff sheet at career start from CA and role for
+   anyone whose DB row is blank. Fitting the block against the editor's **raw**
+   column is therefore hopeless for most staff, and every past failure —
+   the eleven efem sheets, the version-matched eight, today's Fradley multiset —
+   is explained without needing a wrong slot map.
+5. **Choosing candidates by their save block selects against usable ground
+   truth.** A near one-hot front is the signature of a blank DB row: flat
+   generated filler plus a couple of generated spikes. Rich raw rows (Pep,
+   Emery, Mancisidor, Fradley) are the only people whose sheets can name a slot,
+   and they are exactly the people whose fronts are *not* extreme.
+6. **The editor's "All Attributes" page is now the critical unknown.** It is the
+   derived/controlled column — the thing the save actually stores — and it is
+   present in the sidebar for Gerig and Cornelli. One capture of that page for a
+   person already located in Day One.fm would give a direct slot-to-name key
+   with no scale guessing and no dependence on a non-blank DB row.
+
+**The "All Attributes" page, captured (Tom Hutton, 3 August 2026).** It has
+five columns — attribute, value, weighting, controlled attribute, controlled
+attribute difference — and reports **52 items**. It answers the question it was
+fetched for, in the negative.
+
+1. **The controlled column is not what the save stores.** Hutton's entire
+   controlled sheet is 0 or 1 except Youngsters 12 (his one non-zero raw value,
+   passed through unchanged). His save block is dense: a flat floor of 26
+   repeated seven times with spikes of 100/98/95/83/60/58. Neither the raw
+   column nor the controlled column produces that. **The block is generated at
+   career start for staff whose database row is blank, and no editor page will
+   ever name its slots for such a person.** The "controlled ×4" reading from
+   Pep survives only because Pep's raw row is rich, so his controlled column is
+   near his raw one.
+2. **The CA weighting table, read directly** (previously guessed, and guessed
+   wrong — the doc had Judgement at 4 and the coaching set at 3):
+
+   | weight | attributes |
+   |---|---|
+   | 4 | Coaching Attacking, Coaching Defending, Coaching Possession, Coaching Technical, Coaching Tactical |
+   | 3 | Judgement, Judging Potential |
+   | 2 | Determination, Motivating |
+   | 1 | Youngsters, People Management, Tactics, Coaching Fitness, Negotiating, Judging Staff Ability |
+   | 0 | everything else — including Coaching Goalkeeping, Coaching GK Handling, Coaching GK Distribution, Coaching Set Pieces, Physiotherapy, Sports Science, Analysing Data, Versatility, Eccentricity, Dirtiness allowance and every tactical tendency |
+
+   **Caveat: this may be role-scoped.** Hutton's Recommended CA Job Role is
+   *Coach*, and a goalkeeping coach weighting Coaching Goalkeeping at 0 makes no
+   sense, so the column is probably computed for the person's recommended role
+   rather than being a global table. Confirm on a second person with a different
+   role before relying on it.
+3. **The list order, 49 of 52 rows** (top to bottom, editor's own spellings):
+   Attacking, Business, Coaching Technique, Directness, Authority, Free Roles,
+   Interference, Marking, Offside, Patience, Trigger Press, Resources,
+   Youngsters, Determination, Buying Players, Mind Games, Sitting Back, User Of
+   Play-Maker, Use Of Subs, Hardness of training, Squad rotation, Tempo, Width,
+   Coaching, Coaching Goakeeping, Judgement, Judging Potential, People
+   Management, Motivating, Physiotherapy, Tactics, Coaching Attacking, Coaching
+   Defending, Coaching Fitness, Coaching Possession, Coaching Technical,
+   Coaching Tactical, Dirtiness allowance, Coaching GK Handling, Coaching GK
+   Distribution, Versatility, Analysing Data, **(unnamed)**, **(unnamed)**,
+   Sports Science, Eccentricity, Negotiating, Judging Staff Ability, Coaching
+   Set Pieces. Three rows below Coaching Set Pieces were not captured, and
+   **two rows the editor itself leaves blank** — so even a perfect slot map
+   tops out at 50 of 52 names from this source.
+4. **The tidy "s0/s1 are a header, s2-s53 are the 52 items" mapping does not
+   hold.** s1 ≡ 12 in 1,975 of 1,975 blocks (structural, re-confirmed), but s0
+   is not constant — 22 in 33%, 4 in 18%, 33 in 17%, discrete enough to be an
+   enum, not a header byte. And the list order does not map positionally:
+   Hutton's Youngsters 12 is not at the slot its list position would give
+   (s14 = 20), nor are Cornelli's Directness 5, Tempo 4 and Width 6 at theirs
+   (s5 = 1, s23 = 19, s24 = 13).
+
+**Marko Nikolić, a populated row, fitted — and it fails (3 August 2026).** A
+working manager, DB row full, in Day One.fm, block already extracted. This is
+the test the whole programme was waiting for.
+
+Editor: CA 130, PA 145, Recommended CA 136 (Manager), Coaching Style General,
+Game Reputations 6500 (Current) / 6250 (Home) / 4500 (World). Save block at
+`0x4718ea8`: p1/p2 **128 / 145**, triple 6000/6000/5700, low region s2-27
+`12,3,11,12,14,14,6,9,18,6,11,5,13,65,12,12,9,13,7,11,15,10,13,12,9,8`, high
+region s30-53 `60,70,60,60,35,60,60,65,15,65,50,60,40,60,75,55,25,55,75,20,30,
+60,55,25`.
+
+1. **PA lands exactly** (editor 145, save 145) and CA is within two (130 → 128),
+   which is the third independent confirmation of D = CA, E = PA.
+2. **His sheet is not in his block at any scale.** Controlled ×4: 6 of 52
+   values present — dead. Controlled ×5: 20 of 52, and that is inflated by 60
+   and 65 being the commonest block values anyway; the block holds two 65s where
+   the sheet needs five. **His two best weighted attributes have no home at all**
+   — Motivating 16 and Coaching Defending 16 want 64 (×4) or 80 (×5) and the
+   block's high region tops out at 75, with neither value anywhere in the 54.
+   Raw ×1 against the low region scores 18 of 28, at chance for a region already
+   full of 9-15s, and his two most distinctive raw values, **Authority 17 and
+   Trigger Press 16, do not appear** (low region maxes at 18, with no 17 and
+   no 16).
+3. **So the ×4 reading is down to one person.** It came from Pep, whose hits
+   (WWY 16 → 64, Authority 15 → 60) are values common enough in a block to land
+   by accident, and it does not reproduce on a second rich row in a
+   version-matched, day-one, own-record-anchored fit. Treat "controlled ×4" as
+   unproven, not established.
+4. **The weighting column is role-scoped — confirmed.** Nikolić (Manager) and
+   Hutton (Coach) disagree on almost every weighted attribute: Judgement 4 vs 3,
+   People Management 4 vs 1, Motivating 4 vs 2, Tactics 4 vs 1, the coaching set
+   3 vs 4, Coaching Fitness 0 vs 1, Negotiating and Judging Staff Ability 3 vs 1.
+   The column is computed for the person's Recommended CA job role, so it is not
+   a global table and cannot be used to predict which slots are stored coarsely.
+5. **The 52-item list is now complete**, Nikolić's capture supplying the three
+   rows Hutton's cut off (20 Depth, 21 Fluidity, 22 Flexibility) and confirming
+   52 Coaching Set Pieces as the last:
+
+   1 Attacking, 2 Business, 3 Coaching Technique, 4 Directness, 5 Authority,
+   6 Free Roles, 7 Interference, 8 Marking, 9 Offside, 10 Patience,
+   11 Trigger Press, 12 Resources, 13 Youngsters, 14 Determination,
+   15 Buying Players, 16 Mind Games, 17 Sitting Back, 18 User Of Play-Maker,
+   19 Use Of Subs, 20 Depth, 21 Fluidity, 22 Flexibility,
+   23 Hardness of training, 24 Squad rotation, 25 Tempo, 26 Width, 27 Coaching,
+   28 Coaching Goakeeping, 29 Judgement, 30 Judging Potential,
+   31 People Management, 32 Motivating, 33 Physiotherapy, 34 Tactics,
+   35 Coaching Attacking, 36 Coaching Defending, 37 Coaching Fitness,
+   38 Coaching Possession, 39 Coaching Technical, 40 Coaching Tactical,
+   41 Dirtiness allowance, 42 Coaching GK Handling, 43 Coaching GK Distribution,
+   44 Versatility, 45 Analysing Data, 46 **(unnamed)**, 47 **(unnamed)**,
+   48 Sports Science, 49 Eccentricity, 50 Negotiating, 51 Judging Staff Ability,
+   52 Coaching Set Pieces.
+
+6. **The attribution caveat that now matters most.** Nikolić's identity is
+   unbound — `findname` gives him `eid: None` at `0x4718df3` — so his block is
+   owned by `staffmap`'s span heuristic, not by a matching eid/uid pair. The
+   two people whose ownership *was* verified that way (Hutton, Gerig) are
+   exactly the two whose blocks are provably generated filler. Until
+   `bind_identities` gets its staff pass, every fit rests on an unverified
+   attribution, and that is the cheapest thing left to fix.
+
+**Staff identities bind — and the reason they did not was a scanner bug
+(3 August 2026).** `bind_identities` was blamed for dropping staff because
+their eids sit outside the ascending chain. That is true, but it was not what
+lost them.
+
+1. **The shadow hit.** `scan_triples` accepts an `[eid][uid][uid]` triple
+   preceded by three zero bytes, then steps twelve bytes past it. An entity
+   object header ends in zero bytes, so reading the eid *one byte early* also
+   passes: the short read gives `eid << 8` with the repeated uid still lining
+   up. That shadow is accepted whenever `eid << 8` stays under `MAX_EID`
+   (3,000,000) — i.e. **below eid 11,718** — and consuming its twelve bytes
+   hid the real block behind it. Nikolić (5156), Cornelli (1389) and
+   Pfannenstiel (1858) all sit in that band. Fradley (20130) and Hutton (33829)
+   bound fine, because their shifted eids overflow the bound. The symptom
+   looked like "staff are out of order"; the cause was an off-by-one that only
+   bites low eids.
+2. **The fix is one lookahead.** A shadow sits exactly one byte in front of the
+   block it hides, so a hit is dropped when the very next offset carries a
+   triple proven by an object header (`[type 00-02][0x40]`, seven bytes back).
+   Dropping it rather than merely stepping onto it also keeps it out of the
+   ascending chain, where it could otherwise beat its own block. Cost is one
+   extra header test per hit: measured against the pre-change parser back to
+   back on the same (heavily loaded) machine, 19.2/14.0/16.9s against
+   20.7/19.2/19.8s — no regression.
+3. **The header cannot simply be required of every candidate.** Tried: it
+   leaves 26,089 people unnamed against 1,095, so plenty of real identity
+   blocks are written without one. It is a tie-breaker, not a filter.
+4. **The out-of-order pass then takes the leftovers by shape** — inside the
+   record, within 512 bytes of its prefix (`IDENTITY_WINDOW`, from the `idgap`
+   probe: median 145, p99 402, 99.80% inside 512), ids not already bound to
+   somebody, first such block in the record. Anything else keeps `None`.
+5. **Result on Day One.fm: unbound people fall from 5,530 to 1,095**, and all
+   three staff bind to exactly the ids `staffmap` had guessed from their spans
+   — Nikolić 5156 / 5790125, Cornelli 1389 / 308959, Pfannenstiel 1858 /
+   434431. So the block attributions those fits rested on were right after all,
+   and the Nikolić negative stands: **his sheet really is not in his block.**
+   van Dijk, Fradley and Hutton are unchanged.
+
+Covered by `person.rs` tests: the shadow at `eid << 8` must not win, an
+out-of-order eid still names its record, a block deeper than the window is
+refused, and an already-bound id is never reused.
+
+**Where to go next:**
+
+0. **Get General + All Attributes for a staff member with a *populated*
+   database row who is also in Day One.fm.** That is the only remaining route
+   to a slot map: blank-row staff have generated blocks that encode nothing.
+   Working managers are the safe bet — `staffmap`'s owner column has Marko
+   Nikolić, Sergej Jakirović, Marinus Dijkhuizen, Nikos Nioplias and Jiří
+   Jarošík, all real coaches with real sheets, all with blocks already
+   extracted. Two of those settle both the slot map and whether the weighting
+   column is role-scoped.
+1. **Map the stable front first** (s30-42 + s15 + s28/s29): thirteen-ish
+   DB-derived slots, fittable across all 1,976 day-one blocks at once —
+   population statistics against role expectations (every manager high,
+   only physios high, …) now work because the front does not shuffle.
+2. **Decode the shuffled regions as what they probably are — a list.**
+   The per-save reordering of s2-27 and s43-53 says those bytes are a
+   serialized id→value list whose order was fixed at career creation,
+   not a fixed array. Find the id table that orders them (the `10 1d 04
+   .. 04` preamble bytes in front of the run are the first suspects).
+3. **SETTLED, twice over (Haaland's editor General page, 3 Aug 2026):**
+   the editor says Game Reputations 9350/9300/9300 (raw 187/186/186);
+   the day-one save's run for him reads 5250/5250/2250 — **the DB's
+   reputation numbers are not in the save**. (Refined by the Fradley and
+   Lutz sheets above: the run *is* the reputation line by structure —
+   world lowest 92.7%, current == home 82.9% — but career start rewrites
+   every value, so the conclusion for shipping is unchanged. D and E in
+   the same run are Current and Potential Ability.) And the editor's numbers appear
+   **nowhere in the frame** (u16-triple and raw-byte scans, zero hits,
+   `repfind` example) — FM regenerates reputation per career with values
+   that match nothing in the DB. Player reputation is therefore
+   unrecoverable without in-game-editor numbers read from a live save.
+   The same editor session also killed transfer value for good: his DB
+   Transfer Value £120,000,000 is absent near his record in every /10^k
+   encoding (`valuefind` example; the only frame-wide 120M hits are
+   competition prize money before the person table). And it confirmed
+   the personality slot map on a second person — six exact matches
+   (Loyalty 15, Pressure 18, Professionalism 17, Sportsmanship 10,
+   Temperament 12, Controversy 11 against his run
+   `[16,20,15,18,17,10,12,11]`).
+2. **Decode the row list ids.** Emery's rows hold 100/90/75/70/65/…
+   values under u32 ids with type tags (`08 00 03 01`, `03 00 01 03`,
+   `0a 00 03 01`, `00 00 03 02`, `03 53 01 ff`). Group rows by type tag
+   across the 942-block corpus and match value distributions per tag —
+   knowledge rows are proven (nation ids, 100 = Complete); one of the
+   other tag families may be the coaching sheet keyed by attribute id.
+3. **Name the mutable tail.** Whatever slots 43-53 hold changes between
+   saves for the same person — diff one person across the four dated
+   saves to see if it tracks employment, form or morale-like state.
+4. **The second identity.** On later saves Emery carries two consecutive
+   objects (eid 144/uid 5193, then eid 145/uid 5227) — person and
+   non-player. Which of the two carries the block there needs one dump.
+5. **DONE — `bind_identities` second pass** (see the shadow-hit section
+   above). Pure-staff records get their eid; 4,435 more people are named on
+   a day-one save.
+6. **Find a player-coach's non-player object.** Fradley (§ the two editor
+   sheets above) has a full editor coaching sheet and no staff block near
+   his record, so his non-player numbers live in a second object with a
+   different uid, the way Haaland's do. Sweep for a `[eid][uid][uid]`
+   object whose eid neighbours his person eid 20130 in Day One.fm and
+   check the 54 bytes after its five u16s against his sheet — fifteen
+   non-zero values at ×4 and ×5 is a strong enough signature to confirm
+   or kill it in one pass.
+7. **Relax `staffmap`'s 8×FF anchor** before any further population fit:
+   it silently drops every record whose object is followed by more record
+   body, Fradley's among them.
+
+The `02 40 1?` header's five u16s (after the tag byte) read Emery
+5000/5000/1500 + 125/125, Zidane 4600/5450/3750 + 109/130, Beukenkamp
+(a free agent) 4000/4000/400 + 100/120 — triple-plus-pair, shape and
+magnitudes compatible with a reputation triple (efem lists Emery
+Reputation 86) and worth testing when reputation is hunted properly.
 
 **Published staff ground truth exists** for the mapping: efem.club serves
 Emery's full FM 26 coaching sheet in both 26.0.0 and 26.2.0 versions
@@ -302,7 +880,15 @@ entity id, expiry after an 8×FF run. Verified exactly against FM Scout's
 Haaland (£450K to 30/6/2034) and Musiala's in-game report in the 2035 save
 (£392,499 inside the scouted band, to 30/6/2037).
 
-**Transfer value is not stored.** The asking-price range on a player's header
+**Transfer value is not stored — editor-confirmed 3 Aug 2026.** The pre-game
+editor exposes a per-player DB "Transfer Value" (Haaland £120,000,000), and
+a day-one save contains that figure nowhere near his record in any /10^k
+u32 encoding (`valuefind` example; the frame's only 120M hits are
+competition prize money before the person table). FM recomputes value at
+runtime from ability, age, contract and reputation, so any displayed value
+would be an invented number. Original evidence below stands.
+
+The asking-price range on a player's header
 is computed: Bouaddi's screen shows £73M-£219M and neither 73,000,000 nor
 219,000,000 appears *anywhere* in the 154 MB frame, in any of u32, thousands
 or float32. The 1:3 ratio of every observed range (£23M-£70M, £73M-£219M)
@@ -484,6 +1070,36 @@ member, re-tiled offsets, rewritten manifest, zeroed high date bits and all.
 and everything in `shortlist_man.dat` past the pool shape.
 
 ---
+
+## 10. Stub people — parsed as presences, names undecoded
+
+Squad members without person records (generated non-contract signings,
+`SAVE_FORMAT.md` §6d-bis) now parse as stubs and show as undecoded rows.
+What remains is decoding the stub body so the rows can say who they are:
+
+1. **The name is probably not stored.** The u32 at +29 was the only
+   name-id candidate, and a survey of all 744 squad-referenced stubs
+   (`stubfields` example) killed it: its "100% pool hit rate" is an
+   artifact of small ids resolving in every dense pool, the renderings
+   are flavour-garbage in all three pools (Malaysian forenames for
+   Presteigne and Glynneath fillers), and the id repeats across stubs of
+   the same club (LAFC 132 twice, HB 621 twice) — it is a club-correlated
+   entity reference, birth city being the natural candidate. With only
+   ~33 bytes of body and no other id-shaped field, the likely truth is
+   that FM generates grey identities on demand and the save never stores
+   them — in which case "Unnamed" is correct-by-design, not a gap. One
+   user check settles it: note a filler's in-game name, restart FM,
+   reload — if the name changed, it is generated, and this closes.
+2. **The age.** The byte at +28 is bimodal across the 744: 17-22 for
+   two-thirds (age-shaped — fillers are young) and exactly 100 for the
+   rest, so there are two body layouts and the byte cannot be shipped as
+   an age until one in-game cross-check (any stub player's squad-screen
+   age vs the byte) confirms which layout is which.
+3. **The date field reads as creation date**: a year-shaped u16 in the
+   body reads 2027 for 696 of 744 stubs in a January-2027 save.
+
+The `squadlists`, `squadheads`, `eidprobe`, `greynames` and `stubfields`
+examples reproduce the evidence; `clubteams` prints per-club stub counts.
 
 ## Reproducing any of this
 

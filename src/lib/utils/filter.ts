@@ -1,6 +1,9 @@
 import type { Club, Player } from '$lib/tauri/commands';
+import { SET_PIECES, setPieceIndex, VERSATILITY } from '$lib/utils/attributes';
+import { hasFlagData, headroom, riskCount } from '$lib/utils/flags';
+import { coverage } from '$lib/utils/positions';
 
-export type SortKey = 'name' | 'age' | 'ability' | 'potential' | 'score';
+export type SortKey = 'name' | 'age' | 'ability' | 'potential' | 'score' | 'headroom';
 export type SortDirection = 'asc' | 'desc';
 
 export type Filters = {
@@ -22,7 +25,7 @@ export type Filters = {
 	nationId: number | null;
 	/** Restrict by gender. 'all' keeps people whose gender is unknown too. */
 	gender: 'all' | 'men' | 'women';
-	/** Contract status: free agents (no club), or contracts expiring soon. */
+	/** Contract status: free agents (no contract), or contracts expiring soon. */
 	contract: 'any' | 'free' | 'expiring';
 	/** Minimum score under the active scoring profile, on the 1-20 attribute
 	 * scale. Null for any; ignored when no profile is active. */
@@ -30,7 +33,26 @@ export type Filters = {
 	/** Latest expiry date (YYYY-MM-DD) that still counts as "expiring soon".
 	 * Set alongside `contract: 'expiring'`, from the save's own date. */
 	expiryCutoff: string | null;
-	shortlistedOnly: boolean;
+	/** Minimum room to grow — Potential minus Current Ability, on the 1-200
+	 * scale. The development screener's one number. Null for any. */
+	minHeadroom: number | null;
+	/** Filter on the scout's red flags: 'clean' keeps only players the save can
+	 * vouch for, 'flagged' keeps only the ones carrying at least one risk. */
+	risk: 'any' | 'clean' | 'flagged';
+	/** Highest weekly wage, in the save's display currency. The bargain
+	 * board's lever. Null for any. */
+	maxWage: number | null;
+	/** Minimum Versatility (attribute 49) — how readily the player *learns* a
+	 * new role. Null for any. */
+	minVersatility: number | null;
+	/** Minimum number of positions the player is already rated 15+ in. The
+	 * measure that answers "can they cover there on Saturday". Null for any. */
+	minPositions: number | null;
+	/** Which dead-ball skill to filter on, by {@link SetPieceKey}. Null for
+	 * none. */
+	setPiece: string | null;
+	/** Minimum value for the chosen set-piece skill, 1-20. */
+	minSetPiece: number | null;
 };
 
 export const emptyFilters: Filters = {
@@ -47,7 +69,13 @@ export const emptyFilters: Filters = {
 	contract: 'any',
 	minScore: null,
 	expiryCutoff: null,
-	shortlistedOnly: false
+	minHeadroom: null,
+	risk: 'any',
+	maxWage: null,
+	minVersatility: null,
+	minPositions: null,
+	setPiece: null,
+	minSetPiece: null
 };
 
 /**
@@ -65,7 +93,6 @@ export function normalise(value: string): string {
 export function matches(
 	player: Player,
 	filters: Filters,
-	shortlisted: ReadonlySet<string>,
 	scores: ReadonlyMap<number, number> = new Map()
 ): boolean {
 	// An unscoreable player is not a low score, so a minimum excludes them
@@ -74,7 +101,6 @@ export function matches(
 		const value = scores.get(player.id);
 		if (value === undefined || value < filters.minScore) return false;
 	}
-	if (filters.shortlistedOnly && !shortlisted.has(player.name)) return false;
 	if (filters.kind === 'players' && !player.is_player) return false;
 	if (filters.kind === 'staff' && player.is_player) return false;
 	if (filters.position !== null && !player.positions.includes(filters.position)) return false;
@@ -83,14 +109,27 @@ export function matches(
 	// filter is wrong, and this save simply cannot say.
 	if (filters.gender === 'men' && player.female !== false) return false;
 	if (filters.gender === 'women' && player.female !== true) return false;
-	// Free agents are the unattached; "expiring" needs a real date on or
-	// before the cutoff, so unknown contracts never sneak into a bargain hunt.
-	if (filters.contract === 'free' && player.club !== '') return false;
+	// A free agent has neither a contract nor a club. One alone is not
+	// enough: contracted players at clubs outside the loaded leagues have no
+	// club link yet (OPEN_PROBLEMS §1), and a £0 wage at a club is a youth or
+	// amateur deal, not unemployment. An expiry date is contract evidence on
+	// its own — some contract layouts parse the date but not the wage, and
+	// those players are employed, not free. "Expiring" needs a real date on
+	// or before the cutoff, so unknown contracts never sneak into a bargain
+	// hunt.
+	if (
+		filters.contract === 'free' &&
+		(player.wage !== null || player.club !== '' || player.contract_until !== '')
+	)
+		return false;
 	if (filters.contract === 'expiring') {
 		if (player.contract_until === '') return false;
 		if (filters.expiryCutoff !== null && player.contract_until > filters.expiryCutoff) return false;
 	}
-	if (filters.maxAge !== null && player.age > filters.maxAge) return false;
+	// An unknown age is not a young one: stubs (undecoded non-contract
+	// fillers) have no birth date, and an age cap must not sweep them in.
+	if (filters.maxAge !== null && (player.age === null || player.age > filters.maxAge))
+		return false;
 	// Staff have no ability, and an unknown is not a low score — an ability
 	// filter therefore excludes them rather than treating them as zero. That
 	// holds for an upper bound too: an unknown is not "safely under 120".
@@ -103,6 +142,51 @@ export function matches(
 		if (player.potential === null) return false;
 		if (filters.minPotential !== null && player.potential < filters.minPotential) return false;
 		if (filters.maxPotential !== null && player.potential > filters.maxPotential) return false;
+	}
+	// An unreadable wage is not a cheap one. Players out of contract have no
+	// wage to cap, and so does every contract layout the parser has not cracked;
+	// neither belongs in a budget search. The "Free agents" toggle is how you
+	// ask for the ones costing nothing.
+	if (filters.maxWage !== null && (player.wage === null || player.wage > filters.maxWage))
+		return false;
+	if (filters.minVersatility !== null) {
+		const value = player.attributes[VERSATILITY];
+		if (value === undefined || value < filters.minVersatility) return false;
+	}
+	// Position ratings are absent for staff and stubs, and no ratings is not
+	// nought positions covered.
+	if (filters.minPositions !== null) {
+		const covered = coverage(player.position_ratings);
+		if (covered === null || covered < filters.minPositions) return false;
+	}
+	// Both halves have to be set for the filter to mean anything: a skill with
+	// no minimum is not a request, and a minimum with no skill has nothing to
+	// apply to.
+	if (filters.setPiece !== null && filters.minSetPiece !== null) {
+		const index = setPieceIndex(filters.setPiece);
+		if (index === null) return false;
+		const value = player.attributes[index];
+		if (value === undefined || value < filters.minSetPiece) return false;
+	}
+	// Headroom needs both ends decoded. A missing potential is not a player
+	// with nothing left to give, so an unknown fails the bound rather than
+	// passing it at zero.
+	if (filters.minHeadroom !== null) {
+		const room = headroom(player);
+		if (room === null || room < filters.minHeadroom) return false;
+	}
+	// Flags are only computed when this filter is on: `matches` runs over every
+	// person in the save on each keystroke, and the rule set is the most
+	// expensive thing in it.
+	//
+	// "Clean" means the save vouched for them, not that it stayed silent —
+	// staff and stubs carry no attribute block, and no reading is not a good
+	// one. "Flagged" needs a real risk, so those same records fail both.
+	if (filters.risk !== 'any') {
+		if (!hasFlagData(player)) return false;
+		const risks = riskCount(player);
+		if (filters.risk === 'clean' && risks > 0) return false;
+		if (filters.risk === 'flagged' && risks === 0) return false;
 	}
 	if (filters.query.trim() === '') return true;
 	// The query matches the club too, so "man city" lists City's squad.
@@ -152,6 +236,8 @@ export function describeFilters(filters: Filters, nationName?: string): string {
 	if (filters.gender === 'women') parts.push('Women');
 	if (filters.contract === 'free') parts.push('Free agents');
 	if (filters.contract === 'expiring') parts.push('Expiring contracts');
+	if (filters.risk === 'clean') parts.push('No red flags');
+	if (filters.risk === 'flagged') parts.push('Red flags');
 	if (filters.position !== null) parts.push(filters.position);
 	if (filters.nationId !== null) parts.push(nationName ?? `nation ${filters.nationId}`);
 	if (filters.minScore !== null) parts.push(`score ${filters.minScore}+`);
@@ -160,8 +246,15 @@ export function describeFilters(filters: Filters, nationName?: string): string {
 	if (ca !== null) parts.push(ca);
 	const pa = describeRange('PA', filters.minPotential, filters.maxPotential);
 	if (pa !== null) parts.push(pa);
+	if (filters.minHeadroom !== null) parts.push(`+${filters.minHeadroom} to grow`);
+	if (filters.maxWage !== null) parts.push(`under £${filters.maxWage.toLocaleString()}/w`);
+	if (filters.minVersatility !== null) parts.push(`Versatility ${filters.minVersatility}+`);
+	if (filters.minPositions !== null) parts.push(`covers ${filters.minPositions}+`);
+	if (filters.setPiece !== null && filters.minSetPiece !== null) {
+		const skill = SET_PIECES.find((s) => s.key === filters.setPiece);
+		if (skill) parts.push(`${skill.label} ${filters.minSetPiece}+`);
+	}
 	if (filters.query.trim() !== '') parts.push(`"${filters.query.trim()}"`);
-	if (filters.shortlistedOnly) parts.push('shortlisted');
 	return parts.length > 0 ? parts.join(' · ') : 'All players';
 }
 
@@ -187,6 +280,16 @@ export function matchesClub(club: Club, filters: Filters): boolean {
  */
 const byName = new Intl.Collator(undefined, { sensitivity: 'base' });
 
+/** The number a sort key stands for, or null when this person has none of it.
+ * Headroom and score are computed rather than stored, so they cannot simply be
+ * indexed off the row. */
+function value(player: Player, key: SortKey, scores: ReadonlyMap<number, number>): number | null {
+	if (key === 'score') return scores.get(player.id) ?? null;
+	if (key === 'headroom') return headroom(player);
+	if (key === 'name') return null;
+	return player[key];
+}
+
 /**
  * Sorts in place on a copy. Players with no ability value sort last regardless
  * of direction — an unknown is not a low score, and burying them keeps the
@@ -201,9 +304,8 @@ export function sortPlayers(
 	const factor = direction === 'asc' ? 1 : -1;
 	return [...players].sort((a, b) => {
 		if (key === 'name') return byName.compare(a.name, b.name) * factor;
-		if (key === 'age') return (a.age - b.age) * factor;
-		const left = key === 'score' ? (scores.get(a.id) ?? null) : a[key];
-		const right = key === 'score' ? (scores.get(b.id) ?? null) : b[key];
+		const left = value(a, key, scores);
+		const right = value(b, key, scores);
 		if (left === null && right === null) return byName.compare(a.name, b.name);
 		if (left === null) return 1;
 		if (right === null) return -1;

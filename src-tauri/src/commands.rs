@@ -90,7 +90,9 @@ pub struct PlayerRow {
     pub eid: Option<u32>,
     pub name: String,
     pub born: String,
-    pub age: u16,
+    /// Age on the save's own date. `None` for stubs, whose birth date is not
+    /// decoded — an unknown age is not a young one.
+    pub age: Option<u16>,
     pub ability: Option<u8>,
     pub potential: Option<u8>,
     /// True when this person has ability data, i.e. is a player not staff.
@@ -118,12 +120,60 @@ pub struct PlayerRow {
     pub contract_until: String,
     /// Hidden Adaptability, 1-20. `None` when the personality run is absent.
     pub adaptability: Option<u8>,
+    /// Hidden Ambition, 1-20.
+    pub ambition: Option<u8>,
     /// Hidden Loyalty, 1-20.
     pub loyalty: Option<u8>,
+    /// Hidden Pressure, 1-20.
+    pub pressure: Option<u8>,
     /// Hidden Professionalism, 1-20 — the development driver.
     pub professionalism: Option<u8>,
+    /// Hidden Sportsmanship, 1-20.
+    pub sportsmanship: Option<u8>,
+    /// Hidden Temperament, 1-20.
+    pub temperament: Option<u8>,
     /// Hidden Controversy, 1-20.
     pub controversy: Option<u8>,
+    /// Non-player attributes — the pre-game editor's "All Attributes" sheet —
+    /// read from the entity object one id below this person's own. `None` for
+    /// anyone the save gives no such object, which is most players.
+    pub staff: Option<StaffSheet>,
+    /// True for a stub — a non-contract squad filler the save stores without
+    /// a person record. Identity and club are known; name, age and attributes
+    /// are not decoded, and the row says so rather than vanishing.
+    pub stub: bool,
+}
+
+/// A person's non-player sheet, as `fm-save` decodes it.
+///
+/// The names are not sent per row — they are the same 52 for everyone, and
+/// `staff_attribute_names` serves them once.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StaffSheet {
+    /// The 52 attributes on FM's 1-20 scale, in the editor's own order.
+    pub attributes: Vec<u8>,
+    /// Reputation in their home nation, 0-200.
+    pub home_reputation: u16,
+    /// Reputation where they currently work, 0-200.
+    pub current_reputation: u16,
+    /// Worldwide reputation, 0-200.
+    pub world_reputation: u16,
+    /// Non-player Current Ability, 0-200.
+    pub current_ability: u16,
+    /// Non-player Potential Ability, 0-200.
+    pub potential_ability: u16,
+}
+
+/// The editor's name for each of the 52 non-player attributes, in storage
+/// order. Two are empty: the pre-game editor leaves those rows blank itself,
+/// and a guessed name would be an invented one.
+#[tauri::command]
+#[must_use]
+pub fn staff_attribute_names() -> Vec<String> {
+    (0..fm_save::staff::ATTRIBUTE_COUNT)
+        .map(|i| fm_save::staff::attribute_name(i).unwrap_or_default().to_owned())
+        .collect()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -248,35 +298,96 @@ pub fn edit_game_shortlist(
     eid: u32,
     add: bool,
     date: Vec<u16>,
-) -> Result<(), CommandError> {
-    let bytes = std::fs::read(&path).map_err(|e| CommandError::Read {
-        path: path.clone(),
+) -> Result<usize, CommandError> {
+    if add {
+        add_players_to_game_shortlist(path, list, vec![eid], date)
+    } else {
+        write_shortlist_edit(&path, |scout| {
+            fm_save::shortlist::remove_entry(scout, list.as_deref(), eid).ok_or_else(|| {
+                missing_list(list.as_deref())
+            })
+        })
+        .map(usize::from)
+    }
+}
+
+/// Adds many players to one in-save shortlist in a single rewrite — the
+/// "filter, then send the results into the game" flow. Per-player rewrites
+/// would copy the whole save once per name; this copies it once.
+///
+/// Returns how many players were actually added; ones already on the list
+/// count zero and cost nothing.
+///
+/// # Errors
+/// As [`edit_game_shortlist`].
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command]
+pub fn add_players_to_game_shortlist(
+    path: String,
+    list: Option<String>,
+    eids: Vec<u32>,
+    date: Vec<u16>,
+) -> Result<usize, CommandError> {
+    let when = fm_save::Date {
+        year: date.first().copied().unwrap_or(2026),
+        month: date.get(1).copied().unwrap_or(1) as u8,
+        day: date.get(2).copied().unwrap_or(1) as u8,
+    };
+    let stamp = fm_save::shortlist::date_added_bytes(when);
+
+    let mut added = 0usize;
+    write_shortlist_edit(&path, |scout| {
+        let mut frame = scout.to_vec();
+        for &eid in &eids {
+            let next = fm_save::shortlist::add_entry(&frame, list.as_deref(), eid, stamp)
+                .ok_or_else(|| missing_list(list.as_deref()))?;
+            if next.len() != frame.len() {
+                added += 1;
+            }
+            frame = next;
+        }
+        Ok(frame)
+    })?;
+    Ok(added)
+}
+
+/// Empties one in-save shortlist, leaving the list itself in place. Returns
+/// whether anything was removed.
+///
+/// # Errors
+/// As [`edit_game_shortlist`].
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command]
+pub fn clear_game_shortlist(path: String, list: Option<String>) -> Result<bool, CommandError> {
+    write_shortlist_edit(&path, |scout| {
+        fm_save::shortlist::clear_list(scout, list.as_deref())
+            .ok_or_else(|| missing_list(list.as_deref()))
+    })
+}
+
+fn missing_list(list: Option<&str>) -> CommandError {
+    CommandError::Parse(format!("no shortlist named {}", list.unwrap_or("(unnamed)")))
+}
+
+/// The shared write path: read the save, let `edit` produce a new
+/// `scout_man.dat`, and rewrite the file around it — after parking the
+/// untouched original at `<path>.gilet.bak` the first time. Returns whether
+/// anything changed; an edit that produces identical bytes touches nothing.
+fn write_shortlist_edit(
+    path: &str,
+    edit: impl FnOnce(&[u8]) -> Result<Vec<u8>, CommandError>,
+) -> Result<bool, CommandError> {
+    let bytes = std::fs::read(path).map_err(|e| CommandError::Read {
+        path: path.to_owned(),
         message: e.to_string(),
     })?;
 
     let scout = fm_save::archive::member_plaintext(&bytes, "scout_man.dat")
         .map_err(|e| CommandError::Parse(e.to_string()))?;
 
-    let edited = if add {
-        let when = fm_save::Date {
-            year: date.first().copied().unwrap_or(2026),
-            month: date.get(1).copied().unwrap_or(1) as u8,
-            day: date.get(2).copied().unwrap_or(1) as u8,
-        };
-        let stamp = fm_save::shortlist::date_added_bytes(when);
-        fm_save::shortlist::add_entry(&scout, list.as_deref(), eid, stamp)
-    } else {
-        fm_save::shortlist::remove_entry(&scout, list.as_deref(), eid)
-    }
-    .ok_or_else(|| {
-        CommandError::Parse(format!(
-            "no shortlist named {}",
-            list.as_deref().unwrap_or("(unnamed)")
-        ))
-    })?;
-
+    let edited = edit(&scout)?;
     if edited == scout {
-        return Ok(());
+        return Ok(false);
     }
 
     let written = fm_save::archive::replace_member(&bytes, "scout_man.dat", &edited)
@@ -291,10 +402,11 @@ pub fn edit_game_shortlist(
             message: e.to_string(),
         })?;
     }
-    std::fs::write(&path, written).map_err(|e| CommandError::Write {
-        path,
+    std::fs::write(path, written).map_err(|e| CommandError::Write {
+        path: path.to_owned(),
         message: e.to_string(),
-    })
+    })?;
+    Ok(true)
 }
 
 /// Resolves the save's in-game shortlists to the same names the player table
@@ -326,6 +438,112 @@ fn resolve_game_shortlists(save: &fm_save::Save) -> Vec<GameShortlistRow> {
 /// Squad strength is the closest thing to a league level while competitions are
 /// undecoded: a club is as strong as the players it fields. Staff carry no
 /// ability and so do not count towards the squad.
+/// One table row for a parsed person, aged against the save's own date.
+fn person_row(
+    p: &fm_save::Person,
+    now: fm_save::Date,
+    club_names: &std::collections::HashMap<u32, &str>,
+) -> PlayerRow {
+    let d = p.date_of_birth;
+    PlayerRow {
+        id: p.offset,
+        eid: p.eid,
+        name: p.full_name.clone(),
+        born: format!("{:04}-{:02}-{:02}", d.year, d.month, d.day),
+        age: Some(d.age_on(now)),
+        ability: p.ability.as_ref().map(|a| a.current),
+        potential: p.ability.as_ref().map(|a| a.potential),
+        is_player: p.is_player(),
+        attributes: p.ability.as_ref().map(|a| a.attributes.to_vec()).unwrap_or_default(),
+        nation_id: p.nation_id,
+        nation: p.nation().unwrap_or_default().to_owned(),
+        positions: p
+            .ability
+            .as_ref()
+            .map(|a| a.natural_positions().iter().map(|s| (*s).to_owned()).collect())
+            .unwrap_or_default(),
+        position_ratings: p.ability.as_ref().map(|a| a.positions.to_vec()).unwrap_or_default(),
+        club: p
+            .club_eid
+            .and_then(|eid| club_names.get(&eid).copied())
+            .unwrap_or_default()
+            .to_owned(),
+        staff: p.staff.as_ref().map(|s| StaffSheet {
+            attributes: s.attributes.to_vec(),
+            home_reputation: s.home_reputation,
+            current_reputation: s.current_reputation,
+            world_reputation: s.world_reputation,
+            current_ability: s.current_ability,
+            potential_ability: s.potential_ability,
+        }),
+        female: p.female,
+        wage: p.wage,
+        contract_until: p
+            .contract_until
+            .map(|d| format!("{:04}-{:02}-{:02}", d.year, d.month, d.day))
+            .unwrap_or_default(),
+        adaptability: p.adaptability(),
+        ambition: p.ambition(),
+        loyalty: p.loyalty(),
+        pressure: p.pressure(),
+        professionalism: p.professionalism(),
+        sportsmanship: p.sportsmanship(),
+        temperament: p.temperament(),
+        controversy: p.controversy(),
+        stub: false,
+    }
+}
+
+/// Rows for stub members: squad entries whose entity id has no person
+/// record — generated non-contract signings. They appear as undecoded rows
+/// under their club rather than silently missing from its squad.
+fn stub_rows(
+    save: &fm_save::Save,
+    club_names: &std::collections::HashMap<u32, &str>,
+) -> Vec<PlayerRow> {
+    let club_by_member: std::collections::HashMap<u32, u32> = save
+        .squads
+        .iter()
+        .flat_map(|s| s.player_eids.iter().map(|&e| (e, s.club_eid)))
+        .collect();
+    save.stubs
+        .iter()
+        .filter_map(|s| {
+            let club_eid = club_by_member.get(&s.eid)?;
+            Some(PlayerRow {
+                id: s.offset,
+                eid: Some(s.eid),
+                name: String::new(),
+                born: String::new(),
+                age: None,
+                ability: None,
+                potential: None,
+                is_player: true,
+                attributes: Vec::new(),
+                nation_id: 0,
+                nation: String::new(),
+                positions: Vec::new(),
+                position_ratings: Vec::new(),
+                club: club_names.get(club_eid).copied().unwrap_or_default().to_owned(),
+                female: None,
+                wage: None,
+                contract_until: String::new(),
+                adaptability: None,
+                ambition: None,
+                loyalty: None,
+                pressure: None,
+                professionalism: None,
+                sportsmanship: None,
+                temperament: None,
+                controversy: None,
+                // A stub is a presence, not a person: no sheet to read.
+                staff: None,
+                stub: true,
+            })
+        })
+        .collect()
+}
+
 fn squad_strength(save: &fm_save::Save) -> std::collections::HashMap<u32, (u32, u32, usize)> {
     let mut strength: std::collections::HashMap<u32, (u32, u32, usize)> =
         std::collections::HashMap::new();
@@ -378,47 +596,12 @@ pub fn load_save(
         .filter_map(|c| Some((c.eid?, c.short_name.as_str())))
         .collect();
 
-    let players = save
+    let mut players: Vec<PlayerRow> = save
         .people
         .iter()
-        .map(|p| {
-            let d = p.date_of_birth;
-            PlayerRow {
-                id: p.offset,
-                eid: p.eid,
-                name: p.full_name.clone(),
-                born: format!("{:04}-{:02}-{:02}", d.year, d.month, d.day),
-                age: d.age_on(now),
-                ability: p.ability.as_ref().map(|a| a.current),
-                potential: p.ability.as_ref().map(|a| a.potential),
-                is_player: p.is_player(),
-                attributes: p.ability.as_ref().map(|a| a.attributes.to_vec()).unwrap_or_default(),
-                nation_id: p.nation_id,
-                nation: p.nation().unwrap_or_default().to_owned(),
-                positions: p
-                    .ability
-                    .as_ref()
-                    .map(|a| a.natural_positions().iter().map(|s| (*s).to_owned()).collect())
-                    .unwrap_or_default(),
-                position_ratings: p.ability.as_ref().map(|a| a.positions.to_vec()).unwrap_or_default(),
-                club: p
-                    .club_eid
-                    .and_then(|eid| club_names.get(&eid).copied())
-                    .unwrap_or_default()
-                    .to_owned(),
-                female: p.female,
-                wage: p.wage,
-                contract_until: p
-                    .contract_until
-                    .map(|d| format!("{:04}-{:02}-{:02}", d.year, d.month, d.day))
-                    .unwrap_or_default(),
-                adaptability: p.adaptability(),
-                loyalty: p.loyalty(),
-                professionalism: p.professionalism(),
-                controversy: p.controversy(),
-            }
-        })
+        .map(|p| person_row(p, now, &club_names))
         .collect();
+    players.extend(stub_rows(&save, &club_names));
 
     let strength = squad_strength(&save);
     let clubs = save
@@ -553,7 +736,7 @@ pub fn export_csv(path: String, rows: Vec<PlayerRow>) -> Result<(), CommandError
             "{},{},{},{},{},{},{},{}",
             csv_field(&r.name),
             r.born,
-            r.age,
+            r.age.map_or(String::new(), |v| v.to_string()),
             r.ability.map_or(String::new(), |v| v.to_string()),
             r.potential.map_or(String::new(), |v| v.to_string()),
             csv_field(&r.club),
