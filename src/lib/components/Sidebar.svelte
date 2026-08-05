@@ -68,6 +68,20 @@
 						<span class="tabular ml-1 text-xs text-[var(--color-faint)]">{list.players.length}</span>
 					</button>
 					{#if list.players.length > 0}
+						{@const filtering = scout.filters.shortlist === key}
+						<button
+							type="button"
+							class="px-1.5 text-xs transition-opacity
+								{filtering
+								? 'text-[var(--color-hivis)]'
+								: 'text-[var(--color-faint)] opacity-0 group-hover:opacity-100 hover:text-[var(--color-hivis)]'}"
+							title={filtering
+								? 'Stop filtering the table to this shortlist'
+								: 'Show only this shortlist in the table, so it can be sorted, scored and compared like any other search'}
+							onclick={() => scout.showShortlist(filtering ? null : list)}
+						>
+							{filtering ? 'Filtering' : 'Filter'}
+						</button>
 						{#if confirmingClear === key}
 							<button
 								type="button"

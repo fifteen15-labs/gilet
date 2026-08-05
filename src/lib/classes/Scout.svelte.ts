@@ -20,6 +20,7 @@ import {
 	type SortDirection,
 	type SortKey
 } from '$lib/utils/filter';
+import { positionSlots } from '$lib/utils/positions';
 
 /** Which record type the table is showing. */
 export type Tab = 'people' | 'clubs';
@@ -49,8 +50,9 @@ class Scout {
 	sortDirection = $state<SortDirection>('asc');
 	tab = $state<Tab>('people');
 	/** How the clubs table is ordered. Strength is the useful one: it is the
-	 * closest thing to a league level while competitions are undecoded. */
-	clubSort = $state<'name' | 'strength'>('name');
+	 * closest thing to a league level while competitions are undecoded. Age
+	 * and wages sort on the same decoded squad. */
+	clubSort = $state<'name' | 'strength' | 'age' | 'wages'>('name');
 	/** Record the detail panel is showing, by row id. */
 	selectedId = $state<number | null>(null);
 	/** Rows pinned for side-by-side comparison, in the order they were added. */
@@ -82,9 +84,20 @@ class Scout {
 
 	matchingClubs(): Club[] {
 		const found = this.clubs.filter((c) => matchesClub(c, this.filters));
+		// Clubs with nothing decoded for the chosen column sort last in every
+		// case: an unknown is not a weak squad, a young one or a cheap one.
+		// The youngest squad is the interesting end of the age column, so it
+		// ascends where the others descend.
 		if (this.clubSort === 'strength') {
-			// Clubs with no squad sort last: an unknown is not a weak squad.
 			return found.sort((a, b) => (b.average_ability ?? -1) - (a.average_ability ?? -1));
+		}
+		if (this.clubSort === 'wages') {
+			return found.sort((a, b) => (b.wage_bill ?? -1) - (a.wage_bill ?? -1));
+		}
+		if (this.clubSort === 'age') {
+			return found.sort(
+				(a, b) => (a.average_age ?? Infinity) - (b.average_age ?? Infinity)
+			);
 		}
 		return found.sort((a, b) => a.name.localeCompare(b.name));
 	}
@@ -144,6 +157,17 @@ class Scout {
 	}
 
 	/**
+	 * Filters the table down to one in-save shortlist's members, so a list
+	 * built in FM can be sorted, scored and compared like any other search.
+	 * `null` clears the shortlist filter and leaves the rest of the bar alone.
+	 */
+	showShortlist(list: GameShortlist | null): void {
+		this.filters = { ...this.filters, shortlist: list === null ? null : (list.name ?? '') };
+		this.tab = 'people';
+		this.comparing = false;
+	}
+
+	/**
 	 * Everything matching the current filters, sorted. Not capped — the count
 	 * shown to the user has to be the true one.
 	 *
@@ -156,8 +180,29 @@ class Scout {
 	 * selected. Computed once per profile change rather than per row. */
 	readonly scores: ReadonlyMap<number, number> = $derived(scoreAll(this.players, profiles.active));
 
+	/** The save's own position slot ordering, so "accomplished at DM" can read
+	 * the right rating without a second copy of the list in the frontend. */
+	readonly positionSlots: ReadonlyMap<string, number> = $derived(
+		positionSlots(this.summary?.position_names ?? [])
+	);
+
+	/** Members of the shortlist the filter names, by entity id. Empty when no
+	 * shortlist is being filtered to. */
+	readonly shortlistEids: ReadonlySet<number> = $derived.by(() => {
+		// A preset saved before shortlist filtering existed carries no key at
+		// all, and undefined is not a shortlist named "".
+		const name = this.filters.shortlist ?? null;
+		if (name === null) return new Set<number>();
+		const list = (this.summary?.game_shortlists ?? []).find((l) => (l.name ?? '') === name);
+		return new Set(list?.player_eids ?? []);
+	});
+
 	readonly results: Player[] = $derived.by(() => {
-		const found = this.players.filter((p) => matches(p, this.filters, this.scores));
+		const context = {
+			shortlistEids: this.shortlistEids,
+			positionSlots: this.positionSlots
+		};
+		const found = this.players.filter((p) => matches(p, this.filters, this.scores, context));
 		return sortPlayers(found, this.sortKey, this.sortDirection, this.scores);
 	});
 
@@ -212,9 +257,15 @@ class Scout {
 		this.error = null;
 		try {
 			await editGameShortlist(this.summary.path, list.name, player.eid, !has, [year, month, day]);
+			// Names and ids are kept in step: the sidebar reads the names and
+			// the "only this shortlist" filter reads the ids, and a list that
+			// disagreed with itself would show one and filter the other.
 			list.players = has
 				? list.players.filter((n) => n !== player.name)
 				: [...list.players, player.name];
+			list.player_eids = has
+				? list.player_eids.filter((e) => e !== player.eid)
+				: [...list.player_eids, player.eid];
 		} catch (e) {
 			this.error = e instanceof Error ? e.message : String(e);
 		}
@@ -232,6 +283,7 @@ class Scout {
 		try {
 			await clearGameShortlist(this.summary.path, list.name);
 			list.players = [];
+			list.player_eids = [];
 			this.notice = `Cleared ${had.toLocaleString()} from ${list.name ?? '(unnamed)'} in the save.`;
 		} catch (e) {
 			this.error = e instanceof Error ? e.message : String(e);
@@ -262,8 +314,10 @@ class Scout {
 				month,
 				day
 			]);
-			const have = new Set(list.players);
-			list.players = [...list.players, ...rows.map((p) => p.name).filter((n) => !have.has(n))];
+			const have = new Set(list.player_eids);
+			const fresh = rows.filter((p) => p.eid !== null && !have.has(p.eid));
+			list.players = [...list.players, ...fresh.map((p) => p.name)];
+			list.player_eids = [...list.player_eids, ...fresh.map((p) => p.eid ?? 0)];
 			const skipped = this.results.length - rows.length;
 			this.notice =
 				`Added ${added.toLocaleString()} to ${list.name ?? '(unnamed)'} in the save.` +

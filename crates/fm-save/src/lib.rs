@@ -147,9 +147,7 @@ impl Save {
         let frames = container::read_frames(bytes)?;
         let frame_sizes = frames.iter().map(|f| f.data.len()).collect();
 
-        // Records live in the single largest frame — 105 MB of the 187 MB total
-        // in the reference save. Scanning every frame costs a lot for nothing.
-        let main = frames.iter().max_by_key(|f| f.data.len());
+        let main = main_frame(&frames);
 
         let mut people = Vec::new();
         let mut clubs = Vec::new();
@@ -252,7 +250,7 @@ impl Save {
                 main.and_then(|f| gamedate::find_main_frame_date(&f.data))
             });
 
-        let shortlists = scout_man_frame(&frames)
+        let shortlists = named_frame(&frames, "scout_man.dat")
             .map(|f| shortlist::scan_shortlists(&f.data))
             .unwrap_or_default();
 
@@ -293,14 +291,24 @@ impl Save {
 /// whose prefix went undetected, and resolving through the chain still lands
 /// on the right record. Resolution is by containing record — the person whose
 /// prefix is the last one before the block.
-/// The decompressed `scout_man.dat` frame, located through the manifest in
-/// the final frame. The manifest's sorted position is the frame index, and
+/// The database frame, where every record scan runs. `game_db.dat` through
+/// the manifest; the single-largest-frame heuristic — right on every save
+/// until a long career grew `player_stats_hist_dt.cmt` past the database
+/// (372 MB against 351 MB) and the whole save read as empty — stays as the
+/// fallback for a save whose manifest does not parse.
+fn main_frame(frames: &[Frame]) -> Option<&Frame> {
+    named_frame(frames, "game_db.dat")
+        .or_else(|| frames.iter().max_by_key(|f| f.data.len()))
+}
+
+/// The decompressed frame of the named member, located through the manifest
+/// in the final frame. The manifest's sorted position is the frame index, and
 /// the member's plaintext length must match the frame byte-for-byte — a
-/// mismatch means the mapping is wrong, and no shortlist is better than one
-/// read out of someone else's bytes.
-fn scout_man_frame(frames: &[Frame]) -> Option<&Frame> {
+/// mismatch means the mapping is wrong, and no data is better than data read
+/// out of someone else's bytes.
+fn named_frame<'a>(frames: &'a [Frame], name: &str) -> Option<&'a Frame> {
     let members = manifest::read_manifest(&frames.last()?.data)?;
-    let index = manifest::frame_index_of(&members, "scout_man.dat")?;
+    let index = manifest::frame_index_of(&members, name)?;
     let frame = frames.get(index)?;
     let plain = members.get(index).map(|m| m.plain)?;
     (frame.data.len() as u64 == plain).then_some(frame)

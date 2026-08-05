@@ -22,6 +22,18 @@ export const INJURY_PRONENESS = 48;
 export const VERSATILITY = 49;
 export const DETERMINATION = 51;
 
+/**
+ * Where the non-player sheet turns from tendencies to coaching, which is also
+ * where the save changes storage scale: items before it are the editor's raw
+ * 1-20, items from it on are the editor's value times five
+ * (`docs/SAVE_FORMAT.md` §6g).
+ *
+ * The half below this line does not survive ageing — an aged career rewrites
+ * it onto an internal scale nobody has decoded — so anything reading a staff
+ * sheet has to know where the boundary is before it shows a number.
+ */
+export const STAFF_COACHING_FROM = 26;
+
 /** The dead-ball skills, in the order a set-piece menu lists them. */
 export const SET_PIECES = [
 	{ key: 'corners', label: 'Corners', index: CORNERS },

@@ -2,6 +2,7 @@
 	import AbilityBar from './AbilityBar.svelte';
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { abilityOf, flagsFor, headroom, potentialOf } from '$lib/utils/flags';
+	import { formatWage } from '$lib/utils/money';
 	import type { Player } from '$lib/tauri/commands';
 
 	type Props = {
@@ -9,9 +10,12 @@
 		/** Score under the active profile; null when this person cannot be
 		 * scored, undefined when no profile is active and the column is absent. */
 		score?: number | null;
+		/** Whether the table is showing its world-reputation column, which it
+		 * only does under the Staff kind. */
+		showReputation?: boolean;
 	};
 
-	const { player, score }: Props = $props();
+	const { player, score, showReputation = false }: Props = $props();
 
 	const room = $derived(headroom(player));
 	/** A player's own ability, or the staff sheet's non-player CA/PA — same
@@ -23,14 +27,6 @@
 	const strengths = $derived(flags.filter((f) => f.tone === 'strength'));
 	/** The whole report in one hover, so the table stays a table. */
 	const flagTitle = $derived(flags.map((f) => `${f.label} (${f.value})`).join('\n'));
-
-	/** Compact weekly wage: £450K, £8.5K, £400 — or nothing when out of contract. */
-	function formatWage(wage: number | null): string {
-		if (wage === null) return '';
-		if (wage >= 100_000) return `£${Math.round(wage / 1000)}K`;
-		if (wage >= 1_000) return `£${(wage / 1000).toFixed(1).replace(/\.0$/, '')}K`;
-		return `£${wage}`;
-	}
 </script>
 
 <!-- The row opens the detail panel, where the in-save shortlist actions live. -->
@@ -76,6 +72,16 @@
 		{potential ?? ''}
 	</td>
 	<td class="tabular pr-4 text-sm text-[var(--color-mist)]">{room === null ? '' : `+${room}`}</td>
+	{#if showReputation}
+		<td
+			class="tabular pr-4 text-sm text-[var(--color-mist)]"
+			title={player.staff
+				? `Home ${player.staff.homeReputation} · current ${player.staff.currentReputation} · world ${player.staff.worldReputation}`
+				: ''}
+		>
+			{player.staff?.worldReputation ?? ''}
+		</td>
+	{/if}
 	{#if score !== undefined}
 		<td class="tabular pr-4 text-sm text-[var(--color-bright)]">{score ?? ''}</td>
 	{/if}

@@ -1,8 +1,18 @@
 <script lang="ts">
 	import { scout } from '$lib/classes/Scout.svelte';
+	import { formatBill } from '$lib/utils/money';
 
 	const total = $derived(scout.matchingClubs().length);
 	const rows = $derived(scout.visibleClubs());
+
+	/** What a club's wage bill is missing, said out loud on hover. The sum is
+	 * only the wages that decoded, so a club with players the parser could not
+	 * read a contract for has a floor, not a bill. */
+	function billTitle(known: number, squad: number): string {
+		if (squad === 0) return '';
+		if (known >= squad) return `All ${squad} squad wages decoded. Staff wages are not decoded at all.`;
+		return `${known} of ${squad} squad wages decoded — this is a floor, not the club's outgoings. Staff wages are not decoded at all.`;
+	}
 </script>
 
 <div class="flex min-h-0 flex-1 flex-col">
@@ -22,7 +32,25 @@
 							Avg CA{scout.clubSort === 'strength' ? ' ↓' : ''}
 						</button>
 					</th>
-					<th class="w-20 pr-3 pb-2 text-right"><span class="eyebrow">Avg PA</span></th>
+					<th class="w-20 pr-4 pb-2 text-right"><span class="eyebrow">Avg PA</span></th>
+					<th class="w-20 pr-4 pb-2 text-right">
+						<button
+							class="eyebrow hover:text-[var(--color-mist)]"
+							title="Mean age of the squad players whose birth date decoded, on the save's own date. Sorts youngest first — the end of the column worth looking at. Staff are not in it."
+							onclick={() => (scout.clubSort = 'age')}
+						>
+							Avg age{scout.clubSort === 'age' ? ' ↑' : ''}
+						</button>
+					</th>
+					<th class="w-24 pr-3 pb-2 text-right">
+						<button
+							class="eyebrow hover:text-[var(--color-mist)]"
+							title="Weekly wage bill: the sum of the squad wages that decoded. Hover a club to see how many of its squad that covers — staff wages aren't decoded at all, so this is the playing bill."
+							onclick={() => (scout.clubSort = 'wages')}
+						>
+							Wages/w{scout.clubSort === 'wages' ? ' ↓' : ''}
+						</button>
+					</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -40,8 +68,17 @@
 						<td class="tabular pr-4 text-right text-sm text-[var(--color-bright)]">
 							{club.average_ability ?? ''}
 						</td>
-						<td class="tabular pr-3 text-right text-sm text-[var(--color-signal)]">
+						<td class="tabular pr-4 text-right text-sm text-[var(--color-signal)]">
 							{club.average_potential ?? ''}
+						</td>
+						<td class="tabular pr-4 text-right text-sm text-[var(--color-mist)]">
+							{club.average_age ?? ''}
+						</td>
+						<td
+							class="tabular pr-3 text-right text-sm text-[var(--color-mist)]"
+							title={billTitle(club.wages_known, club.squad_size)}
+						>
+							{formatBill(club.wage_bill)}
 						</td>
 					</tr>
 				{/each}

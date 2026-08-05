@@ -99,6 +99,15 @@ export type Club = {
 	average_ability: number | null;
 	/** Mean Potential Ability across the squad. */
 	average_potential: number | null;
+	/** Mean age of the squad players whose birth date decoded, to one decimal.
+	 * Null when none did — an unknown age never enters the mean. */
+	average_age: number | null;
+	/** Weekly wage bill: the sum of the squad wages that decoded. Null when
+	 * none did. Only a floor whenever `wages_known` is below `squad_size`. */
+	wage_bill: number | null;
+	/** How many of the squad had a decoded wage, so the bill can say what it
+	 * is missing rather than reading as a complete total. */
+	wages_known: number;
 };
 
 /** A shortlist as FM stores it inside the save, members already resolved to
@@ -107,6 +116,9 @@ export type GameShortlist = {
 	/** The name given in FM; null for the unnamed default list. */
 	name: string | null;
 	players: string[];
+	/** The same members as entity ids, in the same order — what the "only this
+	 * shortlist" filter keys on, because names collide and ids do not. */
+	player_eids: number[];
 };
 
 export type SaveSummary = {

@@ -197,6 +197,16 @@ pub struct ClubRow {
     pub average_ability: Option<u16>,
     /// Mean Potential Ability across the squad, rounded.
     pub average_potential: Option<u16>,
+    /// Mean age of the squad players whose birth date decoded, to one decimal
+    /// place. `None` when none did — an unknown age never enters the mean.
+    pub average_age: Option<f32>,
+    /// Weekly wage bill: the sum of the squad wages that decoded, in the
+    /// save's display currency. `None` when no squad wage decoded.
+    pub wage_bill: Option<u64>,
+    /// How many of the squad had a decoded wage. The bill is a floor, not a
+    /// total, whenever this is below `squad_size`, and the UI says so rather
+    /// than presenting a partial sum as the club's outgoings.
+    pub wages_known: usize,
 }
 
 /// An in-game shortlist, with entity ids resolved to the same names the
@@ -206,6 +216,10 @@ pub struct GameShortlistRow {
     /// The name the user gave it in FM; `None` for the unnamed default list.
     pub name: Option<String>,
     pub players: Vec<String>,
+    /// The same members as entity ids, in the same order — what the "show
+    /// only this shortlist" filter keys on. Names collide (a save holds
+    /// several Danny Wards); entity ids do not.
+    pub player_eids: Vec<u32>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -427,24 +441,22 @@ fn resolve_game_shortlists(save: &fm_save::Save) -> Vec<GameShortlistRow> {
         .collect();
     save.shortlists
         .iter()
-        .map(|s| GameShortlistRow {
-            name: s.name.clone(),
-            players: s
+        .map(|s| {
+            let resolved: Vec<(u32, String)> = s
                 .person_eids
                 .iter()
-                .filter_map(|eid| people_by_eid.get(eid).map(|&n| n.to_owned()))
-                .collect(),
+                .filter_map(|&eid| people_by_eid.get(&eid).map(|&n| (eid, n.to_owned())))
+                .collect();
+            GameShortlistRow {
+                name: s.name.clone(),
+                player_eids: resolved.iter().map(|(eid, _)| *eid).collect(),
+                players: resolved.into_iter().map(|(_, name)| name).collect(),
+            }
         })
         .filter(|s| s.name.is_some() || !s.players.is_empty())
         .collect()
 }
 
-/// Totals the ability of every player each club fields, as
-/// `(current, potential, count)` by club entity id.
-///
-/// Squad strength is the closest thing to a league level while competitions are
-/// undecoded: a club is as strong as the players it fields. Staff carry no
-/// ability and so do not count towards the squad.
 /// One table row for a parsed person, aged against the save's own date.
 fn person_row(
     p: &fm_save::Person,
@@ -555,17 +567,69 @@ fn stub_rows(
         .collect()
 }
 
-fn squad_strength(save: &fm_save::Save) -> std::collections::HashMap<u32, (u32, u32, usize)> {
-    let mut strength: std::collections::HashMap<u32, (u32, u32, usize)> =
+/// What one club's squad adds up to, gathered in a single pass over the
+/// people. Every total carries its own count, because a field that only some
+/// of the squad have decoded — an age, a wage — must average over the ones it
+/// has rather than over the whole squad.
+#[derive(Debug, Clone, Copy, Default)]
+struct SquadTotals {
+    ability: u32,
+    potential: u32,
+    /// Players counted: everyone at this club with a decoded ability block.
+    players: usize,
+    age_years: u32,
+    aged: usize,
+    wages: u64,
+    waged: usize,
+}
+
+impl SquadTotals {
+    /// The mean of a total over its own count, rounded. `None` when nothing
+    /// was counted — an empty average is not zero.
+    fn mean(sum: u32, n: usize) -> Option<u16> {
+        (n > 0).then(|| u16::try_from(sum as usize / n).unwrap_or(u16::MAX))
+    }
+
+    /// Mean age to one decimal place. Ages are small integers and counts are
+    /// squad-sized, both exact in an f32, so the cast loses nothing.
+    #[allow(clippy::cast_precision_loss)]
+    fn average_age(self) -> Option<f32> {
+        (self.aged > 0).then(|| {
+            let mean = self.age_years as f32 / self.aged as f32;
+            (mean * 10.0).round() / 10.0
+        })
+    }
+}
+
+/// Totals every club's squad: ability, age and the wage bill.
+///
+/// Squad strength is the closest thing to a league level while competitions
+/// are undecoded: a club is as strong as the players it fields. Staff carry no
+/// ability block and so never count towards a squad — their wages are not
+/// decoded at all (`OPEN_PROBLEMS.md` §3c), which is the other reason a wage
+/// bill here is a playing bill.
+fn squad_strength(
+    save: &fm_save::Save,
+    now: fm_save::Date,
+) -> std::collections::HashMap<u32, SquadTotals> {
+    let mut strength: std::collections::HashMap<u32, SquadTotals> =
         std::collections::HashMap::new();
     for p in &save.people {
         let (Some(eid), Some(ability)) = (p.club_eid, p.ability.as_ref()) else {
             continue;
         };
         let entry = strength.entry(eid).or_default();
-        entry.0 += u32::from(ability.current);
-        entry.1 += u32::from(ability.potential);
-        entry.2 += 1;
+        entry.ability += u32::from(ability.current);
+        entry.potential += u32::from(ability.potential);
+        entry.players += 1;
+        if let Some(born) = p.date_of_birth {
+            entry.age_years += u32::from(born.age_on(now));
+            entry.aged += 1;
+        }
+        if let Some(wage) = p.wage {
+            entry.wages += u64::from(wage);
+            entry.waged += 1;
+        }
     }
     strength
 }
@@ -620,24 +684,26 @@ pub fn load_save(
         .collect();
     players.extend(stub_rows(&save, &club_names));
 
-    let strength = squad_strength(&save);
+    let strength = squad_strength(&save, now);
     let clubs = save
         .clubs
         .iter()
         .map(|c| {
             let totals = c.eid.and_then(|eid| strength.get(&eid)).copied();
-            let mean = |sum: u32, n: usize| -> Option<u16> {
-                (n > 0).then(|| u16::try_from(sum as usize / n).unwrap_or(u16::MAX))
-            };
             ClubRow {
                 id: c.offset,
                 name: c.name.clone(),
                 short_name: c.short_name.clone(),
                 club_id: c.club_id,
                 nation_id: c.nation_id,
-                squad_size: totals.map_or(0, |t| t.2),
-                average_ability: totals.and_then(|t| mean(t.0, t.2)),
-                average_potential: totals.and_then(|t| mean(t.1, t.2)),
+                squad_size: totals.map_or(0, |t| t.players),
+                average_ability: totals.and_then(|t| SquadTotals::mean(t.ability, t.players)),
+                average_potential: totals.and_then(|t| SquadTotals::mean(t.potential, t.players)),
+                average_age: totals.and_then(SquadTotals::average_age),
+                // A wage bill of nothing is not a wage bill of zero: a club
+                // whose wages all failed to decode reports none at all.
+                wage_bill: totals.filter(|t| t.waged > 0).map(|t| t.wages),
+                wages_known: totals.map_or(0, |t| t.waged),
             }
         })
         .collect();

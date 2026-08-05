@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { staffAttributeNames, type StaffSheet } from '$lib/tauri/commands';
+	import { STAFF_COACHING_FROM } from '$lib/utils/attributes';
 
 	type Props = { sheet: StaffSheet };
 	const { sheet }: Props = $props();
@@ -15,9 +16,8 @@
 	const entries = $derived(sheet.attributes.map((value, index) => ({ index, value })));
 	// The editor's list turns from tendencies to coaching between Width and
 	// Coaching, which is also where the save changes storage scale.
-	const COACHING_FROM = 26;
-	const tendencies = $derived(entries.filter((e) => e.index < COACHING_FROM));
-	const coaching = $derived(entries.filter((e) => e.index >= COACHING_FROM));
+	const tendencies = $derived(entries.filter((e) => e.index < STAFF_COACHING_FROM));
+	const coaching = $derived(entries.filter((e) => e.index >= STAFF_COACHING_FROM));
 	/** The tendency half is stored raw 1-20 on a day-one save, but an aged
 	 * save moves it onto an internal scale nobody has decoded — Klopp reads
 	 * 98 where the editor caps at 20. A value past 20 proves the whole half

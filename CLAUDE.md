@@ -191,7 +191,42 @@ versatility measure, since the Versatility *attribute* is about how readily
 they learn a new role. **The compare board** (`CompareBoard.svelte`) puts up to
 four pinned players side by side over every named attribute; the leader mark
 inverts on Dirtiness and Injury Proneness and is withheld entirely when values
-tie or only one player has a decoded one.
+tie or only one player has a decoded one. **It reads staff sheets too** (5 Aug
+2026): a board of non-players compares the 52-item sheet in the editor's two
+halves, plus CA/PA and the world and current reputations, and withholds the
+tendency half when any sheet on the board has aged off the 1-20 scale. A board
+holding both kinds falls back to the figures both carry and says so — the two
+sheets do not line up index for index, and laying one's labels over the
+other's numbers would compare nothing (`utils/compare.ts`).
+
+**Everything already decoded is now reachable from the bar** (5 Aug 2026).
+Seven fills, all from data the parser had and only the panel showed:
+**world reputation** is a sortable Staff-kind column and a minimum bound (the
+reputation that decides who takes your call; home and current stay in the
+panel); **an in-save shortlist is a filter** — the row now ships
+`player_eids` beside the names, so "only this list" keys on entity ids rather
+than names that collide, and the sidebar's per-list Filter button turns a list
+built in FM into a search that can be sorted, scored and compared;
+**Professionalism and Ambition minimums** screen youth-development targets off
+the hidden run; **position ratings have tiers** — natural 15+ or can-cover
+10+, one control governing both the position select and the Covers count,
+reading the slot ordering out of the save's own `position_names`; the **club
+table carries average age and a weekly wage bill**, each computed over the
+squad players that decoded and each saying on hover how many that was, since a
+partial sum presented as a club's outgoings is an invented number; and
+**`auditBackroom`** reads a club's staff the way its staff screen does —
+manager seat, the three departments with mean non-player CA and best world
+reputation, and the empty or one-deep ones called out with the line named as
+Gilet's. The same work found `squadOf` folding a club's coaches into its
+squad — staff carry a club since the backroom binding, so a squad audit was
+averaging the ages of physios — and a journey test that had been asserting
+"people at Man City" is squad-sized (148 on a day-one save, and correct). The
+filter bar split to stay inside the 300-line rule — `FilterWho` is row one,
+and row two is `FilterBounds`, `FilterTraits` and `FilterActions` — and
+`hasAnyFilter` now compares the
+bar against `emptyFilters` field by field rather than through a hand-written
+list that was one edit behind every new filter. Tests run against
+`Career.fm`, or whatever `GILET_TEST_SAVE` names.
 
 **Staff attributes parse** (3 Aug 2026, `staff.rs`, `OPEN_PROBLEMS.md` §3b).
 `Person::staff` carries the sheet, its three reputations and the non-player

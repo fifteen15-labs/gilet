@@ -1,10 +1,32 @@
 import type { Club, Player } from '$lib/tauri/commands';
 import { SET_PIECES, setPieceIndex, VERSATILITY } from '$lib/utils/attributes';
 import { abilityOf, hasFlagData, headroom, potentialOf, riskCount } from '$lib/utils/flags';
-import { coverage } from '$lib/utils/positions';
+import { coverage, tierThreshold, type PositionTier } from '$lib/utils/positions';
 
-export type SortKey = 'name' | 'age' | 'ability' | 'potential' | 'score' | 'headroom';
+export type SortKey =
+	| 'name'
+	| 'age'
+	| 'ability'
+	| 'potential'
+	| 'score'
+	| 'headroom'
+	| 'reputation';
 export type SortDirection = 'asc' | 'desc';
+
+/**
+ * What `matches` needs that a row cannot carry on its own: the members of the
+ * shortlist being filtered to, and the save's own position slot ordering.
+ *
+ * Both are absent by default, and an absent one turns its filter off rather
+ * than matching nobody — a saved preset from a build that had neither must not
+ * silently empty the table.
+ */
+export type MatchContext = {
+	/** Entity ids on the shortlist named by `filters.shortlist`. */
+	shortlistEids?: ReadonlySet<number>;
+	/** Position code to slot index in `position_ratings`. */
+	positionSlots?: ReadonlyMap<string, number>;
+};
 
 export type Filters = {
 	query: string;
@@ -26,6 +48,14 @@ export type Filters = {
 	staffRole: 'any' | 'Manager' | 'Coaching' | 'Medical' | 'Recruitment';
 	/** Only players comfortable in this position, e.g. "ST". Null for any. */
 	position: string | null;
+	/** Which rating counts as playing there: `natural` (15+, their own
+	 * position) or `accomplished` (10+, can do a job). Governs the position
+	 * filter and the "covers N" count alike. Absent on presets saved before
+	 * tiers existed — treated as `natural`, which is what they meant. */
+	positionTier: PositionTier;
+	/** Only members of the in-save shortlist with this name; `''` is FM's
+	 * unnamed default list. Null for any. */
+	shortlist: string | null;
 	/** Only people of this nation, by identifier. Null for any. */
 	nationId: number | null;
 	/** Restrict by gender. 'all' keeps people whose gender is unknown too. */
@@ -58,6 +88,16 @@ export type Filters = {
 	setPiece: string | null;
 	/** Minimum value for the chosen set-piece skill, 1-20. */
 	minSetPiece: number | null;
+	/** Minimum worldwide reputation, 0-200, from the non-player sheet. World
+	 * reputation is the one that decides who will take your call, which is why
+	 * it is the one filtered on. Staff only — a player's reputation is not
+	 * decoded, so a player fails this bound rather than passing at zero. */
+	minReputation: number | null;
+	/** Minimum hidden Professionalism, 1-20 — the strongest single driver of a
+	 * young player reaching their potential. Null for any. */
+	minProfessionalism: number | null;
+	/** Minimum hidden Ambition, 1-20 — whether they want the step up. */
+	minAmbition: number | null;
 };
 
 export const emptyFilters: Filters = {
@@ -70,6 +110,8 @@ export const emptyFilters: Filters = {
 	kind: 'all',
 	staffRole: 'any',
 	position: null,
+	positionTier: 'natural',
+	shortlist: null,
 	nationId: null,
 	gender: 'all',
 	contract: 'any',
@@ -81,7 +123,10 @@ export const emptyFilters: Filters = {
 	minVersatility: null,
 	minPositions: null,
 	setPiece: null,
-	minSetPiece: null
+	minSetPiece: null,
+	minReputation: null,
+	minProfessionalism: null,
+	minAmbition: null
 };
 
 /**
@@ -99,8 +144,16 @@ export function normalise(value: string): string {
 export function matches(
 	player: Player,
 	filters: Filters,
-	scores: ReadonlyMap<number, number> = new Map()
+	scores: ReadonlyMap<number, number> = new Map(),
+	context: MatchContext = {}
 ): boolean {
+	// The shortlist filter is first because it is the cheapest and the most
+	// selective: a shortlist is tens of people out of fifty thousand. A preset
+	// saved before this filter existed carries no key at all, and undefined is
+	// not a shortlist named "" — it is no filter.
+	if ((filters.shortlist ?? null) !== null && context.shortlistEids !== undefined) {
+		if (player.eid === null || !context.shortlistEids.has(player.eid)) return false;
+	}
 	// An unscoreable player is not a low score, so a minimum excludes them
 	// rather than treating them as zero — the same rule the ability bounds use.
 	if (filters.minScore !== null) {
@@ -118,7 +171,20 @@ export function matches(
 		player.staff_role !== filters.staffRole
 	)
 		return false;
-	if (filters.position !== null && !player.positions.includes(filters.position)) return false;
+	// A natural is read off the backend's own naturals list; an accomplished
+	// one needs the slot rating, so it fails when the save's slot ordering was
+	// not supplied or the player carries no ratings — an unknown rating is not
+	// a passing one.
+	if (filters.position !== null) {
+		if ((filters.positionTier ?? 'natural') === 'accomplished') {
+			const slot = context.positionSlots?.get(filters.position);
+			if (slot === undefined) return false;
+			const rating = player.position_ratings[slot];
+			if (rating === undefined || rating < tierThreshold('accomplished')) return false;
+		} else if (!player.positions.includes(filters.position)) {
+			return false;
+		}
+	}
 	if (filters.nationId !== null && player.nation_id !== filters.nationId) return false;
 	// An unknown gender only passes 'all' — showing a woman under a "Men"
 	// filter is wrong, and this save simply cannot say.
@@ -173,10 +239,32 @@ export function matches(
 		if (value === undefined || value < filters.minVersatility) return false;
 	}
 	// Position ratings are absent for staff and stubs, and no ratings is not
-	// nought positions covered.
+	// nought positions covered. The tier decides what counts as covered: their
+	// own positions, or every one they could be asked to fill.
 	if (filters.minPositions !== null) {
-		const covered = coverage(player.position_ratings);
+		const covered = coverage(
+			player.position_ratings,
+			tierThreshold(filters.positionTier ?? 'natural')
+		);
 		if (covered === null || covered < filters.minPositions) return false;
+	}
+	// Reputation only exists on a non-player sheet, so a player fails the
+	// bound rather than passing at zero — the same rule the ability bounds use.
+	const minReputation = filters.minReputation ?? null;
+	if (minReputation !== null) {
+		const rep = player.staff?.worldReputation;
+		if (rep === undefined || rep < minReputation) return false;
+	}
+	// The hidden personality run is absent on staff, stubs and any record
+	// whose run did not decode. Missing is not low, and it is not high either.
+	const minProfessionalism = filters.minProfessionalism ?? null;
+	if (minProfessionalism !== null) {
+		if (player.professionalism === null || player.professionalism < minProfessionalism)
+			return false;
+	}
+	const minAmbition = filters.minAmbition ?? null;
+	if (minAmbition !== null) {
+		if (player.ambition === null || player.ambition < minAmbition) return false;
 	}
 	// Both halves have to be set for the filter to mean anything: a skill with
 	// no minimum is not a request, and a minimum with no skill has nothing to
@@ -261,7 +349,14 @@ export function describeFilters(filters: Filters, nationName?: string): string {
 	if (filters.contract === 'expiring') parts.push('Expiring contracts');
 	if (filters.risk === 'clean') parts.push('No red flags');
 	if (filters.risk === 'flagged') parts.push('Red flags');
-	if (filters.position !== null) parts.push(filters.position);
+	if (filters.shortlist !== null)
+		parts.push(`on ${filters.shortlist === '' ? '(unnamed)' : filters.shortlist}`);
+	if (filters.position !== null)
+		parts.push(
+			(filters.positionTier ?? 'natural') === 'accomplished'
+				? `${filters.position} (10+)`
+				: filters.position
+		);
 	if (filters.nationId !== null) parts.push(nationName ?? `nation ${filters.nationId}`);
 	if (filters.minScore !== null) parts.push(`score ${filters.minScore}+`);
 	if (filters.maxAge !== null) parts.push(`Under ${filters.maxAge}`);
@@ -272,13 +367,49 @@ export function describeFilters(filters: Filters, nationName?: string): string {
 	if (filters.minHeadroom !== null) parts.push(`+${filters.minHeadroom} to grow`);
 	if (filters.maxWage !== null) parts.push(`under £${filters.maxWage.toLocaleString()}/w`);
 	if (filters.minVersatility !== null) parts.push(`Versatility ${filters.minVersatility}+`);
-	if (filters.minPositions !== null) parts.push(`covers ${filters.minPositions}+`);
+	if (filters.minPositions !== null)
+		parts.push(
+			`covers ${filters.minPositions}+${
+				(filters.positionTier ?? 'natural') === 'accomplished' ? ' (10+)' : ''
+			}`
+		);
+	if (filters.minReputation !== null) parts.push(`world rep ${filters.minReputation}+`);
+	if (filters.minProfessionalism !== null)
+		parts.push(`Professionalism ${filters.minProfessionalism}+`);
+	if (filters.minAmbition !== null) parts.push(`Ambition ${filters.minAmbition}+`);
 	if (filters.setPiece !== null && filters.minSetPiece !== null) {
 		const skill = SET_PIECES.find((s) => s.key === filters.setPiece);
 		if (skill) parts.push(`${skill.label} ${filters.minSetPiece}+`);
 	}
 	if (filters.query.trim() !== '') parts.push(`"${filters.query.trim()}"`);
 	return parts.length > 0 ? parts.join(' · ') : 'All players';
+}
+
+/**
+ * Whether the bar is filtering anything at all — what the "save this filter"
+ * and "add these results" buttons are gated on.
+ *
+ * Compared against {@link emptyFilters} field by field rather than by a hand-
+ * written list of conditions: the list was one edit behind every new filter,
+ * and a filter missing from it left the buttons dead while the table was
+ * plainly narrowed.
+ */
+export function hasAnyFilter(filters: Filters): boolean {
+	const defaults = emptyFilters as unknown as Record<string, unknown>;
+	const current = filters as unknown as Record<string, unknown>;
+	for (const key of Object.keys(defaults)) {
+		// The cutoff is written alongside `contract`, never chosen on its own.
+		if (key === 'expiryCutoff') continue;
+		// A preset saved before a filter existed carries no key for it, which
+		// is the default rather than a difference from it.
+		const value = current[key] ?? defaults[key];
+		if (key === 'query') {
+			if (typeof value === 'string' && value.trim() !== '') return true;
+			continue;
+		}
+		if (value !== defaults[key]) return true;
+	}
+	return false;
 }
 
 /** True when ability data has been decoded for at least one player, which is
@@ -311,6 +442,9 @@ function value(player: Player, key: SortKey, scores: ReadonlyMap<number, number>
 	if (key === 'headroom') return headroom(player);
 	if (key === 'ability') return abilityOf(player);
 	if (key === 'potential') return potentialOf(player);
+	// Reputation lives on the non-player sheet only, so players sort last
+	// under it rather than sorting as a reputation of nothing.
+	if (key === 'reputation') return player.staff?.worldReputation ?? null;
 	if (key === 'name') return null;
 	return player[key];
 }
@@ -321,7 +455,7 @@ function value(player: Player, key: SortKey, scores: ReadonlyMap<number, number>
  * top of the table meaningful once abilities are decoded.
  */
 export function sortPlayers(
-	players: Player[],
+	players: readonly Player[],
 	key: SortKey,
 	direction: SortDirection,
 	scores: ReadonlyMap<number, number> = new Map()

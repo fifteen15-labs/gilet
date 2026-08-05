@@ -75,3 +75,29 @@ export function coverage(ratings: readonly number[], threshold = NATURAL): numbe
 	if (ratings.length === 0) return null;
 	return ratings.filter((r) => r >= threshold).length;
 }
+
+/**
+ * Which tier of a position rating a search is asking for. `natural` is the
+ * player's own position; `accomplished` is one they can be asked to fill —
+ * FM's own two readings, and the difference between "a DM" and "can do a job
+ * at DM".
+ */
+export type PositionTier = 'natural' | 'accomplished';
+
+/** The rating a tier requires. */
+export function tierThreshold(tier: PositionTier): number {
+	return tier === 'accomplished' ? ACCOMPLISHED : NATURAL;
+}
+
+/**
+ * Position code to slot index in `position_ratings`, built from the save's own
+ * `position_names` rather than a second copy of the list here — the same rule
+ * the pitch layout follows, so one list stays authoritative.
+ */
+export function positionSlots(names: readonly string[]): Map<string, number> {
+	const slots = new Map<string, number>();
+	names.forEach((name, index) => {
+		if (name !== '') slots.set(name, index);
+	});
+	return slots;
+}

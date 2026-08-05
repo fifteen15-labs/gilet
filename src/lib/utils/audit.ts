@@ -9,7 +9,7 @@
  * they do not have.
  */
 import type { Club, Player } from '$lib/tauri/commands';
-import { headroom, riskCount } from '$lib/utils/flags';
+import { abilityOf, headroom, riskCount } from '$lib/utils/flags';
 import { POSITIONS } from '$lib/utils/positions';
 
 export type AgeBands = {
@@ -50,9 +50,18 @@ export type SquadAudit = {
 /** The squad as the loaded people describe it. Clubs are matched on short name
  * because that is the link the person records carry; two clubs sharing one
  * short name would pool, which is why the count is shown against the club's
- * own squad size rather than presented as gospel. */
+ * own squad size rather than presented as gospel.
+ *
+ * Staff are bound to their club too (`backroom.rs`), so the squad is the
+ * playing side only — a club's coaches are not part of its age profile. */
 export function squadOf(club: Club, players: readonly Player[]): Player[] {
-	return players.filter((p) => p.club === club.short_name);
+	return players.filter((p) => p.club === club.short_name && p.is_player);
+}
+
+/** The people the save employs at this club who are not players: the manager
+ * from the roster seat, and the three department lists. */
+export function backroomOf(club: Club, players: readonly Player[]): Player[] {
+	return players.filter((p) => p.club === club.short_name && !p.is_player);
 }
 
 /** Mean of the values that exist, rounded to one place. Null when there are
@@ -122,5 +131,85 @@ export function auditSquad(
 		flagged,
 		positions,
 		gaps: positions.filter((p) => p.count === 0).map((p) => p.code)
+	};
+}
+
+/**
+ * The three department lists the club record carries, in the save's own order.
+ * The manager sits outside them, in the roster table's own seat.
+ */
+export const DEPARTMENTS = ['Coaching', 'Medical', 'Recruitment'] as const;
+
+export type Department = (typeof DEPARTMENTS)[number];
+
+export type DepartmentCount = {
+	role: Department;
+	count: number;
+	/** Mean non-player Current Ability across the department, rounded. Null
+	 * when nobody in it has one decoded. */
+	averageAbility: number | null;
+	/** The strongest world reputation in the department — the name that opens
+	 * doors. Null when no sheet in it decoded one. */
+	topReputation: number | null;
+};
+
+export type BackroomAudit = {
+	/** Non-players bound to this club, however they were bound. */
+	counted: number;
+	/** The manager from the roster seat, when the club has one. */
+	manager: Player | null;
+	departments: DepartmentCount[];
+	/** Staff at the club the save gives no department for. They are employed —
+	 * they are simply not in one of the three lists, so they are reported
+	 * separately rather than counted into a department they may not be in. */
+	unassigned: number;
+	/** Departments with nobody at all. */
+	gaps: string[];
+	/** Departments with exactly one person. The line is Gilet's, not FM's: one
+	 * physio is a department that stops working the week they are ill. */
+	thin: string[];
+};
+
+/** Mean of the values that exist, to the nearest whole number. */
+function meanRounded(values: number[]): number | null {
+	if (values.length === 0) return null;
+	return Math.round(values.reduce((sum, v) => sum + v, 0) / values.length);
+}
+
+/**
+ * A club's backroom, read the way the staff screen reads it: who is in each
+ * department, how strong they are, and where there is nobody.
+ *
+ * Only what the save says. Staff bound to the club with no department land in
+ * `unassigned` rather than being distributed across the three, and a
+ * department whose members all lack a decoded sheet reports no average rather
+ * than an average of nothing.
+ */
+export function auditBackroom(club: Club, players: readonly Player[]): BackroomAudit {
+	const staff = backroomOf(club, players);
+
+	const departments = DEPARTMENTS.map((role) => {
+		const members = staff.filter((p) => p.staff_role === role);
+		return {
+			role,
+			count: members.length,
+			averageAbility: meanRounded(
+				members.map(abilityOf).filter((v): v is number => v !== null)
+			),
+			topReputation: members.reduce<number | null>((best, p) => {
+				const rep = p.staff?.worldReputation;
+				if (rep === undefined) return best;
+				return best === null || rep > best ? rep : best;
+			}, null)
+		};
+	});
+
+	return {
+		counted: staff.length,
+		manager: staff.find((p) => p.staff_role === 'Manager') ?? null,
+		departments,
+		unassigned: staff.filter((p) => p.staff_role === null).length,
+		gaps: departments.filter((d) => d.count === 0).map((d) => d.role),
+		thin: departments.filter((d) => d.count === 1).map((d) => d.role)
 	};
 }

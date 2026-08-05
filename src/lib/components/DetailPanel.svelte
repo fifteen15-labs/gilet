@@ -1,11 +1,13 @@
 <script lang="ts">
 	import AbilityBar from './AbilityBar.svelte';
 	import AttributeGrid from './AttributeGrid.svelte';
+	import BackroomAudit from './BackroomAudit.svelte';
 	import StaffGrid from './StaffGrid.svelte';
 	import PositionStrip from './PositionStrip.svelte';
 	import SquadAudit from './SquadAudit.svelte';
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { flagsFor, hasFlagData, headroom } from '$lib/utils/flags';
+	import { formatBill } from '$lib/utils/money';
 
 	const player = $derived(scout.selectedPlayer);
 	const room = $derived(player ? headroom(player) : null);
@@ -277,6 +279,25 @@
 								<span class="text-[var(--color-signal)]">{club.average_potential ?? '—'}</span>
 							</dd>
 						</div>
+						<div>
+							<dt class="eyebrow" title="Mean age of the squad players whose birth date decoded">
+								Average age
+							</dt>
+							<dd class="tabular text-sm text-[var(--color-bright)]">{club.average_age ?? '—'}</dd>
+						</div>
+						<div>
+							<dt
+								class="eyebrow"
+								title={club.wages_known < club.squad_size
+									? `${club.wages_known} of ${club.squad_size} squad wages decoded — a floor, not the club's outgoings. Staff wages are not decoded at all.`
+									: 'Every squad wage decoded. Staff wages are not decoded at all, so this is the playing bill.'}
+							>
+								Wage bill
+							</dt>
+							<dd class="tabular text-sm text-[var(--color-bright)]">
+								{formatBill(club.wage_bill, '—')}{club.wage_bill === null ? '' : '/w'}
+							</dd>
+						</div>
 					{/if}
 				</dl>
 				<button
@@ -288,6 +309,7 @@
 					Show squad
 				</button>
 				<SquadAudit {club} />
+				<BackroomAudit {club} />
 			{/if}
 		</div>
 	</aside>

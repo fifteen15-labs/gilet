@@ -9,7 +9,15 @@
 
 use gilet_lib::commands;
 
+/// The save these journeys run against: `Career.fm` in FM's own games folder,
+/// or whatever `GILET_TEST_SAVE` points at. The override is how a machine
+/// whose reference save is named something else — or is a career several
+/// seasons in — still runs the suite rather than skipping it silently.
 fn save_path() -> Option<std::path::PathBuf> {
+    if let Some(named) = std::env::var_os("GILET_TEST_SAVE") {
+        let p = std::path::PathBuf::from(named);
+        return p.exists().then_some(p);
+    }
     let home = std::env::var_os("HOME")?;
     let p = std::path::PathBuf::from(home)
         .join("Library/Application Support/Sports Interactive/Football Manager 26/games/Career.fm");
@@ -256,11 +264,25 @@ fn links_players_to_their_clubs() {
     // A club filter needs squads to be squad-sized, not empty or thousands.
     // "Man City" covers two club entities — the men's squad of 33 and the
     // women's of 20, separate clubs in FM's database sharing a short name.
-    let city_count = summary.players.iter().filter(|p| p.club == "Man City").count();
+    //
+    // Players only: the backroom binds to its club too, so the people at a
+    // club are its squad *and* its staff, and folding the two together is what
+    // would make a squad look three times the size it is.
+    let city_squad = summary
+        .players
+        .iter()
+        .filter(|p| p.club == "Man City" && p.is_player)
+        .count();
     assert!(
-        (15..=70).contains(&city_count),
-        "City's squads should be squad-sized, got {city_count}"
+        (15..=70).contains(&city_squad),
+        "City's squads should be squad-sized, got {city_squad}"
     );
+    let city_staff = summary
+        .players
+        .iter()
+        .filter(|p| p.club == "Man City" && !p.is_player)
+        .count();
+    assert!(city_staff > 0, "City should employ backroom staff");
 
     // Most people in a database this size are unattached — retired legends,
     // newgens not yet placed, national staff. Attached people are a minority.
@@ -371,5 +393,71 @@ fn club_squad_strength_ranks_the_divisions_correctly() {
             panic!("{} has a squad but no averages", c.name);
         };
         assert!(pa >= ca, "{}: average PA {pa} below CA {ca}", c.name);
+    }
+}
+
+#[test]
+fn club_rows_carry_an_age_and_a_wage_bill() {
+    let summary = save_or_skip!();
+
+    let club = |name: &str| -> &commands::ClubRow {
+        summary
+            .clubs
+            .iter()
+            .find(|c| c.name == name)
+            .unwrap_or_else(|| panic!("{name} should be in the database"))
+    };
+
+    // A first-team squad's mean age sits inside the range a squad can be: a
+    // figure outside it would mean staff or undated people are being folded in.
+    let city = club("Manchester City");
+    let age = city.average_age.expect("City should have a mean age");
+    assert!((18.0..=32.0).contains(&age), "City mean age {age}");
+
+    // The wage bill is the sum of the wages that decoded, so it is only ever a
+    // floor — but a Premier League club's floor still has to dwarf a League Two
+    // club's, and every counted wage has to belong to a counted player.
+    let city_bill = city.wage_bill.expect("City should have a wage bill");
+    let lower = club("Accrington Stanley");
+    let lower_bill = lower.wage_bill.expect("Accrington should have a wage bill");
+    assert!(city_bill > lower_bill * 5, "City {city_bill} vs Accrington {lower_bill}");
+
+    for c in summary.clubs.iter().filter(|c| c.squad_size > 0) {
+        assert!(
+            c.wages_known <= c.squad_size,
+            "{}: {} wages known across {} squad players",
+            c.name,
+            c.wages_known,
+            c.squad_size
+        );
+        // No wage decoded means no bill at all, never a bill of zero.
+        assert_eq!(c.wage_bill.is_some(), c.wages_known > 0, "{}", c.name);
+    }
+}
+
+#[test]
+fn in_save_shortlists_carry_the_entity_ids_of_their_members() {
+    let summary = save_or_skip!();
+
+    for list in &summary.game_shortlists {
+        assert_eq!(
+            list.players.len(),
+            list.player_eids.len(),
+            "{:?}: {} names against {} ids",
+            list.name,
+            list.players.len(),
+            list.player_eids.len()
+        );
+        // Each id has to be the id of the person named beside it: the filter
+        // that shows one shortlist keys on the id, and a mismatch there would
+        // quietly show the wrong squad.
+        for (eid, name) in list.player_eids.iter().zip(&list.players) {
+            let person = summary
+                .players
+                .iter()
+                .find(|p| p.eid == Some(*eid))
+                .unwrap_or_else(|| panic!("shortlist member {eid} should be a loaded person"));
+            assert_eq!(&person.name, name);
+        }
     }
 }

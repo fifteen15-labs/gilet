@@ -16,6 +16,12 @@
 				? 'Position'
 				: 'Position / Role'
 	);
+	/** Reputation is a non-player figure, so the column only earns its width
+	 * under the Staff kind — or while the table is sorted by it, since a sort
+	 * on a column nobody can see reads as no sort at all. */
+	const showReputation = $derived(
+		scout.filters.kind === 'staff' || scout.sortKey === 'reputation'
+	);
 </script>
 
 <div class="flex min-h-0 flex-1 flex-col">
@@ -64,6 +70,21 @@
 								: ''}
 						</button>
 					</th>
+					{#if showReputation}
+						<th class="w-16 pr-4 pb-2 text-left">
+							<button
+								class="eyebrow hover:text-[var(--color-mist)]"
+								title="Worldwide reputation, 0-200, straight from the non-player sheet — the one that decides who will take your call. Home and current reputation are in the detail panel."
+								onclick={() => scout.sortBy('reputation')}
+							>
+								Rep{scout.sortKey === 'reputation'
+									? scout.sortDirection === 'asc'
+										? ' ↑'
+										: ' ↓'
+									: ''}
+							</button>
+						</th>
+					{/if}
 					{#if profile}
 						<th class="w-16 pr-4 pb-2 text-left">
 							<button
@@ -89,7 +110,11 @@
 			</thead>
 			<tbody>
 				{#each rows as player (player.id)}
-					<PlayerRow {player} score={profile ? (scout.scores.get(player.id) ?? null) : undefined} />
+					<PlayerRow
+						{player}
+						{showReputation}
+						score={profile ? (scout.scores.get(player.id) ?? null) : undefined}
+					/>
 				{/each}
 			</tbody>
 		</table>
