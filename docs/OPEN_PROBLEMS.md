@@ -898,33 +898,46 @@ anything coaching-specific.
 
 ---
 
-## 3c. Staff employer — managers SOLVED, the rest of the backroom open
+## 3c. Staff employer — day-one SOLVED, aged saves partial
 
-**Managers bind to their clubs** (4 August 2026, `backroom.rs`,
+**Managers bind everywhere** (4 August 2026, `backroom.rs`,
 `SAVE_FORMAT.md` §6h): the per-club roster table's manager slot, validated
-against the club's doubled uid, names 1,646 managers on Day One and 1,441
-in a 2030 career — Slot/Arteta/Guardiola exact on day one, Iraola at
-Liverpool in the aged save, Klopp correctly unemployed there. The UI's club
-column fills for them through the ordinary `club_eid`.
+against the club's doubled uid — Slot/Arteta/Guardiola exact on day one,
+Iraola at Liverpool in a 2030 career, Klopp correctly unemployed there.
 
-The rest of the gap is still real:
+**The rest of the backroom binds on day-one saves** (5 August 2026): the
+club record's body carries count-prefixed ascending person-eid lists —
+FM's staff categories — found by sweeping Hulshoff's eid after every
+person-side and member-frame lead failed. Every member of every run
+checked was pure staff; with the four-in-five non-player gate, 6,653
+staff carry an employer on Day One (Hulshoff to Liverpool in the test).
 
-1. **Assistants, coaches, physios and scouts have no decoded employer.**
-   The roster entry's count-prefixed list turned out to be the club's
-   *player* registration list (Mac Allister, Szoboszlai, Alisson under
-   Liverpool), and the other header words resolve to implausible people
-   when read as person eids. The wider search history: no employer id
-   within ±768 bytes of a staff record (`staffclub`); `manager_manager.dat`
-   holds one odd record, not a registry; `hall_of_fame.dat` is an award
-   registry (Klopp reads Liverpool there while unemployed — 1,478 of its
-   1,487 entries join people by uid, useful someday, wrong for employment).
-2. **`bind_contracts` finds no wage for staff** — the eid-anchored wage row
-   players carry is absent or differently shaped before staff records.
+**Aged saves work too** (5 August 2026): staff turnover shuffles the lists
+(like squad lists) and the growing record pushes them deeper — 18KB past
+the head in a 2031 career against 6KB on day one — so the scanner takes
+any in-range count-prefixed run inside the club span (cap 64KB) and the
+four-in-five gate carries acceptance. Verified name-by-name against the
+running career's own staff screen: Truck, Nicholas and Evans all read
+Port Talbot. 6,641 employed staff on that save. A hard-won method note:
+an earlier session concluded a shuffled list sat in the *wrong* club's
+span — that was an artifact of cross-referencing dumps taken minutes
+apart from a save FM was actively rewriting. Snapshot the file before
+comparing offsets.
 
-Next: the non-manager backroom likely hangs off the same roster entry's
-undecoded words, or a parallel table keyed the same way — diff a club's
-entry before and after hiring a scout, which one in-game save-reload would
-give. `job_centre.dat` (28 KB) is unexamined for vacancies.
+**Staff roles are the next open piece.** Ahead of each club's staff lists
+sit rows `01 [tag u8] [uid][uid]` — the staff again, by doubled uid,
+under small tags that look like a role enum. The 2031 career's staff
+screen gives (person, role) ground truth for a dozen people; mapping tag
+values to roles would give the UI a role column and a role filter.
+
+Dead ends recorded so nobody re-treads them: no employer id within ±768
+bytes of a staff record (`staffclub`); `manager_manager.dat` holds one odd
+record, not a registry; `hall_of_fame.dat` is an award registry (Klopp
+reads Liverpool there while unemployed); the roster entry's list is player
+registrations, and its other header words resolve to implausible people.
+
+**Staff wages remain unfound** — the eid-anchored wage row players carry
+is absent or differently shaped before staff records.
 
 ## 4. Contracts — wage and expiry solved, the rest of the block open
 

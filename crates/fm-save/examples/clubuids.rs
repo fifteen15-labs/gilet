@@ -14,7 +14,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let save = fm_save::Save::parse(&bytes)?;
     for c in &save.clubs {
         if let (Some(eid), Some(uid)) = (c.eid, c.uid) {
-            println!("{eid} {uid}");
+            println!("{:#x} {eid} {uid} {} / {}", c.offset, c.name, c.short_name);
         }
     }
     Ok(())

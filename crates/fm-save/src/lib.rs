@@ -182,7 +182,7 @@ impl Save {
                 squads = squad::scan_squads(&frame.data, &club_ids);
                 link_members(&mut people, &squads, &chain);
 
-                link_managers(&frame.data, &mut people, &club_ids);
+                link_backroom(&frame.data, &mut people, &clubs, &club_ids);
 
                 // Gender falls out of the squad structure: squads are
                 // single-gender and the female forename pool is the tail of
@@ -306,9 +306,15 @@ fn scout_man_frame(frames: &[Frame]) -> Option<&Frame> {
     (frame.data.len() as u64 == plain).then_some(frame)
 }
 
+/// Sets `Person::club_eid` for the backroom: managers from the roster
+/// table's slot, then the staff lists in each club record's body.
+fn link_backroom(frame: &[u8], people: &mut [Person], clubs: &[Club], club_ids: &[(u32, u32)]) {
+    link_managers(frame, people, club_ids);
+    link_staff(frame, people, clubs);
+}
+
 /// Sets `Person::club_eid` for managers, from the roster table's manager
-/// slot. Managers are never in the squad table, and the rest of the backroom
-/// has no decoded employer yet (`OPEN_PROBLEMS.md` §3c).
+/// slot. Managers are never in the squad table.
 fn link_managers(frame: &[u8], people: &mut [Person], club_ids: &[(u32, u32)]) {
     let mut by_eid: std::collections::HashMap<u32, usize> = people
         .iter()
@@ -319,6 +325,41 @@ fn link_managers(frame: &[u8], people: &mut [Person], club_ids: &[(u32, u32)]) {
         if let Some(person) = by_eid.remove(&m.manager_eid).and_then(|i| people.get_mut(i)) {
             if person.club_eid.is_none() {
                 person.club_eid = Some(m.club_eid);
+            }
+        }
+    }
+}
+
+/// Sets `Person::club_eid` for the rest of the backroom, from the staff
+/// lists inside each club record's body.
+///
+/// Each list is gated on its own members: at least four in five must
+/// resolve to non-player people, or the whole list is dropped — an
+/// ascending run of some other entity kind must not hand people a club.
+/// Individual members only bind when they are themselves non-players with
+/// no club yet, so a player eid colliding with a list never loses their
+/// squad club.
+fn link_staff(frame: &[u8], people: &mut [Person], clubs: &[Club]) {
+    let spans: Vec<(usize, u32)> = clubs.iter().filter_map(|c| Some((c.offset, c.eid?))).collect();
+    let by_eid: std::collections::HashMap<u32, usize> = people
+        .iter()
+        .enumerate()
+        .filter_map(|(i, p)| Some((p.eid?, i)))
+        .collect();
+    for list in backroom::scan_staff_lists(frame, &spans) {
+        let members: Vec<usize> = list.eids.iter().filter_map(|e| by_eid.get(e).copied()).collect();
+        let non_players = members
+            .iter()
+            .filter(|&&i| people.get(i).is_some_and(|p| p.ability.is_none()))
+            .count();
+        if non_players * 5 < list.eids.len() * 4 {
+            continue;
+        }
+        for i in members {
+            if let Some(person) = people.get_mut(i) {
+                if person.ability.is_none() && person.club_eid.is_none() {
+                    person.club_eid = Some(list.club_eid);
+                }
             }
         }
     }

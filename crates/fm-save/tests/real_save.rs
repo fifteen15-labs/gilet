@@ -638,13 +638,19 @@ fn managers_bind_to_their_clubs() {
     assert_eq!(employer("Mikel Arteta Amatriain"), Some(club_eid("Arsenal")));
     assert_eq!(employer("Josep Guardiola Sala"), Some(club_eid("Manchester City")));
 
+    // The rest of the backroom comes from the staff lists inside the club
+    // record body: Slot's assistant is in Liverpool's.
+    assert_eq!(employer("Sipke Hulshoff"), Some(club_eid("Liverpool")));
+
+    // Managers plus backroom staff, across the loaded world — 6,653 on this
+    // save — not a handful of big names.
     let employed_staff = save
         .people
         .iter()
         .filter(|p| p.staff.is_some() && p.ability.is_none() && p.club_eid.is_some())
         .count();
     assert!(
-        employed_staff > 1_000,
+        employed_staff > 6_000,
         "only {employed_staff} staff carry an employer"
     );
 }

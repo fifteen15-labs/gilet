@@ -143,10 +143,16 @@ numbers on such a sheet and staff scores skip those slots. **Managers carry thei
 2026, `backroom.rs`): the per-club roster table's manager slot — doubled
 club uid, manager eid two u32s past the FF run, FFFF when vacant — binds
 1,646 managers on a day-one save and survives ageing (Iraola at Liverpool
-in 2030, Klopp correctly unemployed; `SAVE_FORMAT.md` §6h). The rest of the
-backroom (assistants, physios, scouts) and staff wages stay undecoded —
-the roster entry's list is the club's *player* registration list, and
-`hall_of_fame.dat` is awards, not employment (`OPEN_PROBLEMS.md` §3c).
+in 2030, Klopp correctly unemployed; `SAVE_FORMAT.md` §6h). **The rest of
+the backroom binds too** (5 Aug 2026): count-prefixed staff lists in the
+club record's body — ascending and shallow on day one, shuffled and up to
+18KB deep on aged saves — gated four-in-five on members resolving to
+non-players. 6,653 employed staff on Day One (Hulshoff to Liverpool in
+the test), 6,641 on a 2031 career, verified against that career's own
+staff screen (Truck, Nicholas, Evans → Port Talbot). Method scar: never
+cross-reference offsets from two dumps of a save FM is actively
+rewriting — snapshot first. Staff wages stay undecoded; the role-enum
+rows beside the lists are the next piece (`OPEN_PROBLEMS.md` §3c).
 Stubs sort last under the name key: an empty name must not lead the
 alphabet. "Free agents" filters on having neither a contract nor a club: a
 missing club alone is a parser gap, not unemployment, and £0 at a club is a

@@ -1029,8 +1029,30 @@ to implausible people as a person eid (left undecoded); big clubs carry one
 extra word after the manager (637 on all 29 on day one) before the shared
 `00 FF FF FF FF` tail; and the count-prefixed list further in is the club's
 **player registration list** — Liverpool's reads Mac Allister, Szoboszlai,
-Alisson — which the squad table already covers. The backroom beyond the
-manager is still unlocated (`OPEN_PROBLEMS.md` §3c).
+Alisson — which the squad table already covers.
+
+**The rest of the backroom sits in the club record's own body** as several
+count-prefixed person-eid lists — FM's staff categories. Liverpool's
+day-one record holds runs of 20, 35 and 39, Hulshoff in the 35, the
+manager in none (he lives in the roster slot above); every member of every
+run checked was pure staff. Day-one lists are ascending and sit within
+6KB of the head; an aged career **shuffles them and pushes them deeper**
+as the record grows — a 2031 career's Port Talbot lists sit 18KB in,
+still inside the club's own span, verified name-by-name against the
+running career's staff screen (Truck, Nicholas, Evans). Order is
+therefore not part of the shape; acceptance is the count byte, in-range
+ids, and the caller's gate — four in five members must resolve to
+non-player people, which random bytes or a run of another entity kind
+cannot pass. `backroom::scan_staff_lists` reads them, `Save::parse`
+binds: 6,653 employed staff on a day-one save, 6,641 on the 2031 career.
+(A note for anyone re-deriving this: comparing offsets from two dumps of
+a save FM is actively rewriting produces phantom "wrong span" results —
+snapshot the file first.)
+
+Just ahead of the lists sit rows shaped `01 [tag u8] [uid u32][uid u32]`
+— the same staff referenced by doubled uid under small tag values. The
+tags look like a **role enum** (an in-game staff screen provides ground
+truth to map them); not yet decoded.
 
 ## 7. Prior art
 
