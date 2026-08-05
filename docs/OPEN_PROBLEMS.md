@@ -898,27 +898,33 @@ anything coaching-specific.
 
 ---
 
-## 3c. Staff employer and staff contracts — not located
+## 3c. Staff employer — managers SOLVED, the rest of the backroom open
 
-Staff rows show no club and no wage. Both gaps are real absences from the
-decoded structures, not display bugs:
+**Managers bind to their clubs** (4 August 2026, `backroom.rs`,
+`SAVE_FORMAT.md` §6h): the per-club roster table's manager slot, validated
+against the club's doubled uid, names 1,646 managers on Day One and 1,441
+in a 2030 career — Slot/Arteta/Guardiola exact on day one, Iraola at
+Liverpool in the aged save, Klopp correctly unemployed there. The UI's club
+column fills for them through the ordinary `club_eid`.
 
-1. **The squad table lists players only**, so the player club link never
-   covers staff.
-2. **The employer id is not near the staff record.** Probed 4 August 2026
-   (`staffclub` example) on Day One.fm with three known employments — Slot
-   at Liverpool, Arteta at Arsenal, Guardiola at Man City: neither the
-   club's eid nor its uid occurs anywhere within the person's record span
-   or the 768 bytes before it, for any of the three. Whatever links a staff
-   member to their club lives elsewhere — most likely a club-side staff
-   list (the club analogue of the squad table, possibly unmaterialised the
-   way out-of-league squads are), or another member frame.
-3. **`bind_contracts` finds no wage for staff** — the eid-anchored wage row
+The rest of the gap is still real:
+
+1. **Assistants, coaches, physios and scouts have no decoded employer.**
+   The roster entry's count-prefixed list turned out to be the club's
+   *player* registration list (Mac Allister, Szoboszlai, Alisson under
+   Liverpool), and the other header words resolve to implausible people
+   when read as person eids. The wider search history: no employer id
+   within ±768 bytes of a staff record (`staffclub`); `manager_manager.dat`
+   holds one odd record, not a registry; `hall_of_fame.dat` is an award
+   registry (Klopp reads Liverpool there while unemployed — 1,478 of its
+   1,487 entries join people by uid, useful someday, wrong for employment).
+2. **`bind_contracts` finds no wage for staff** — the eid-anchored wage row
    players carry is absent or differently shaped before staff records.
 
-Next: sweep the club record's neighbourhood for known staff eids (the
-reverse direction), and grep the member manifest for a contract- or
-staff-flavoured member the way `scout_man.dat` fell.
+Next: the non-manager backroom likely hangs off the same roster entry's
+undecoded words, or a parallel table keyed the same way — diff a club's
+entry before and after hiring a scout, which one in-game save-reload would
+give. `job_centre.dat` (28 KB) is unexamined for vacancies.
 
 ## 4. Contracts — wage and expiry solved, the rest of the block open
 

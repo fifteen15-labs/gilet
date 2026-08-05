@@ -139,10 +139,16 @@ physio legitimately outranks Klopp on raw CA — ranking coaches needs a staff
 profile, not the CA column — and **the tendency half of the sheet does not
 survive ageing** (Klopp reads 98 where the editor caps at 20; undecoded
 internal scale, `SAVE_FORMAT.md` §6g), so the panel shows no tendency
-numbers on such a sheet and staff scores skip those slots. Staff club and
-wage are genuinely not decoded — no employer id sits anywhere near the staff
-record (`OPEN_PROBLEMS.md` §3c). Stubs sort last under the name key: an
-empty name must not lead the alphabet. "Free agents" filters on having neither a contract nor a club: a
+numbers on such a sheet and staff scores skip those slots. **Managers carry their club** (4 Aug
+2026, `backroom.rs`): the per-club roster table's manager slot — doubled
+club uid, manager eid two u32s past the FF run, FFFF when vacant — binds
+1,646 managers on a day-one save and survives ageing (Iraola at Liverpool
+in 2030, Klopp correctly unemployed; `SAVE_FORMAT.md` §6h). The rest of the
+backroom (assistants, physios, scouts) and staff wages stay undecoded —
+the roster entry's list is the club's *player* registration list, and
+`hall_of_fame.dat` is awards, not employment (`OPEN_PROBLEMS.md` §3c).
+Stubs sort last under the name key: an empty name must not lead the
+alphabet. "Free agents" filters on having neither a contract nor a club: a
 missing club alone is a parser gap, not unemployment, and £0 at a club is a
 youth deal. Covered by integration tests in `src-tauri/tests/journeys.rs` and
 `crates/fm-save/tests/real_save.rs` that run against a real save (Liverpool's

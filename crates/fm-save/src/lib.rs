@@ -14,6 +14,7 @@
 
 pub mod ability;
 pub mod archive;
+pub mod backroom;
 pub mod club;
 pub mod container;
 pub mod date;
@@ -181,6 +182,8 @@ impl Save {
                 squads = squad::scan_squads(&frame.data, &club_ids);
                 link_members(&mut people, &squads, &chain);
 
+                link_managers(&frame.data, &mut people, &club_ids);
+
                 // Gender falls out of the squad structure: squads are
                 // single-gender and the female forename pool is the tail of
                 // the name table, so the split derives from the save itself.
@@ -301,6 +304,24 @@ fn scout_man_frame(frames: &[Frame]) -> Option<&Frame> {
     let frame = frames.get(index)?;
     let plain = members.get(index).map(|m| m.plain)?;
     (frame.data.len() as u64 == plain).then_some(frame)
+}
+
+/// Sets `Person::club_eid` for managers, from the roster table's manager
+/// slot. Managers are never in the squad table, and the rest of the backroom
+/// has no decoded employer yet (`OPEN_PROBLEMS.md` §3c).
+fn link_managers(frame: &[u8], people: &mut [Person], club_ids: &[(u32, u32)]) {
+    let mut by_eid: std::collections::HashMap<u32, usize> = people
+        .iter()
+        .enumerate()
+        .filter_map(|(i, p)| Some((p.eid?, i)))
+        .collect();
+    for m in backroom::scan_managers(frame, club_ids) {
+        if let Some(person) = by_eid.remove(&m.manager_eid).and_then(|i| people.get_mut(i)) {
+            if person.club_eid.is_none() {
+                person.club_eid = Some(m.club_eid);
+            }
+        }
+    }
 }
 
 fn link_members(people: &mut [Person], squads: &[squad::Squad], chain: &[person::Identity]) {

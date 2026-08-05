@@ -609,6 +609,46 @@ fn probe_save_survives_reassembly_and_a_shortlist_edit() {
     assert_eq!(wirtznew(&reparsed), wirtznew(&save));
 }
 
+/// The roster table's manager slot names each club's manager: on day one
+/// Slot manages Liverpool, Arteta Arsenal, Guardiola Manchester City — and
+/// the coverage is the loaded world's managed clubs (1,646 filled slots on
+/// this save), not a handful of big names.
+#[test]
+fn managers_bind_to_their_clubs() {
+    let Some(save) = load_named("Day One.fm") else {
+        eprintln!("skipping: no Day One.fm");
+        return;
+    };
+
+    let club_eid = |name: &str| -> u32 {
+        save.clubs
+            .iter()
+            .find(|c| c.name == name)
+            .and_then(|c| c.eid)
+            .unwrap_or_else(|| panic!("{name} should have an entity id"))
+    };
+    let employer = |name: &str| -> Option<u32> {
+        save.people
+            .iter()
+            .find(|p| p.full_name == name)
+            .unwrap_or_else(|| panic!("{name} is not in the save"))
+            .club_eid
+    };
+    assert_eq!(employer("Arend Martijn Slot"), Some(club_eid("Liverpool")));
+    assert_eq!(employer("Mikel Arteta Amatriain"), Some(club_eid("Arsenal")));
+    assert_eq!(employer("Josep Guardiola Sala"), Some(club_eid("Manchester City")));
+
+    let employed_staff = save
+        .people
+        .iter()
+        .filter(|p| p.staff.is_some() && p.ability.is_none() && p.club_eid.is_some())
+        .count();
+    assert!(
+        employed_staff > 1_000,
+        "only {employed_staff} staff carry an employer"
+    );
+}
+
 /// The non-player sheet reads back exactly what the pre-game editor shows.
 ///
 /// Both people are checked against their editor "All Attributes" page, and

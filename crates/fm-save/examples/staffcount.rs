@@ -29,12 +29,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .count();
     println!("{} people, {with} with a staff sheet ({pure_staff} pure staff)", save.people.len());
     println!("{staff_no_sheet} non-players carry no sheet at all");
+    let employed = save
+        .people
+        .iter()
+        .filter(|p| p.staff.is_some() && p.ability.is_none() && p.club_eid.is_some())
+        .count();
+    println!("{employed} pure staff carry an employer");
 
+    let club_names: std::collections::HashMap<u32, &str> = save
+        .clubs
+        .iter()
+        .filter_map(|c| Some((c.eid?, c.short_name.as_str())))
+        .collect();
     for p in &save.people {
         let name = p.full_name.to_lowercase();
         if needles.iter().any(|n| name.contains(n.as_str())) {
+            let club = p
+                .club_eid
+                .and_then(|e| club_names.get(&e).copied())
+                .unwrap_or("-");
             println!(
-                "0x{:x}  eid={:?}  staff={}  ability={}  {}",
+                "0x{:x}  eid={:?}  staff={}  ability={}  club={club}  {}",
                 p.offset,
                 p.eid,
                 p.staff.is_some(),

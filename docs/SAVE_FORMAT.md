@@ -1004,6 +1004,34 @@ Verified in `real_save::staff_sheets_match_the_editor`: 34 values across
 Nikolić and Fradley, reputations included, every one exact — plus Slot's
 CA/PA and reputations from behind the headerless identity.
 
+## 6h. The roster table — one entry per club, manager slot SOLVED
+
+A dedicated table (~0x20d0000 region in the reference save, far from the
+club records) holds one entry per club in entry-entity order:
+
+```text
+[eid2 u32] [club uid u32] [club uid u32]  0a 00  [3 bytes] [u32] [u32]
+[FF FF FF FF] [u32] [manager eid u32 | FF FF FF FF]  ...
+[count u16] [player eid u32] × count  ...
+```
+
+`eid2` is the entry's own entity id (club eid + 131 on day one — a gap, not
+a law). The doubled uid is the club's, the same validation squad records
+offer. **The slot two u32s past the `FF` run is the club's manager**:
+Slot / Arteta / Guardiola exact on a day-one save, Iraola at Liverpool in a
+2030 career, `FF FF FF FF` when the seat is empty — 1,646 filled slots on
+day one against 17,207 vacant, and the four out-of-band values are noise
+the scanner rejects. `backroom::scan_managers` reads it; `Save::parse`
+binds each manager's `club_eid`.
+
+What the rest of the entry is **not**: the u32 before the manager resolves
+to implausible people as a person eid (left undecoded); big clubs carry one
+extra word after the manager (637 on all 29 on day one) before the shared
+`00 FF FF FF FF` tail; and the count-prefixed list further in is the club's
+**player registration list** — Liverpool's reads Mac Allister, Szoboszlai,
+Alisson — which the squad table already covers. The backroom beyond the
+manager is still unlocated (`OPEN_PROBLEMS.md` §3c).
+
 ## 7. Prior art
 
 FM Scouting Tool 26 (the Electron app on fmscout.com) does **not** parse saves.
