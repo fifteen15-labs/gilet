@@ -924,6 +924,21 @@ span — that was an artifact of cross-referencing dumps taken minutes
 apart from a save FM was actively rewriting. Snapshot the file before
 comparing offsets.
 
+**The two unnamed sheet slots (45, 46) stay unnamed — one hypothesis
+killed** (5 August 2026). An in-game staff report for Mats Hummels (slot
+45 = 14 against Authority "Good", 46 = 15 against Determination "Very
+Good") suggested Authority/Determination, but Nikolić's banked editor
+sheet kills 45 = Authority: his editor Authority is 17 and his slot 45
+reads 13. Slot 46 tracks Determination on all of Nikolić (13 vs 13),
+Fradley (14 vs 13) and Hummels — but index 13 already carries
+Determination, so 46 would be a duplicate copy; not named on one
+person's word-bands. Side-finding worth keeping: **index 13
+(Determination) stores ×5 even inside the tendency half, even on day
+one** — Nikolić 68 ≈ 13.6×5 against editor 13, Fradley 63 ≈ 12.6×5
+against 13, exactly the "CA-weighted attributes store fine-grained"
+rule; the sheet display shows it raw, so it reads as an off-scale
+tendency when it is really Determination×5.
+
 **Coarse roles are SOLVED** (5 August 2026): the three lists are a
 back-to-back department triple in fixed order — medical, coaching,
 recruitment — verified member-by-member against the 2031 career's staff

@@ -6,6 +6,16 @@
 	const profile = $derived(profiles.active);
 	const total = $derived(scout.results.length);
 	const rows = $derived(scout.visibleResults);
+	/** The shared column carries positions for players and the backroom role
+	 * for staff; the header follows the kind filter so it names what the
+	 * rows actually show. */
+	const positionHeader = $derived(
+		scout.filters.kind === 'staff'
+			? 'Role'
+			: scout.filters.kind === 'players'
+				? 'Position'
+				: 'Position / Role'
+	);
 </script>
 
 <div class="flex min-h-0 flex-1 flex-col">
@@ -21,7 +31,7 @@
 					<th class="w-28 pr-4 pb-2 text-left"><span class="eyebrow">Club</span></th>
 					<th class="w-32 pr-4 pb-2 text-left"
 						><span class="eyebrow" title="Positions for players; the backroom role for staff"
-							>Position / Role</span
+							>{positionHeader}</span
 						></th
 					>
 					<th class="w-20 pr-4 pb-2 text-left"><span class="eyebrow">Nation</span></th>
