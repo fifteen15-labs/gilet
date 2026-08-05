@@ -81,6 +81,10 @@ export type Player = {
 	/** True for a stub — a non-contract squad filler the save stores without a
 	 * person record. Name, age and attributes are undecoded, not absent. */
 	stub: boolean;
+	/** The person's decoded place in a club's backroom: "Manager",
+	 * "Coaching", "Medical" or "Recruitment". Null for players, the
+	 * unemployed, and staff the save gives no department for. */
+	staff_role: string | null;
 };
 
 export type Club = {

@@ -48,7 +48,11 @@
 		{/if}
 	</td>
 	<td class="pr-4 text-xs text-[var(--color-mist)]">{player.club}</td>
-	<td class="pr-4 text-xs text-[var(--color-mist)]">{player.positions.slice(0, 3).join(', ')}</td>
+	<td class="pr-4 text-xs text-[var(--color-mist)]">
+		{player.positions.length > 0
+			? player.positions.slice(0, 3).join(', ')
+			: (player.staff_role ?? '')}
+	</td>
 	<td
 		class="pr-4 text-xs text-[var(--color-faint)]"
 		title={player.nation_id === null ? '' : `Nation ${player.nation_id}`}

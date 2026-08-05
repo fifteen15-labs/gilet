@@ -2,7 +2,7 @@
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { savedFilters } from '$lib/classes/SavedFilters.svelte';
 	import { profiles } from '$lib/classes/Profiles.svelte';
-	import { describeFilters, hasAbilityData, nationsIn } from '$lib/utils/filter';
+	import { describeFilters, hasAbilityData, nationsIn, type Filters } from '$lib/utils/filter';
 	import { hasFlagData } from '$lib/utils/flags';
 	import { SET_PIECES } from '$lib/utils/attributes';
 	import { POSITIONS } from '$lib/utils/positions';
@@ -31,6 +31,10 @@
 		await scout.addResultsToGameShortlist(target);
 	}
 
+	function setStaffRole(value: string) {
+		scout.filters.staffRole = value as Filters['staffRole'];
+	}
+
 	const abilityKnown = $derived(hasAbilityData(scout.players));
 	/** The flag rules read hidden attributes and the personality run; without
 	 * either there is nothing to flag, so the toggles hide rather than filter
@@ -57,6 +61,7 @@
 			scout.filters.minPotential !== null ||
 			scout.filters.maxPotential !== null ||
 			scout.filters.kind !== 'all' ||
+			scout.filters.staffRole !== 'any' ||
 			scout.filters.position !== null ||
 			scout.filters.nationId !== null ||
 			scout.filters.minScore !== null ||
@@ -120,6 +125,23 @@
 				</button>
 			{/each}
 		</div>
+
+		{#if scout.filters.kind === 'staff'}
+			<select
+				value={scout.filters.staffRole}
+				aria-label="Backroom role"
+				title="The save's own backroom groups: the manager seat, or the coaching, medical and recruitment department lists. Staff the save gives no department for only show under Any role."
+				class="rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+					text-[var(--color-mist)] focus:border-[var(--color-hivis)] focus:outline-none"
+				onchange={(event) => setStaffRole(event.currentTarget.value)}
+			>
+				<option value="any">Any role</option>
+				<option value="Manager">Manager</option>
+				<option value="Coaching">Coaching</option>
+				<option value="Medical">Medical</option>
+				<option value="Recruitment">Recruitment</option>
+			</select>
+		{/if}
 
 		{#if genderKnown}
 			<div class="flex items-center gap-1">

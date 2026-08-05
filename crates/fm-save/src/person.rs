@@ -64,6 +64,11 @@ pub struct Person {
     /// `full_name`, `eid` and `uid` are real. Everything else is genuinely
     /// absent from the save, not undecoded.
     pub compact: bool,
+    /// The person's decoded place in a club's backroom — the manager seat,
+    /// or the department whose staff list names them. `None` for players,
+    /// the unemployed, and anyone bound through a list outside the
+    /// department triple.
+    pub staff_role: Option<crate::backroom::Role>,
 }
 
 impl Person {
@@ -423,6 +428,7 @@ fn parse_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<(Person, u
             ability: None,
             staff: None,
             compact: false,
+            staff_role: None,
         },
         body + 4,
     ))
@@ -539,6 +545,7 @@ fn compact_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<Person> 
         ability: None,
         staff: None,
         compact: true,
+        staff_role: None,
     })
 }
 

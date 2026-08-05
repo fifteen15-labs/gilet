@@ -109,6 +109,54 @@ const MAX_LIST: usize = 120;
 /// within 6KB.
 const MAX_SPAN: usize = 64 * 1024;
 
+/// The department a staff list covers — FM's own staff-screen tabs.
+///
+/// A club's lists come as three back-to-back runs in this order, verified
+/// member-by-member against a running career's staff screen: the medical
+/// run held exactly the physios, doctors and sports scientists, the
+/// coaching run the coaches, assistant managers, analysts and the head of
+/// youth development, the recruitment run the scouts, chief scout and
+/// technical director.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Department {
+    Medical,
+    Coaching,
+    Recruitment,
+}
+
+/// A person's decoded place in a club's backroom: the manager seat from
+/// the roster table, or the department whose staff list names them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Role {
+    Manager,
+    Coaching,
+    Medical,
+    Recruitment,
+}
+
+impl Role {
+    /// The label the UI shows.
+    #[must_use]
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Manager => "Manager",
+            Self::Coaching => "Coaching",
+            Self::Medical => "Medical",
+            Self::Recruitment => "Recruitment",
+        }
+    }
+}
+
+impl From<Department> for Role {
+    fn from(d: Department) -> Self {
+        match d {
+            Department::Medical => Self::Medical,
+            Department::Coaching => Self::Coaching,
+            Department::Recruitment => Self::Recruitment,
+        }
+    }
+}
+
 /// One staff list found inside a club record's body.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StaffList {
@@ -116,6 +164,10 @@ pub struct StaffList {
     pub offset: usize,
     /// The employing club's entity id.
     pub club_eid: u32,
+    /// The department, when this list is part of an exactly-three
+    /// back-to-back run. `None` for lists outside that shape — the club
+    /// link still holds, the department would be a guess.
+    pub department: Option<Department>,
     /// The members' person eids, ascending as stored.
     pub eids: Vec<u32>,
 }
@@ -148,22 +200,41 @@ pub fn scan_staff_lists(frame: &[u8], clubs: &[(usize, u32)]) -> Vec<StaffList> 
             .map_or(head.saturating_add(MAX_SPAN), |&(next, _)| next)
             .min(head.saturating_add(MAX_SPAN))
             .min(frame.len());
+        let mut chain: Vec<StaffList> = Vec::new();
         let mut at = head;
         while at < end.saturating_sub(4) {
             if let Some(eids) = read_list(frame, at, end) {
                 let len = eids.len();
-                out.push(StaffList {
+                chain.push(StaffList {
                     offset: at,
                     club_eid,
+                    department: None,
                     eids,
                 });
                 at += 1 + len * 4;
             } else {
+                flush_chain(&mut chain, &mut out);
                 at += 1;
             }
         }
+        flush_chain(&mut chain, &mut out);
     }
     out
+}
+
+/// Labels a back-to-back run of lists and moves it to the output. Exactly
+/// three adjacent lists are the department triple, in the order the save
+/// writes them; any other run length keeps `None` — the club link holds,
+/// the department would be a guess.
+fn flush_chain(chain: &mut Vec<StaffList>, out: &mut Vec<StaffList>) {
+    if chain.len() == 3 {
+        const ORDER: [Department; 3] =
+            [Department::Medical, Department::Coaching, Department::Recruitment];
+        for (list, department) in chain.iter_mut().zip(ORDER) {
+            list.department = Some(department);
+        }
+    }
+    out.append(chain);
 }
 
 /// Reads the count-prefixed run at `at`, staying inside `end`.
@@ -284,6 +355,37 @@ mod tests {
         // The only club starts after the run ends.
         let clubs = [(buf.len() - 8, 366u32)];
         assert!(scan_staff_lists(&buf, &clubs).is_empty());
+    }
+
+    #[test]
+    fn three_adjacent_lists_are_the_department_triple() {
+        // Port Talbot's real 2031 shape: medical, coaching and recruitment
+        // back to back, no separator bytes.
+        let mut buf = vec![0u8; 12];
+        buf.extend(list(5, &[37_567, 113_287, 41_145, 45_718, 13_044]));
+        buf.extend(list(5, &[28_786, 14_072, 25_096, 36_265, 11_312]));
+        buf.extend(list(5, &[10_584, 20_761, 10_542, 12_460, 136_574]));
+        let clubs = [(4usize, 3117u32)];
+        let found = scan_staff_lists(&buf, &clubs);
+        assert_eq!(found.len(), 3);
+        assert_eq!(
+            found.iter().map(|l| l.department).collect::<Vec<_>>(),
+            vec![
+                Some(Department::Medical),
+                Some(Department::Coaching),
+                Some(Department::Recruitment)
+            ]
+        );
+    }
+
+    #[test]
+    fn a_lone_list_gets_no_department() {
+        let mut buf = vec![0u8; 4];
+        buf.extend(list(5, &[126, 1432, 2003, 5837, 6753]));
+        let clubs = [(0usize, 366u32)];
+        let found = scan_staff_lists(&buf, &clubs);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found.first().unwrap().department, None);
     }
 
     #[test]

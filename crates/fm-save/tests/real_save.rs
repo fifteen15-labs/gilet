@@ -639,8 +639,17 @@ fn managers_bind_to_their_clubs() {
     assert_eq!(employer("Josep Guardiola Sala"), Some(club_eid("Manchester City")));
 
     // The rest of the backroom comes from the staff lists inside the club
-    // record body: Slot's assistant is in Liverpool's.
+    // record body: Slot's assistant is in Liverpool's coaching list, and the
+    // roster seat marks Slot himself as the manager.
     assert_eq!(employer("Sipke Hulshoff"), Some(club_eid("Liverpool")));
+    let role = |name: &str| {
+        save.people
+            .iter()
+            .find(|p| p.full_name == name)
+            .and_then(|p| p.staff_role)
+    };
+    assert_eq!(role("Arend Martijn Slot"), Some(fm_save::backroom::Role::Manager));
+    assert_eq!(role("Sipke Hulshoff"), Some(fm_save::backroom::Role::Coaching));
 
     // Managers plus backroom staff, across the loaded world — 6,653 on this
     // save — not a handful of big names.

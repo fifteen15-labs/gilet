@@ -151,8 +151,14 @@ non-players. 6,653 employed staff on Day One (Hulshoff to Liverpool in
 the test), 6,641 on a 2031 career, verified against that career's own
 staff screen (Truck, Nicholas, Evans → Port Talbot). Method scar: never
 cross-reference offsets from two dumps of a save FM is actively
-rewriting — snapshot first. Staff wages stay undecoded; the role-enum
-rows beside the lists are the next piece (`OPEN_PROBLEMS.md` §3c).
+rewriting — snapshot first. **The lists are a department triple** in
+fixed order — medical, coaching, recruitment, verified member-by-member
+against a running career's staff screen — so `Person::staff_role` names
+each employed staff member's department (or Manager, from the roster
+seat), the table's Position/Role column shows it, and the Staff kind
+gains a role filter. Fine-grained job words (head physio vs physio),
+the DOF and the chairperson stay undecoded; staff wages too
+(`OPEN_PROBLEMS.md` §3c).
 Stubs sort last under the name key: an empty name must not lead the
 alphabet. "Free agents" filters on having neither a contract nor a club: a
 missing club alone is a parser gap, not unemployment, and £0 at a club is a

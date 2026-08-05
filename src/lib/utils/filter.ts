@@ -21,6 +21,9 @@ export type Filters = {
 	maxPotential: number | null;
 	/** Restrict to players or to staff. Players are the ones with ability data. */
 	kind: 'all' | 'players' | 'staff';
+	/** Only staff in this backroom role — the manager seat or a department.
+	 * An unknown role fails the filter: the save not saying is not a match. */
+	staffRole: 'any' | 'Manager' | 'Coaching' | 'Medical' | 'Recruitment';
 	/** Only players comfortable in this position, e.g. "ST". Null for any. */
 	position: string | null;
 	/** Only people of this nation, by identifier. Null for any. */
@@ -65,6 +68,7 @@ export const emptyFilters: Filters = {
 	minPotential: null,
 	maxPotential: null,
 	kind: 'all',
+	staffRole: 'any',
 	position: null,
 	nationId: null,
 	gender: 'all',
@@ -105,6 +109,15 @@ export function matches(
 	}
 	if (filters.kind === 'players' && !player.is_player) return false;
 	if (filters.kind === 'staff' && player.is_player) return false;
+	// Role only bites under the Staff kind, and presets saved before roles
+	// existed carry no staffRole at all — absent means 'any', not a filter
+	// that matches nobody.
+	if (
+		filters.kind === 'staff' &&
+		(filters.staffRole ?? 'any') !== 'any' &&
+		player.staff_role !== filters.staffRole
+	)
+		return false;
 	if (filters.position !== null && !player.positions.includes(filters.position)) return false;
 	if (filters.nationId !== null && player.nation_id !== filters.nationId) return false;
 	// An unknown gender only passes 'all' — showing a woman under a "Men"
@@ -240,6 +253,8 @@ export function describeFilters(filters: Filters, nationName?: string): string {
 	const parts: string[] = [];
 	if (filters.kind === 'players') parts.push('Players');
 	if (filters.kind === 'staff') parts.push('Staff');
+	if (filters.kind === 'staff' && (filters.staffRole ?? 'any') !== 'any')
+		parts.push(filters.staffRole);
 	if (filters.gender === 'men') parts.push('Men');
 	if (filters.gender === 'women') parts.push('Women');
 	if (filters.contract === 'free') parts.push('Free agents');

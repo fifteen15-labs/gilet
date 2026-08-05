@@ -1049,10 +1049,21 @@ binds: 6,653 employed staff on a day-one save, 6,641 on the 2031 career.
 a save FM is actively rewriting produces phantom "wrong span" results —
 snapshot the file first.)
 
-Just ahead of the lists sit rows shaped `01 [tag u8] [uid u32][uid u32]`
-— the same staff referenced by doubled uid under small tag values. The
-tags look like a **role enum** (an in-game staff screen provides ground
-truth to map them); not yet decoded.
+**The lists come as a department triple.** A club's three lists are
+written back to back with no separator, in a fixed order: **medical,
+coaching, recruitment** — verified member-by-member against a running
+career's staff screen (the medical run held exactly the physios, doctors
+and sports scientists; coaching the coaches, assistant managers, fitness
+and GK coaches, analysts and the head of youth development; recruitment
+the scouts, chief scout and technical director). A second adjacent triple
+is the club's B or women's team. `backroom::Department` labels exactly-
+three adjacent runs; anything else keeps the club link with no
+department, and the roster seat marks the manager — together they give
+each employed staff member a `Person::staff_role`. The director of
+football and chairperson sit in none of the lists and stay unbound.
+
+Rows shaped `01 [tag u8] [uid u32][uid u32]` nearby resolve to no person
+(team-entity references, by the look of the ids); not person roles.
 
 ## 7. Prior art
 

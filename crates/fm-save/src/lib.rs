@@ -325,6 +325,7 @@ fn link_managers(frame: &[u8], people: &mut [Person], club_ids: &[(u32, u32)]) {
         if let Some(person) = by_eid.remove(&m.manager_eid).and_then(|i| people.get_mut(i)) {
             if person.club_eid.is_none() {
                 person.club_eid = Some(m.club_eid);
+                person.staff_role = Some(backroom::Role::Manager);
             }
         }
     }
@@ -359,6 +360,7 @@ fn link_staff(frame: &[u8], people: &mut [Person], clubs: &[Club]) {
             if let Some(person) = people.get_mut(i) {
                 if person.ability.is_none() && person.club_eid.is_none() {
                     person.club_eid = Some(list.club_eid);
+                    person.staff_role = list.department.map(backroom::Role::from);
                 }
             }
         }

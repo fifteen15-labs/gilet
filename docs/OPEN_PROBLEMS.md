@@ -924,11 +924,16 @@ span — that was an artifact of cross-referencing dumps taken minutes
 apart from a save FM was actively rewriting. Snapshot the file before
 comparing offsets.
 
-**Staff roles are the next open piece.** Ahead of each club's staff lists
-sit rows `01 [tag u8] [uid][uid]` — the staff again, by doubled uid,
-under small tags that look like a role enum. The 2031 career's staff
-screen gives (person, role) ground truth for a dozen people; mapping tag
-values to roles would give the UI a role column and a role filter.
+**Coarse roles are SOLVED** (5 August 2026): the three lists are a
+back-to-back department triple in fixed order — medical, coaching,
+recruitment — verified member-by-member against the 2031 career's staff
+screen, and the roster seat marks the manager. `Person::staff_role`
+carries it; the UI shows it in the Position/Role column and filters on
+it under the Staff kind. Not covered: the fine-grained job (a physio vs
+the head physio, a coach vs a set-piece coach) — FM stores the words
+somewhere still unfound — and the director of football and chairperson,
+who appear in none of the three lists. (The `01 [tag] [uid][uid]` rows
+nearby resolve to no person — team-entity references, not roles.)
 
 Dead ends recorded so nobody re-treads them: no employer id within ±768
 bytes of a staff record (`staffclub`); `manager_manager.dat` holds one odd

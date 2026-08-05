@@ -144,6 +144,11 @@ pub struct PlayerRow {
     /// a person record. Identity and club are known; name, age and attributes
     /// are not decoded, and the row says so rather than vanishing.
     pub stub: bool,
+    /// The person's decoded place in a club's backroom — "Manager" from the
+    /// roster table's seat, or "Coaching" / "Medical" / "Recruitment" from
+    /// the department staff lists. `None` for players, the unemployed, and
+    /// staff bound outside the department triple.
+    pub staff_role: Option<String>,
 }
 
 /// A person's non-player sheet, as `fm-save` decodes it.
@@ -495,6 +500,7 @@ fn person_row(
         temperament: p.temperament(),
         controversy: p.controversy(),
         stub: false,
+        staff_role: p.staff_role.map(|r| r.name().to_owned()),
     }
 }
 
@@ -543,6 +549,7 @@ fn stub_rows(
                 // A stub is a presence, not a person: no sheet to read.
                 staff: None,
                 stub: true,
+                staff_role: None,
             })
         })
         .collect()
