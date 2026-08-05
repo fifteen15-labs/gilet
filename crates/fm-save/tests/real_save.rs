@@ -5,13 +5,16 @@
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
-fn load_named(name: &str) -> Option<fm_save::Save> {
+fn read_named(name: &str) -> Option<Vec<u8>> {
     let home = std::env::var_os("HOME")?;
     let path = std::path::PathBuf::from(home)
         .join("Library/Application Support/Sports Interactive/Football Manager 26/games")
         .join(name);
-    let bytes = std::fs::read(path).ok()?;
-    Some(fm_save::Save::parse(&bytes).unwrap())
+    std::fs::read(path).ok()
+}
+
+fn load_named(name: &str) -> Option<fm_save::Save> {
+    Some(fm_save::Save::parse(&read_named(name)?).unwrap())
 }
 
 fn load() -> Option<fm_save::Save> {
@@ -781,4 +784,76 @@ fn staff_sheets_match_the_editor() {
     ] {
         assert_eq!(fradley.get(name), Some(expected), "Fradley {name}");
     }
+}
+
+/// The 26.0.0 regression, read straight from the frames — no person scan, so a
+/// 456 MB save costs a decompression rather than a parse.
+///
+/// The header's stamp is the real-world time the file was written, October
+/// 2025, when 26.0.0 was the shipping format. Reading it as the in-game date
+/// put every person in this save eight years short of their age: sixteen-
+/// year-old newgens showed as eight, and 49,161 of its people came out under
+/// fourteen. The in-game date is `game_db.dat`'s week stamp, on both format
+/// versions — and `game_db.dat` must come from the manifest, because on a
+/// career this long the match-history member is the larger frame.
+#[test]
+fn an_aged_2600_save_reads_its_date_from_the_database_not_the_wall_clock() {
+    let Some(bytes) = read_named("Adam Clouston.fm") else {
+        eprintln!("skipped: no Adam Clouston.fm on this machine");
+        return;
+    };
+    let frames = fm_save::container::read_frames(&bytes).expect("frames");
+    let header = frames.first().expect("header frame");
+    assert_eq!(fm_save::gamedate::format_version(&header.data), Some((26, 0)));
+
+    let members = fm_save::manifest::read_manifest(&frames.last().expect("manifest").data)
+        .expect("a manifest");
+    let index = fm_save::manifest::frame_index_of(&members, "game_db.dat").expect("game_db.dat");
+    let db = frames.get(index).expect("the database frame");
+    let biggest = frames.iter().map(|f| f.data.len()).max().unwrap_or(0);
+    assert!(
+        db.data.len() < biggest,
+        "the database is no longer the largest frame here — that is the whole point"
+    );
+
+    let date = fm_save::gamedate::find_main_frame_date(&db.data).expect("the week stamp");
+    assert_eq!((date.year, date.month), (2033, 7), "the save's own date");
+
+    let written = fm_save::gamedate::find_wall_clock_date(&header.data).expect("the header stamp");
+    assert_eq!((written.year, written.month), (2025, 10), "when the file was written");
+}
+
+/// Nobody in a football database is nine years old or a hundred and nine.
+///
+/// Both used to show, from records that were never people: three string ids
+/// that happen to resolve and four bytes that happen to decode as a date are
+/// weak enough that a frame this size supplies about a thousand of them. The
+/// nation field is the tell — FM's highest identifier is 249, and these read
+/// 1280, 8704, 45209.
+#[test]
+fn nobody_is_born_outside_a_footballing_lifetime() {
+    let Some(save) = load() else {
+        eprintln!("skipped: no Career.fm on this machine");
+        return;
+    };
+    let today = save.game_date.expect("the save's own date");
+
+    let odd: Vec<&fm_save::person::Person> = save
+        .people
+        .iter()
+        .filter(|p| !p.compact)
+        .filter(|p| p.date_of_birth.is_some_and(|d| !(14..=100).contains(&d.age_on(today))))
+        .collect();
+    assert!(
+        odd.len() < 10,
+        "{} people outside a footballing lifetime, e.g. {:?}",
+        odd.len(),
+        odd.first().map(|p| &p.full_name)
+    );
+
+    let highest = save.people.iter().filter_map(|p| p.nation_id).max();
+    assert!(
+        highest.is_some_and(|n| n <= 249),
+        "nation identifier past the end of FM's table: {highest:?}"
+    );
 }

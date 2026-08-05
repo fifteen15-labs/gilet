@@ -73,7 +73,13 @@ all eleven goalkeeping ones, both feet, and the five hidden ones (Dirtiness
 values matching his block one-for-one). The visible set was solved by
 intersecting five in-game player reports, then finished against published
 FM 26.2 database pages (fminside display×5 values — Donnarumma splits the
-last four keeper skills; `docs/SAVE_FORMAT.md` §6c). 75 nations are named from their squads. Aged saves parse:
+last four keeper skills; `docs/SAVE_FORMAT.md` §6c). **228 nations are
+named**, 150 from their squads and the other 78 from **club records, which
+store their names in the clear and use the same numbering** — "Ba FC, Labasa
+FC, Lautoka FC" is Fiji outright, where Fijian-sounding players only suggest
+it. That pass named the small federations squad-reading could never settle and
+corrected one it had got wrong (116 is Saint Vincent, not Cayman; Cayman is
+98). Three ids stay numeric because they name no country. Aged saves parse:
 attribute internals are 1-100 (only initialised to display×5) and squad
 lists shuffle after years of transfers, both handled and locked in by a
 test against a 2035 save. From a 44 MB save: 49,217 people, 18,663 clubs,
@@ -81,10 +87,17 @@ test against a 2035 save. From a 44 MB save: 49,217 people, 18,663 clubs,
 player row carries their club's short name. **Wages and contract expiry**
 parse from the block before each person record (Haaland £450K/30-6-2034
 exact vs FM Scout), shown as a table column and exported in CSV. **The
-in-game date reads on both format versions** — the 26.0.0 header pair, or on
-26.2.0 the main frame's week stamp with its day-of-year masked from the low
-nine bits, gated on the header's format-version string (`SAVE_FORMAT.md`
-§1c). The club record's pre-`FF FF` byte is per-club **flags**, not a
+in-game date is `game_db.dat`'s week stamp on both format versions**, its
+day-of-year masked from the low nine bits (`SAVE_FORMAT.md` §1c). The header
+pair it used to prefer is the **real-world time the file was written**: the
+26.2.0 careers here stamp 1-3 August 2026, their own file dates, while sitting
+in 2026, 2030, 2032 and 2035. It passed as the in-game date because the
+reference save was written weeks after the date it sat at, and the week stamp
+was gated to 26.2.0-only because the check masked the *largest* frame instead
+of `game_db.dat` — on a long career that is the match-history member, the same
+trap `main_frame` carries a note about. An eight-year 26.0.0 career showed it
+plainly: header October 2025, database July 2033, sixteen-year-old newgens
+reported as eight. The club record's pre-`FF FF` byte is per-club **flags**, not a
 constant signature — accepting all values when the entity head validates
 recovered Tottenham, Chelsea and ~1,050 other clubs plus their squads in a
 26.2.0 save. The club head's third nation u32 is **not a repeat**: it is the
@@ -310,9 +323,20 @@ or contract answers no scouting question and clogs the table (owner's call,
 4 Aug 2026); `commands.rs` filters `Person::compact` out of the row set, so
 they exist only in `Save::people` and the format docs.
 
-Not yet located: the full nation-name table, the last few attribute names,
-and the club link for players outside the loaded leagues (their squads are
-not materialised in the squad table, so they show no club).
+**A nation identifier past the end of the table means the bytes were not a
+person.** Three resolving string ids and a plausible date of birth is a weak
+enough test that a 350 MB frame invents about a thousand people per save —
+mashup names, no club, no entity id, ages of 9 and 109. FM's highest real
+identifier is 249, so a record whose nation reads above 512 is refused. A
+day-one save loses 1,043 records, none with a club, and five ability blocks go
+back to the real players they belonged to; an eight-year career loses 796 and
+its implausible ages fall from 690 to one. The survivor stays: a tighter bound
+would start costing real people, and the genuinely old are real — Étienne
+Davignon, born 1932, is Anderlecht's honorary chairman.
+
+Not yet located: the last few attribute names, and the club link for players
+outside the loaded leagues (their squads are not materialised in the squad
+table, so they show no club).
 **`docs/OPEN_PROBLEMS.md` is the handoff document** — it records what was
 tried for each, what the evidence showed, and where to go next, including
 the small residuals of the squad work.

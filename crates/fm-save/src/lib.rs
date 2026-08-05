@@ -233,22 +233,12 @@ impl Save {
             }
         }
 
-        // The in-game date lives in the small header frame on 26.0.0; on
-        // 26.2.0 it moved, and the main frame's week stamp stands in — at
-        // most a week stale, against years wrong from a system-clock
-        // fallback. The stamp is only decoded on 26.2-format saves: 26.0.0
-        // keeps a different quantity at the same offset that masks to a
-        // valid-looking wrong date.
-        let header = frames.first();
-        let game_date = header
-            .and_then(|f| gamedate::find_game_date(&f.data))
-            .or_else(|| {
-                let (major, minor) = header.and_then(|f| gamedate::format_version(&f.data))?;
-                if major != 26 || minor < 2 {
-                    return None;
-                }
-                main.and_then(|f| gamedate::find_main_frame_date(&f.data))
-            });
+        // The in-game date is the database frame's week stamp — at most a week
+        // stale, against years wrong from a system-clock fallback. The header
+        // frame's own stamp is the real-world time the file was written and is
+        // never used for ages: it read as the in-game date only on a save
+        // played within weeks of its own calendar.
+        let game_date = main.and_then(|f| gamedate::find_main_frame_date(&f.data));
 
         let shortlists = named_frame(&frames, "scout_man.dat")
             .map(|f| shortlist::scan_shortlists(&f.data))

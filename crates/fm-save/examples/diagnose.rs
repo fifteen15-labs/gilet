@@ -29,9 +29,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .map(|b| format!("{b:02x}"))
             .collect();
         println!("  bytes 40..64: {}", window.join(" "));
-        println!("  find_game_date: {:?}", fm_save::gamedate::find_game_date(&header.data));
+        println!("  find_wall_clock_date: {:?}", fm_save::gamedate::find_wall_clock_date(&header.data));
     }
-    let main = frames.iter().max_by_key(|f| f.data.len());
+    // Named through the manifest, never the largest frame — on a long career
+    // the match-history member is bigger than the database.
+    let main = frames
+        .last()
+        .and_then(|f| fm_save::manifest::read_manifest(&f.data))
+        .and_then(|members| {
+            let i = fm_save::manifest::frame_index_of(&members, "game_db.dat")?;
+            let plain = members.get(i).map(|m| m.plain)?;
+            let frame = frames.get(i)?;
+            (frame.data.len() as u64 == plain).then_some(frame)
+        });
     if let Some(main) = main {
         println!("main frame: {} bytes", main.data.len());
         let window: Vec<String> = main

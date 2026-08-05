@@ -87,34 +87,45 @@ Named members confirmed so far: `game_info.dat` (frame 0), `memory_pools.dat`,
 `shortlist_man.dat`, `manager_manager.dat`, `scout_man.dat`, and ~70 more —
 run `members.py` for the full list of a given save.
 
-## 1c. The in-game date — SOLVED on both format versions
+## 1c. The in-game date — SOLVED, one reader for both format versions
 
 Dates throughout the save are `(u16 day_of_year, u16 year)` pairs, the same
-encoding as a date of birth. Where the *current* date lives depends on the
-format version, which is the string in frame 0 at offset 12 (`"26.0.0+0"`,
-`"26.2.0+0"`).
+encoding as a date of birth. The current date is the **week stamp at the head
+of `game_db.dat`, offset 0x2A**, on 26.0.0 and 26.2.0 alike: a u16 whose **low
+nine bits are the day of year** (the high seven vary per save and are not
+understood — 0, 13, 25, 27 and 41 observed), then the u16 year. It tracks the
+weekly rollover, so it lags the true date by up to a week.
 
-**26.0.0**: the header frame (`game_info.dat`) holds the current date at
-offset 50, and exactly one valid pair exists in that frame, so a validated
-scan is reliable. Career.fm reads (299, 2025) = 26 October 2025, the known
-true date.
+Verified on seven saves. The 2035 career masks to 24 May 2035 against a known
+true 28 May; the Afan Lido career masks to day 159 of 2026 (8 June), exactly
+the current-date stamp repeated through that save's `rgman/comp_*.dat`
+competition frames; a save named "Day One" reads 23 June 2025, FM 26's first
+day. On 26.0.0 the same offset reads 20 September 2025 for a young career and
+1 July 2033 for one eight years in.
 
-**26.2.0**: the header pair is gone. Offset 50 instead holds a career-constant
-value (identical across saves of the same career, e.g. `d5 68 ea 07` on both
-Afan Lido saves) whose year half reads the real-world year — not the in-game
-date. The current date moved to the **main frame's week stamp** at `game_db`
-offset 0x2A: a u16 whose **low nine bits are the day of year** (the high seven
-vary per save and are not understood — 0, 13 and 41 observed), then the u16
-year. It tracks the weekly rollover, so it lags the true date by up to a week.
-Two verifications: the 2035 save masks to 24 May 2035 against a known true
-28 May, and the Afan Lido save masks to day 159 of 2026 (8 June), which is
-exactly the current-date stamp repeated through that save's
-`rgman/comp_*.dat` competition frames.
+**The header frame's stamp is the real-world time the file was written, not
+the in-game date.** `game_info.dat` offset 50 carries the same masked
+`(stamp, year)` shape, and on the four 26.2.0 careers here it reads 1, 2 and 3
+August 2026 — those files' own modification dates — while the careers sit in
+2026, 2030, 2032 and 2035. On 26.0.0 saves it reads late October 2025, the
+real-world month 26.0.0 was the shipping format. `find_wall_clock_date` reads
+it under that name; nothing about anyone's age may come from it.
 
-**Do not apply the mask to a 26.0.0 save.** There the same offset holds a
-different quantity: Career.fm's `0x1EC7` masks to day 199 (18 July) against a
-true 26 October. The reader gates the masked read on the format version and
-still refuses to guess when both sources fail.
+**Scar.** This was recorded the other way round for a while: the header pair
+was taken as the 26.0.0 in-game date, and the week stamp gated to 26.2.0-only
+because on 26.0.0 it "masked to a valid-looking wrong date" (day 199 against a
+true 26 October). Both halves came from the same mistake. The wrong date came
+from masking the **largest** frame rather than `game_db.dat` — on a long career
+`player_stats_hist_dt.cmt` outgrows the database (372 MB against 351 MB), which
+is the same trap §1b's `main_frame` note records. And the header pair only
+looked right because the reference save was written weeks after the in-game
+date it sat at, so wall clock and game date fell in the same season. An aged
+26.0.0 save shows it plainly: the header says October 2025, the database says
+July 2033, and the save's sixteen-year-old newgens were being reported as
+eight-year-olds.
+
+Diagnostics that read the date must name `game_db.dat` through the manifest,
+never take the largest frame — `datescan` and `diagnose` do now.
 
 The save-list summary (`save_game_summary.dat`) repeats the same stamp pair
 after the manager's name and club, so it is a stale copy too, not an exact
@@ -252,15 +263,61 @@ The nation **names** are not stored beside the identifier. Every occurrence of
 in the surname table between Boateng and Mullen — the country names are
 probably in FM's localisation files rather than the save.
 
-150 nations are named anyway, by grouping every person by nation identifier
-and reading the best players. A national squad is unmistakable: 143 gives
-Zidane, Henry, Deschamps and Trézéguet; 158 gives Davids, Reiziger and van
-Nistelrooij; 33 gives Okocha, Kanu and Amokachi; 120 gives Donovan, Berhalter
-and Cherundolo. The identifiers are regionally alphabetical (Africa 0–50,
-Asia 51–91, CONCACAF 92–125, UEFA 126–176, later admissions at 200+), which
-double-checks every identification. Five doubtful groups are left unnamed and
-surface as raw numbers, which still group and filter correctly
+228 nations are named anyway. The first 150 came from grouping every person by
+nation identifier and reading the best players: a national squad is
+unmistakable — 143 gives Zidane, Henry, Deschamps and Trézéguet; 158 gives
+Davids, Reiziger and van Nistelrooij; 33 gives Okocha, Kanu and Amokachi; 120
+gives Donovan, Berhalter and Cherundolo.
+
+**The other 78 came from the clubs, which is the better method and should have
+been first.** Club records carry the same numbering and store their names *in
+the clear*. "Ba FC, Labasa FC, Lautoka FC, Nadi FC" is Fiji and nothing else,
+where a squad of Fijian-sounding players only suggests it; "Al-Sadd, Al-Wakrah,
+Al-Shamal" is Qatar; "Bolívar, The Strongest, Wilstermann" is Bolivia. One pass
+over a save with every league loaded named 78 identifiers at once, most of them
+the small federations a squad-reading pass could never settle — Kiribati,
+Wallis and Futuna, Saint Pierre and Miquelon, Zanzibar. `examples/nations.rs`
+prints clubs beside people for exactly this.
+
+The identifiers are broadly regionally alphabetical, on FM's own older names
+(Africa 0–50 with 44 The Congo and 48 Zaire; Asia 51–91 with 63 Kampuchea and
+86 The Philippines; CONCACAF 92–125 with 118 The Bahamas; UEFA 126–176; later
+admissions at 200+), which double-checks every identification but does not
+override it — 114 Saint Lucia sits ahead of 115 Saint Kitts and Nevis.
+
+Reading the clubs also **corrected an entry the player-name method got wrong**:
+116 was Cayman Islands here, but its clubs are Avenues United, Layou FC and
+North Leeward Predators — Saint Vincent and the Grenadines. Cayman is 98, where
+Bodden Town FC and Scholars International play.
+
+Three groups are left unnamed and surface as raw numbers, which still group and
+filter correctly: 213 is four British Army regimental sides, 123 a single East
+German club with no people, and 238 three people with no clubs at all
 (`OPEN_PROBLEMS.md` §5).
+
+### An identifier past the end of the nation table means it is not a person
+
+The highest identifier FM uses is 249, Saint Barthélemy. Records that read past
+it read far past it — 1280, 8704, 45209 — because they are not records: they
+are other tables' bytes that happen to satisfy the person prefix (three
+resolving string ids, then something that decodes as a date of birth). A frame
+of 350 MB gives coincidence plenty of room.
+
+The scan therefore refuses a record whose nation field reads above 512, chosen
+well clear of both 249 and 1280 so a nation FM adds later is not mistaken for
+noise. An *absent* nation field still passes — a record truncated at the end of
+the frame has nothing to judge.
+
+The cost and the benefit, measured on two saves: a day-one save loses 1,043
+records, none of which has a club, four of which have an entity id, and five of
+which had captured an ability block that belonged to a real player nearby. An
+eight-year career loses 796. What goes with them is every person whose date of
+birth put them outside a footballing lifetime — 689 under-fourteens and a
+109-year-old on the aged save, all of them these coincidences wearing
+cross-cultural mashup names like "Oldřich Dharmaraja Singgam". One survivor
+remains out of 239,403, and it stays: a tighter bound would start costing real
+people, and the save's genuinely old are real — Étienne Davignon, born 1932, is
+Anderlecht's honorary chairman.
 
 ### The hidden personality run — SOLVED, four slots named
 

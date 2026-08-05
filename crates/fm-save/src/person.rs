@@ -140,21 +140,41 @@ impl Person {
     }
 }
 
-/// Nation names for identifiers confirmed against known players.
+/// Nation names for identifiers confirmed against the save's own records.
 ///
 /// The file does not store the name beside the identifier — every occurrence
-/// of "England" in the database frame is the *surname* England — so these were
-/// derived by grouping every person by nation identifier and reading the best
-/// players in each group. A national squad is unmistakable: Courtois, De
-/// Bruyne, Lukaku and Tielemans fix 131; Modrić, Gvardiol and Kovačić fix 135;
-/// Kvaratskhelia and Mamardashvili fix 144; Son, Kim Min-Jae and Lee Kang-In
-/// fix 80. Cross-checked against the nation the club records carry, which uses
-/// the same numbering — German clubs and Wirtz both report 145, English clubs
-/// and Saka both report 139.
+/// of "England" in the database frame is the *surname* England — so the first
+/// batch was derived by grouping every person by nation identifier and reading
+/// the best players in each group. A national squad is unmistakable: Courtois,
+/// De Bruyne, Lukaku and Tielemans fix 131; Modrić, Gvardiol and Kovačić fix
+/// 135; Kvaratskhelia and Mamardashvili fix 144; Son, Kim Min-Jae and Lee
+/// Kang-In fix 80.
 ///
-/// Identifiers are left unnamed rather than guessed wherever the best players
-/// in the group do not settle the country — mostly small groups of fewer than
-/// twenty people. A wrong flag is worse than a number.
+/// **Club records name the rest outright.** They carry the same numbering —
+/// German clubs and Wirtz both report 145 — and unlike people they store their
+/// names in the clear. "Ba FC, Labasa FC, Lautoka FC, Nadi FC" is Fiji and
+/// nothing else, where a squad of Fijian-sounding players only suggests it. A
+/// save with every league loaded named 78 identifiers this way at once, most of
+/// them the small federations a squad-reading pass could never settle.
+///
+/// The numbering corroborates them: it runs **broadly alphabetical within each
+/// confederation**, on FM's own older names — 43 Tanzania, 44 The Congo, 45
+/// Togo, 46 Tunisia, 47 Uganda, 48 Zaire, 49 Zambia; 62 Jordan, 63 Kampuchea,
+/// 64 Kazakhstan; 85 Thailand, 86 The Philippines, 87 Turkmenistan; 117
+/// Suriname, 118 The Bahamas, 119 Trinidad and Tobago. Every name the clubs
+/// gave lands where that ordering puts it. It is corroboration and not proof —
+/// 114 Saint Lucia sits ahead of 115 Saint Kitts and Nevis — so where the two
+/// disagree the clubs win.
+///
+/// Reading the clubs also **corrected 116**, which was Cayman Islands here on
+/// the strength of its players' names. Its clubs are Avenues United, Layou FC
+/// and North Leeward Predators: Saint Vincent and the Grenadines. Cayman is 98,
+/// where Bodden Town FC and Scholars International play.
+///
+/// Identifiers are left unnamed rather than guessed where neither settles the
+/// country: 213 is four British Army regimental sides, 123 a single East German
+/// club, and 238 three people with no clubs at all. A wrong flag is worse than
+/// a number.
 ///
 /// Note 0 is a real identifier (Algeria: Mahrez, Bennacer, Bensebaïni), not a
 /// missing value.
@@ -165,13 +185,17 @@ pub fn nation_name(id: u16) -> Option<&'static str> {
         0 => Some("Algeria"),
         1 => Some("Angola"),
         2 => Some("Benin"),
+        3 => Some("Botswana"),
         4 => Some("Burkina Faso"),
         5 => Some("Burundi"),
         6 => Some("Cameroon"),
         7 => Some("Cape Verde"),
         8 => Some("Central African Republic"),
+        9 => Some("Chad"),
+        10 => Some("Djibouti"),
         11 => Some("Egypt"),
         12 => Some("Equatorial Guinea"),
+        13 => Some("Ethiopia"),
         14 => Some("Gabon"),
         15 => Some("Gambia"),
         16 => Some("Ghana"),
@@ -179,20 +203,28 @@ pub fn nation_name(id: u16) -> Option<&'static str> {
         18 => Some("Guinea-Bissau"),
         19 => Some("Ivory Coast"),
         20 => Some("Kenya"),
+        21 => Some("Lesotho"),
         22 => Some("Liberia"),
         23 => Some("Libya"),
+        24 => Some("Madagascar"),
         25 => Some("Malawi"),
         26 => Some("Mali"),
         27 => Some("Mauritania"),
+        28 => Some("Mauritius"),
         29 => Some("Morocco"),
         30 => Some("Mozambique"),
+        31 => Some("Namibia"),
+        32 => Some("Niger"),
         33 => Some("Nigeria"),
+        34 => Some("Rwanda"),
         35 => Some("São Tomé and Príncipe"),
         36 => Some("Senegal"),
+        37 => Some("Seychelles"),
         38 => Some("Sierra Leone"),
         39 => Some("Somalia"),
         40 => Some("South Africa"),
         41 => Some("Sudan"),
+        42 => Some("Eswatini"),
         43 => Some("Tanzania"),
         44 => Some("Congo"),
         45 => Some("Togo"),
@@ -201,6 +233,10 @@ pub fn nation_name(id: u16) -> Option<&'static str> {
         48 => Some("DR Congo"),
         49 => Some("Zambia"),
         50 => Some("Zimbabwe"),
+        51 => Some("Afghanistan"),
+        52 => Some("Bahrain"),
+        53 => Some("Bangladesh"),
+        54 => Some("Brunei"),
         55 => Some("China"),
         56 => Some("Hong Kong"),
         57 => Some("India"),
@@ -208,11 +244,24 @@ pub fn nation_name(id: u16) -> Option<&'static str> {
         59 => Some("Iran"),
         60 => Some("Iraq"),
         61 => Some("Japan"),
+        62 => Some("Jordan"),
+        63 => Some("Cambodia"),
         64 => Some("Kazakhstan"),
+        65 => Some("Kuwait"),
         66 => Some("Kyrgyzstan"),
+        67 => Some("Laos"),
         68 => Some("Lebanon"),
+        69 => Some("Macau"),
+        70 => Some("Malaysia"),
+        71 => Some("Maldives"),
+        72 => Some("Myanmar"),
+        73 => Some("Nepal"),
+        74 => Some("North Korea"),
+        75 => Some("Oman"),
         76 => Some("Pakistan"),
+        77 => Some("Qatar"),
         78 => Some("Saudi Arabia"),
+        79 => Some("Singapore"),
         80 => Some("South Korea"),
         81 => Some("Sri Lanka"),
         82 => Some("Syria"),
@@ -220,14 +269,20 @@ pub fn nation_name(id: u16) -> Option<&'static str> {
         84 => Some("Tajikistan"),
         85 => Some("Thailand"),
         86 => Some("Philippines"),
+        87 => Some("Turkmenistan"),
         88 => Some("United Arab Emirates"),
         89 => Some("Uzbekistan"),
         90 => Some("Vietnam"),
+        91 => Some("Yemen"),
         92 => Some("Antigua and Barbuda"),
+        93 => Some("Aruba"),
         94 => Some("Barbados"),
+        95 => Some("Belize"),
         96 => Some("Bermuda"),
         97 => Some("Canada"),
+        98 => Some("Cayman Islands"),
         99 => Some("Costa Rica"),
+        100 => Some("Cuba"),
         101 => Some("Dominica"),
         102 => Some("El Salvador"),
         103 => Some("Grenada"),
@@ -238,18 +293,23 @@ pub fn nation_name(id: u16) -> Option<&'static str> {
         108 => Some("Jamaica"),
         109 => Some("Mexico"),
         110 => Some("Curaçao"),
+        111 => Some("Nicaragua"),
         112 => Some("Panama"),
+        113 => Some("Puerto Rico"),
         114 => Some("Saint Lucia"),
         115 => Some("Saint Kitts and Nevis"),
-        116 => Some("Cayman Islands"),
+        116 => Some("Saint Vincent and the Grenadines"),
         117 => Some("Suriname"),
+        118 => Some("Bahamas"),
         119 => Some("Trinidad and Tobago"),
         120 => Some("United States"),
         126 => Some("Albania"),
+        127 => Some("Andorra"),
         128 => Some("Armenia"),
         129 => Some("Austria"),
         130 => Some("Azerbaijan"),
         131 => Some("Belgium"),
+        132 => Some("Belarus"),
         133 => Some("Bosnia and Herzegovina"),
         134 => Some("Bulgaria"),
         135 => Some("Croatia"),
@@ -269,6 +329,7 @@ pub fn nation_name(id: u16) -> Option<&'static str> {
         149 => Some("Israel"),
         150 => Some("Italy"),
         151 => Some("Latvia"),
+        152 => Some("Liechtenstein"),
         153 => Some("Lithuania"),
         154 => Some("Luxembourg"),
         155 => Some("North Macedonia"),
@@ -282,6 +343,7 @@ pub fn nation_name(id: u16) -> Option<&'static str> {
         163 => Some("Republic of Ireland"),
         164 => Some("Romania"),
         165 => Some("Russia"),
+        166 => Some("San Marino"),
         167 => Some("Scotland"),
         168 => Some("Slovakia"),
         169 => Some("Slovenia"),
@@ -293,8 +355,17 @@ pub fn nation_name(id: u16) -> Option<&'static str> {
         175 => Some("Wales"),
         176 => Some("Serbia"),
         177 => Some("Australia"),
+        178 => Some("Cook Islands"),
+        179 => Some("Fiji"),
         180 => Some("New Zealand"),
+        181 => Some("Papua New Guinea"),
+        182 => Some("Solomon Islands"),
+        183 => Some("Tahiti"),
+        184 => Some("Tonga"),
+        185 => Some("Vanuatu"),
+        186 => Some("Samoa"),
         187 => Some("Argentina"),
+        188 => Some("Bolivia"),
         189 => Some("Brazil"),
         190 => Some("Chile"),
         191 => Some("Colombia"),
@@ -303,15 +374,42 @@ pub fn nation_name(id: u16) -> Option<&'static str> {
         194 => Some("Peru"),
         195 => Some("Uruguay"),
         196 => Some("Venezuela"),
+        197 => Some("Palestine"),
+        201 => Some("American Samoa"),
+        202 => Some("Mongolia"),
+        203 => Some("Guam"),
+        204 => Some("Eritrea"),
+        205 => Some("Anguilla"),
+        206 => Some("British Virgin Islands"),
         207 => Some("Montserrat"),
+        208 => Some("US Virgin Islands"),
+        209 => Some("Turks and Caicos Islands"),
+        210 => Some("New Caledonia"),
+        211 => Some("Bhutan"),
         212 => Some("Dominican Republic"),
+        215 => Some("Kiribati"),
         216 => Some("Gibraltar"),
+        217 => Some("Bonaire"),
+        218 => Some("Crimea"),
         219 => Some("Kosovo"),
+        225 => Some("French Guiana"),
         226 => Some("Guadeloupe"),
         227 => Some("Martinique"),
+        228 => Some("Sint Maarten"),
+        229 => Some("Saint Martin"),
+        230 => Some("Réunion"),
+        231 => Some("Mayotte"),
+        232 => Some("Wallis and Futuna"),
+        233 => Some("Saint Pierre and Miquelon"),
         234 => Some("Comoros"),
         236 => Some("Timor-Leste"),
+        239 => Some("Zanzibar"),
+        240 => Some("South Sudan"),
+        242 => Some("Micronesia"),
+        243 => Some("Northern Mariana Islands"),
+        244 => Some("Tuvalu"),
         247 => Some("Montenegro"),
+        249 => Some("Saint Barthélemy"),
         _ => None,
     }
 }
@@ -322,6 +420,20 @@ const MAX_NAME_LEN: usize = 64;
 
 /// Bytes past the date of birth where the nation identifier sits.
 const NATION_OFFSET: usize = 13;
+
+/// A nation identifier this large is not a nation, so the bytes that produced
+/// it were not a person.
+///
+/// FM's nation table runs to about 250 entries: the highest identifier any
+/// person or club carries across the saves here is 249, Saint-Barthélemy. The
+/// records that read past it read *far* past it — 1280, 8704, 45209 — because
+/// they are not records at all but other tables' bytes that happen to satisfy
+/// the prefix. On a day-one save the ceiling drops 1,043 of them, none of which
+/// has a club, and it takes with them every person whose date of birth put them
+/// outside a footballing lifetime: the 9-year-olds and the 109-year-old that
+/// were the visible symptom. The bound is set well clear of both numbers so a
+/// nation FM adds later is not mistaken for noise.
+const MAX_NATION_ID: u16 = 512;
 
 /// A person in a football save is born within this window. Wider than strictly
 /// necessary — the oldest staff and the youngest newgens both have to fit — but
@@ -403,8 +515,13 @@ fn parse_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<(Person, u
     let date_of_birth = Date::from_day_of_year(read_u16(frame, body)?, year)?;
 
     // Nationality sits further out, so a record truncated at the end of the
-    // frame still parses — it is descriptive, not part of the acceptance test.
+    // frame still parses — an absent nation is descriptive, not disqualifying.
+    // One that reads past the end of FM's nation table is another matter: it
+    // says these bytes are some other table's, and the record goes.
     let nation_id = read_u16(frame, body + NATION_OFFSET);
+    if nation_id.is_some_and(|n| n > MAX_NATION_ID) {
+        return None;
+    }
     let personality = nation_id.and_then(|n| find_personality(frame, body, n));
 
     Some((
@@ -968,6 +1085,16 @@ mod tests {
         v
     }
 
+    /// The nine bytes between the date of birth and the nation identifier,
+    /// then the identifier. Fixtures that append anything after a record need
+    /// this: whatever follows is read as the nation, and a value past the end
+    /// of FM's nation table now disqualifies the record.
+    fn nation_field(id: u16) -> Vec<u8> {
+        let mut v = vec![0u8; 9];
+        v.extend_from_slice(&id.to_le_bytes());
+        v
+    }
+
     #[test]
     fn reads_a_record_with_an_inline_name() {
         // Haaland's real values: born day 203 of 2000, name stored inline
@@ -1020,6 +1147,40 @@ mod tests {
     }
 
     #[test]
+    fn names_the_nations_the_club_records_settled() {
+        // 98 and 116 were one entry between them before the club names were
+        // read: Cayman's clubs are Bodden Town and Scholars International,
+        // Saint Vincent's are Avenues United and Layou FC.
+        assert_eq!(nation_name(98), Some("Cayman Islands"));
+        assert_eq!(nation_name(116), Some("Saint Vincent and the Grenadines"));
+        assert_eq!(nation_name(179), Some("Fiji"));
+        assert_eq!(nation_name(249), Some("Saint Barthélemy"));
+        // Four British Army regimental sides name no country, so 213 stays a
+        // number rather than becoming a guess.
+        assert_eq!(nation_name(213), None);
+    }
+
+    #[test]
+    fn rejects_a_record_whose_nation_is_not_a_nation() {
+        // The shape that produced the 9-year-olds and the 109-year-old: a
+        // prefix and a date that pass, and a nation field of 1280.
+        let mut buf = record(100, 200, NO_COMMON_NAME, Some("Oldřich Dharmaraja Singgam"), 257, 1923);
+        buf.extend_from_slice(&[0u8; 9]);
+        buf.extend_from_slice(&1280u16.to_le_bytes());
+        assert!(scan_people(&buf, &table()).is_empty());
+    }
+
+    #[test]
+    fn keeps_a_record_whose_nation_field_never_arrives() {
+        // Truncated at the end of the frame: no nation to judge, so the
+        // record stands with `None` rather than being thrown away.
+        let buf = record(100, 200, NO_COMMON_NAME, Some("Bukayo Ayoyinka Saka"), 248, 2001);
+        let found = scan_people(&buf, &table());
+        assert_eq!(found.len(), 1);
+        assert_eq!(found.first().unwrap().nation_id, None);
+    }
+
+    #[test]
     fn reads_the_hidden_personality_run() {
         // Emery's real shape: nation, then the 03-nation-zeros marker, then
         // eight 1-20 values with Professionalism 20 at slot 4.
@@ -1059,6 +1220,7 @@ mod tests {
     #[test]
     fn finds_several_records_in_sequence() {
         let mut buf = record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000);
+        buf.extend(nation_field(170));
         buf.extend(record(101, 201, NO_COMMON_NAME, None, 189, 1991));
         let found = scan_people(&buf, &table());
         assert_eq!(found.len(), 2);
@@ -1164,6 +1326,7 @@ mod tests {
         // Four zeros ahead of the triple, as on disk, so the short read one
         // byte early passes the zeros test too and the tie is real.
         let mut buf = record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000);
+        buf.extend(nation_field(170));
         buf.extend_from_slice(&[0u8; 4]);
         buf.extend_from_slice(&2057u32.to_le_bytes());
         buf.extend_from_slice(&601_116u32.to_le_bytes());
@@ -1203,10 +1366,13 @@ mod tests {
         // alone. Two ascending records first, so the chain has a run of its
         // own and the deep block is genuinely out of order.
         let mut buf = record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000);
+        buf.extend(nation_field(170));
         buf.extend(identity_block(40_000, 9_000_001));
         buf.extend(record(101, 201, NO_COMMON_NAME, None, 189, 1991));
+        buf.extend(nation_field(170));
         buf.extend(identity_block(41_000, 9_000_002));
         buf.extend(record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000));
+        buf.extend(nation_field(170));
         buf.extend(std::iter::repeat_n(0x11u8, IDENTITY_WINDOW + 16));
         buf.extend(identity_block(1858, 434_431));
 

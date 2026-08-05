@@ -996,7 +996,7 @@ mapped. Transfer *value* is probably computed by the game, not stored.
 
 ---
 
-## 5. Nation names — 150 named, five doubtful groups remain
+## 5. Nation names — 228 named, four groups that name no country
 
 Every occurrence of "England" in the database frame is the *surname* England;
 the country names live in FM's localisation files, not the save. They are
@@ -1016,14 +1016,46 @@ second, aged save whose regen names carry the right nationality flavour
 (Azeri diacritics under 130, Sinhalese names under 81, the Buffonge family
 under Montserrat 207).
 
-Five groups stay numeric, deliberately: 204 (Tigrinya names — Eritrea and
-Ethiopia cannot be told apart), 93 (Dutch-Caribbean, probably Aruba on the
-alphabetical slot but only one weak player), 205 and 206 (minor British
-overseas territories, no recognisable player), and 1535 (three players,
-suspicious out-of-band id). `cargo run --release --example nations --
-<save.fm>` prints the unnamed groups with their best players; anything
-identifiable can be added to `nation_name`. A wrong flag is worse than a
-number, so the doubtful ones stay as raw identifiers.
+**The clubs then named 78 more in one pass (5 August 2026), and the five
+doubtful groups with them.** Club records carry the same nation numbering and
+store their names *in the clear*, so they answer outright what a squad of
+players only suggests. 204 was "Tigrinya names, Eritrea or Ethiopia" — its
+clubs are Red Sea FC, Al-Tahrir Asmara and Denden, so Eritrea, and Ethiopia is
+13 (Saint George SC, Ethiopian Coffee). 93 was "probably Aruba, one weak
+player" — SV Estrella, SV Racing Club Aruba, SV Dakota. 205 and 206 were "minor
+British overseas territories, no recognisable player" — Roaring Lions (AIA) and
+Attackers (AIA) give Anguilla; Virgin Gorda United and Rebels (VGB) give the
+British Virgin Islands. 1535 was not a nation at all: it was noise, and §5a
+explains why it is gone.
+
+Run `cargo run --release --example nations -- <save.fm>` on a save with many
+leagues loaded; it prints the clubs beside the people for every unnamed id.
+
+The method also **corrected 116**, which the player-name pass had made Cayman
+Islands. Its clubs are Avenues United, Layou FC and North Leeward Predators:
+Saint Vincent and the Grenadines. Cayman is 98, where Bodden Town FC and
+Scholars International play. Reading the clubs for all 150 already-named ids
+found no other mistake.
+
+**Three groups stay numeric because they name no country.** 213 is four British
+Army regimental sides (Royal Engineers, Black Watch, Highland Light Infantry);
+123 is one East German club and no people; 238 is three people with no clubs at
+all. A wrong flag is worse than a number. 218 *is* named — TSK-Tavria
+Simferopol, FC Yalta and Qiziltash Bakhchysaray are Crimea, and that evidence is
+as good as any other id's.
+
+### 5a. Identifiers that were never nations — SOLVED
+
+Saves used to report ids like 1280, 1535, 8704 and 45209, carried by people
+with cross-cultural mashup names, no club and no entity id. They were not
+badly-read nations: they were **not people**. The person scan accepts three
+resolving string ids and a plausible date of birth, and across a 350 MB frame
+coincidence supplies both often enough to invent about a thousand people per
+save. The nation field is what gives them away — FM's highest real identifier
+is 249 — so `person.rs` now refuses a record whose nation reads above 512
+(`SAVE_FORMAT.md`, "An identifier past the end of the nation table"). That
+removed the bogus ids and, with them, the 9-year-olds and the 109-year-old the
+table used to show.
 
 ### Original note
 
@@ -1039,26 +1071,35 @@ method, which is slow but works and needs no new format knowledge.
 
 ---
 
-## 6. In-game date on FM 26.2.0 saves — SOLVED, one residual
+## 6. In-game date — SOLVED on both format versions, one residual
 
 Solved on 2 August 2026; the encoding is documented in `SAVE_FORMAT.md` §1c
-and shipped in `gamedate.rs`. The main frame's week stamp at `game_db` offset
-0x2A packs the day of year into the **low nine bits** of its u16 — the earlier
-"4821 is not a day of year" observation was the packing, not a dead end
-(4821 & 0x1FF = 213). Masked, the 2035 save reads within four days of its
-known true date, and the Afan Lido save reads 8 June 2026, exactly matching
-the current-date stamps repeated through its competition frames. The masked
-read is gated on the header's format-version string because 26.0.0 keeps a
-different quantity at the same offset that masks to a plausible wrong date.
+and shipped in `gamedate.rs`. The week stamp at `game_db.dat` offset 0x2A packs
+the day of year into the **low nine bits** of its u16 — the earlier "4821 is
+not a day of year" observation was the packing, not a dead end
+(4821 & 0x1FF = 213). Masked, the 2035 save reads within four days of its known
+true date, and the Afan Lido save reads 8 June 2026, exactly matching the
+current-date stamps repeated through its competition frames.
 
-The header-frame value at offset 50 on 26.2.0 turned out to be
-career-constant (same bytes across saves of one career, low nine bits = the
-real-world day the career was created) — a creation stamp, not the current
-date, which is why the whole-frame scan never found a valid pair.
+**Finished on 5 August 2026: the same stamp is the date on 26.0.0 too, and the
+header pair was never the in-game date.** The version gate came from masking
+the *largest* frame instead of `game_db.dat`, which on a long career is the
+match-history member — the trap `main_frame` already had a note about. Named
+through the manifest, 26.0.0 saves read correctly: 20 September 2025 for a
+young career, 1 July 2033 for one eight years in.
+
+The header-frame value at offset 50 is the **real-world time the file was
+written**. It is the same masked shape, and on the four 26.2.0 careers here it
+reads 1, 2 and 3 August 2026 — those files' own modification dates — while the
+careers sit in 2026, 2030, 2032 and 2035. It looked like the in-game date on
+the 26.0.0 reference save only because that file was written weeks after the
+date it sat at. It is read under `find_wall_clock_date` and no age comes from
+it.
 
 **Residuals:**
 
-1. **The stamp's high seven bits are unread** (0, 13, 41 observed). Decoding
+1. **The stamp's high seven bits are unread** (0, 13, 25, 27 and 41 observed).
+   Decoding
    them might remove the up-to-a-week staleness; nothing depends on it.
 2. **The exact date exists in `rgman/comp_*.dat` members** — several
    competition frames repeat the true current date — but which competitions

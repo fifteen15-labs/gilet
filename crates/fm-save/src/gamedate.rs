@@ -1,43 +1,28 @@
 use crate::date::Date;
 
-/// Finds the save's in-game date in the header frame.
+/// Offset of the wall-clock stamp in the header frame (`game_info.dat`).
+const HEADER_WALL_CLOCK_AT: usize = 50;
+
+/// Reads the header frame's date stamp — the **real-world** date the save was
+/// written, not the in-game one.
 ///
-/// This matters for ages: a save at 26 October 2025 read on 1 August 2026
-/// reports everyone a year too old if the system clock is used instead.
-///
-/// The date is a `(u16 day_of_year, u16 year)` pair, the same encoding as a
-/// date of birth. In the FM 26.0.0 reference save exactly one such pair occurs
-/// in the header frame, at offset 50, which makes a validated scan reliable
-/// rather than a guess at a fixed offset.
-///
-/// Returns `None` when no unambiguous date is present — FM 26.2.0 saves encode
-/// it differently and are not yet understood, and a wrong date is worse than an
-/// absent one because it silently shifts every age.
+/// Same `(u16 stamp, u16 year)` shape as the database frame's week stamp, low
+/// nine bits carrying the day of year. It is exposed because it says when a
+/// file on disk was last played, and kept separate because it was for a while
+/// mistaken for the in-game date: on the 26.0.0 reference save the two happened
+/// to sit weeks apart and the header's value looked plausible. Seven saves
+/// settle it — the four 26.2.0 careers here stamp 1, 2 and 3 August 2026, their
+/// files' own modification dates, while sitting at in-game 2026, 2030, 2032 and
+/// 2035. Ages come from [`find_main_frame_date`]; nothing about a person's age
+/// may be derived from this.
 #[must_use]
-pub fn find_game_date(header_frame: &[u8]) -> Option<Date> {
-    let mut found: Option<Date> = None;
-
-    let mut at = 0usize;
-    while at + 4 <= header_frame.len() {
-        let doy = read_u16(header_frame, at)?;
-        let year = read_u16(header_frame, at + 2)?;
-        // A save's own date sits within the era FM models, which is much
-        // tighter than the range allowed for a date of birth.
-        if (2000..=2100).contains(&year) {
-            if let Some(date) = Date::from_day_of_year(doy, year) {
-                match found {
-                    // More than one candidate means the signature is not
-                    // unique in this save, so decline rather than pick one.
-                    Some(existing) if existing != date => return None,
-                    Some(_) => {}
-                    None => found = Some(date),
-                }
-            }
-        }
-        at += 2;
+pub fn find_wall_clock_date(header_frame: &[u8]) -> Option<Date> {
+    let stamp = read_u16(header_frame, HEADER_WALL_CLOCK_AT)?;
+    let year = read_u16(header_frame, HEADER_WALL_CLOCK_AT + 2)?;
+    if !(2000..=2100).contains(&year) {
+        return None;
     }
-
-    found
+    Date::from_day_of_year(stamp & DOY_MASK, year)
 }
 
 /// Offset of the week-stamp date pair in the main database frame's header.
@@ -47,25 +32,27 @@ const MAIN_FRAME_DATE_AT: usize = 0x2A;
 /// seven carry something else (unknown — 0 on one save, 13 and 41 on others).
 const DOY_MASK: u16 = 0x01FF;
 
-/// Reads the date stamp at the head of the main database frame.
+/// Reads the in-game date from the head of the database frame.
 ///
-/// FM 26.2.0 moved the header-frame date, but the *database* frame carries a
-/// date stamp at offset `0x2A`: a u16 whose **low nine bits are the day of
-/// year**, then the u16 year. The high seven bits vary per save and are not
-/// understood, so they are masked off. Verified two ways: the 2035 save's
-/// masked stamp lands four days before its known true date (it tracks the
-/// last weekly rollover, so it can lag by up to a week), and an FM 26.2.0
-/// career's masked stamp (day 159 of 2026) matches the current-date stamps
-/// repeated through that save's competition frames exactly.
+/// `game_db.dat` carries a date stamp at offset `0x2A`: a u16 whose **low nine
+/// bits are the day of year**, then the u16 year. The high seven bits vary per
+/// save and are not understood, so they are masked off. It tracks the last
+/// weekly rollover, so it can lag the true date by up to a week. Verified two
+/// ways: the 2035 save's masked stamp lands four days before its known true
+/// date, and an FM 26.2.0 career's masked stamp (day 159 of 2026) matches the
+/// current-date stamps repeated through that save's competition frames exactly.
 ///
 /// A days-stale date keeps every age right; falling back to the system clock
 /// on an aged save shifts ages by years, which is how a player born 2012
 /// showed as 14 in a 2035 save.
 ///
-/// **Only meaningful on 26.2.0-format saves.** On 26.0.0 the same offset
-/// holds a different quantity whose masked value is a valid-looking but wrong
-/// date (Career.fm: 18 July vs the true 26 October) — gate on
-/// [`format_version`] before trusting this.
+/// **Both format versions.** The stamp was once thought to be 26.2.0-only,
+/// because on 26.0.0 it read a valid-looking wrong date — but that reading came
+/// from the largest frame rather than `game_db.dat`, which on a long career is
+/// the match-history member. Named through the manifest, the stamp is right on
+/// 26.0.0 too: Adam Clouston's 26.0.0 save reads 1 July 2033, and its header
+/// wall-clock stamp reads October 2025, the real-world month a 26.0.0 file was
+/// last written.
 #[must_use]
 pub fn find_main_frame_date(main_frame: &[u8]) -> Option<Date> {
     let stamp = read_u16(main_frame, MAIN_FRAME_DATE_AT)?;
@@ -120,31 +107,30 @@ mod tests {
     }
 
     #[test]
-    fn finds_the_reference_saves_date() {
-        // Career.fm sits at day 299 of 2025 — 26 October 2025.
-        let found = find_game_date(&frame_with(299, 2025)).unwrap();
+    fn reads_the_headers_wall_clock_stamp() {
+        // Career (v02).fm was written on day 299 of 2025 — 26 October 2025,
+        // real-world, with its high bits clear.
+        let found = find_wall_clock_date(&frame_with(299, 2025)).unwrap();
         assert_eq!(found, Date { year: 2025, month: 10, day: 26 });
     }
 
     #[test]
-    fn declines_when_no_date_is_present() {
-        assert!(find_game_date(&[0u8; 256]).is_none());
+    fn masks_the_wall_clock_stamps_high_bits() {
+        // Adam Clouston.fm: 0x5129 = 40 << 9 | 297, year 2025 — 24 October,
+        // the real-world date, while that save sits at in-game July 2033.
+        let found = find_wall_clock_date(&frame_with(0x5129, 2025)).unwrap();
+        assert_eq!(found, Date { year: 2025, month: 10, day: 24 });
     }
 
     #[test]
-    fn declines_when_two_different_dates_are_candidates() {
-        // Ambiguity means the signature is not unique; guessing would silently
-        // shift every age in the save.
-        let mut v = frame_with(299, 2025);
-        v.extend_from_slice(&100u16.to_le_bytes());
-        v.extend_from_slice(&2030u16.to_le_bytes());
-        assert!(find_game_date(&v).is_none());
+    fn declines_a_wall_clock_stamp_with_no_plausible_year() {
+        assert!(find_wall_clock_date(&[0u8; 256]).is_none());
     }
 
     #[test]
     fn tolerates_a_short_frame() {
         for len in 0..8 {
-            let _ = find_game_date(&vec![0u8; len]);
+            let _ = find_wall_clock_date(&vec![0u8; len]);
         }
     }
 
