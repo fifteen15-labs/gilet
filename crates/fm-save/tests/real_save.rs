@@ -370,6 +370,53 @@ fn a_262_career_reads_its_date_and_flagged_clubs() {
     assert!(save.clubs.iter().any(|c| c.name == "Chelsea" && c.eid.is_some()));
 }
 
+/// The two bytes read as a fixed `FF FF` signature before the club name are
+/// per-club, exactly as the flags byte in front of them turned out to be.
+/// Heybridge Swifts — the club this save's career is played with — reads
+/// `10 FF 00`, so the club was dropped along with its whole squad, and the
+/// user's own team could not be found at all. 592 head-validated clubs in this
+/// save sit behind a pair that is not `FF FF`; Newport County, Birmingham
+/// City, Blackburn Rovers and Bolton Wanderers are among them.
+#[test]
+fn a_club_whose_tail_pair_is_not_ffff_keeps_its_squad() {
+    let Some(save) = load_named("Heybridge Swifts.fm") else {
+        eprintln!("skipped: no Heybridge Swifts.fm on this machine");
+        return;
+    };
+
+    let swifts = save
+        .clubs
+        .iter()
+        .find(|c| c.name == "Heybridge Swifts")
+        .expect("Heybridge Swifts missing from the club table");
+    assert_eq!(swifts.eid, Some(5404));
+    assert_eq!(swifts.uid, Some(5_100_159));
+    assert_eq!(swifts.nation_id, 139);
+
+    let squad = save
+        .squads
+        .iter()
+        .find(|s| s.club_eid == 5404)
+        .expect("Heybridge Swifts field a squad");
+    assert_eq!(squad.player_eids.len(), 25);
+
+    let crook = save
+        .people
+        .iter()
+        .find(|p| p.full_name == "Billy Crook")
+        .expect("Billy Crook missing");
+    assert!(squad.player_eids.contains(&crook.eid.unwrap()));
+    assert_eq!(crook.club_eid, Some(5404));
+
+    // The clubs the same anchor dropped in the divisions above them.
+    for name in ["Newport County", "Birmingham City", "Blackburn Rovers", "Bolton Wanderers"] {
+        assert!(
+            save.clubs.iter().any(|c| c.name == name && c.eid.is_some()),
+            "{name} should carry an entity id"
+        );
+    }
+}
+
 /// A club playing in one nation's pyramid from a ground in another kept no
 /// entity id, because the club head's third u32 was read as a repeat of the
 /// nation and required to match. It is not a repeat — it is where the club

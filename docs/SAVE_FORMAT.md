@@ -412,8 +412,9 @@ full evidence and the tooling.
 ## 4. Club record
 
 Clubs carry a full name and the short name FM shows in tables. The header ends
-with a three-byte signature immediately before the name length, and starts
-with the club's own entity-id head:
+with three per-club bytes immediately before the name length — long read as a
+flags byte and a fixed `FF FF` signature, none of the three constant — and
+starts with the club's own entity-id head:
 
 ```
 u32  eid               entity id — what the squad table references
@@ -427,7 +428,7 @@ u32  nation_id         (repeated)
 u32  club_id
 3    UNKNOWN
 u8   flags             usually 0x10; 0x00/0x01/0x11/0x12/0x14/0x30 also occur
-2    FF FF             signature
+2    UNKNOWN           usually FF FF; FF 00, 00 00 and 00 FF also occur
 u32  name_length
 [u8] name              e.g. "Manchester City"
 u32  short_length
@@ -446,18 +447,56 @@ that distinct club entities share display names: the reference save has two
 "Manchester City" clubs, eid 369 (men) and eid 15524 (women), each with its
 own squad.
 
+### None of the three bytes before the name is a signature
+
 The byte before `FF FF` is a **per-club flags byte, not part of the
 signature**. An Afan Lido save reads 0x10 on 17,203 records but 0x00 on 522,
 0x11 on 299, 0x12 on 6 (Tottenham and Chelsea among them), 0x14 on 3 and 0x30
 on 13. Anchoring the scan on `10 FF FF` silently dropped every non-0x10 club —
 and squads validate against the club table, so those clubs' entire squads
-vanished with them and their contracted first-teamers showed no club. The
-reader now accepts any flags byte when the entity head validates, and requires
-the long-verified 0x10 only for records without a validating head, because two
-consecutive length-prefixed strings is not a specific enough shape on its own —
-the file also contains the commentary word lists, which produce thousands of
-pairs like `("admirable", "amazing")` and `("bewitching", "brilliant")`.
-Requiring an initial capital removes those too.
+vanished with them and their contracted first-teamers showed no club.
+
+**The `FF FF` behind it is per-club as well** (6 August 2026). Anchoring on
+that pair had the same failure, one step along: the user's own club, Heybridge
+Swifts, reads `10 FF 00` and so could not be found in Gilet at all. Surveying
+every position in a 26.2.0 save whose *entity head* validates and whose tail is
+a plausible name/short-name pair gives 19,365 clubs, and the three bytes
+distribute:
+
+| bytes | count |
+|---|---|
+| `10 FF FF` | 17,777 |
+| `00 FF FF` | 721 |
+| `10 FF 00` | 419 |
+| `11 FF FF` | 257 |
+| `10 00 00` | 114 |
+| `11 FF 00` | 51 |
+| `30 FF FF` | 16 |
+| `10 00 FF` | 7 |
+| `01 FF FF` | 2 |
+| `11 00 00` | 1 |
+
+592 of those clubs sit behind a pair that is not `FF FF` — Heybridge Swifts,
+Newport County, Birmingham City, Blackburn Rovers, Bolton Wanderers, Boston
+United among them. The reader therefore anchors on the **entity head**, not on
+those bytes at all: a record whose head validates is a club whatever the three
+bytes read. A record with no validating head must still carry the
+long-verified `10 FF FF`, because two consecutive length-prefixed strings is
+not a specific enough shape on its own — the file also contains the commentary
+word lists, which produce thousands of pairs like `("admirable", "amazing")`
+and `("bewitching", "brilliant")`. Requiring an initial capital removes those
+too.
+
+The head check has to run before the strings, not after: parsing two
+length-prefixed strings at every offset of a 285 MB frame takes over a minute,
+where testing the head's `FFFFFFFF` first keeps the whole parse at 3.5 s.
+
+On the Heybridge save the fix is worth **+592 clubs, +417 squads and +5,505
+players linked to a club**; on a day-one save +97 clubs and +39 linked players,
+and no club entity id is claimed by two records in any save tested.
+`crates/fm-save/examples/clubtail.rs` reproduces the survey and
+`crates/fm-save/examples/linkstats.rs` the before/after numbers; the regression
+test is `a_club_whose_tail_pair_is_not_ffff_keeps_its_squad`.
 
 ### The third nation u32 is where the club sits, not a repeat
 

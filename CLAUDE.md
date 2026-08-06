@@ -100,7 +100,15 @@ plainly: header October 2025, database July 2033, sixteen-year-old newgens
 reported as eight. The club record's pre-`FF FF` byte is per-club **flags**, not a
 constant signature — accepting all values when the entity head validates
 recovered Tottenham, Chelsea and ~1,050 other clubs plus their squads in a
-26.2.0 save. The club head's third nation u32 is **not a repeat**: it is the
+26.2.0 save. **The `FF FF` behind it is per-club too** (6 Aug 2026), which the
+same failure one step along proved: a new Heybridge Swifts career could not
+find its own club, because that record reads `10 FF 00`. The scan now anchors
+on the **entity head** and treats all three bytes before the name as data,
+requiring `10 FF FF` only where no head validates — +592 clubs, +417 squads and
++5,505 linked players on that save, +97 clubs on a day-one one, no club eid
+claimed twice. The head test must run *before* the strings: parsing two
+length-prefixed strings at every offset of a 285 MB frame costs a minute where
+the head check keeps the whole parse at 3.5 s. The club head's third nation u32 is **not a repeat**: it is the
 country the club sits in, where the other two are the pyramid it plays in
 (`SAVE_FORMAT.md` §4). Requiring all three to match dropped the entity head of
 every cross-border club — The New Saints, Cardiff, Swansea, Wrexham, Newport
