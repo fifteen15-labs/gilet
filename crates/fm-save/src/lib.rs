@@ -45,6 +45,12 @@ pub struct Save {
     /// One record per club that fields a first-team squad, referencing people
     /// by entity id. `Person::club_eid` is the same link from the other side.
     pub squads: Vec<Squad>,
+    /// B-team and youth squads, read from the same table's 0x13/0x15-typed
+    /// rows. They bind `Person::club_eid` for players no first-team squad
+    /// claims — the players outside the loaded leagues — but stay out of
+    /// [`Save::squads`] so a club's squad size, wage bill and audit keep
+    /// meaning first team.
+    pub team_squads: Vec<Squad>,
     /// Squad fillers with no person record — generated non-contract players
     /// stored as entity stubs. Only stubs whose entity id no parsed person
     /// claims are kept, so a squad list can show every member it references.
@@ -152,6 +158,7 @@ impl Save {
         let mut people = Vec::new();
         let mut clubs = Vec::new();
         let mut squads = Vec::new();
+        let mut team_squads = Vec::new();
         if let Some(frame) = main {
             // People sit after the string table their names reference; both
             // scans need it, so it is parsed once and dropped when done.
@@ -181,6 +188,15 @@ impl Save {
                 link_members(&mut people, &squads, &chain);
 
                 link_backroom(&frame.data, &mut people, &clubs, &club_ids);
+
+                // B and youth squads bind last, and only people neither a
+                // first-team list nor the backroom claimed — a player-coach
+                // in a youth list keeps the staff role and club the backroom
+                // pass gave them. A player appearing in the lists of two
+                // *different* clubs stays unbound: an ambiguous read is not
+                // a link.
+                team_squads = squad::scan_team_squads(&frame.data, &club_ids);
+                link_team_members(&mut people, &team_squads, &chain);
 
                 // Gender falls out of the squad structure: squads are
                 // single-gender and the female forename pool is the tail of
@@ -266,6 +282,7 @@ impl Save {
             people,
             clubs,
             squads,
+            team_squads,
             stubs,
             game_date,
             shortlists,
@@ -380,6 +397,74 @@ fn link_members(people: &mut [Person], squads: &[squad::Squad], chain: &[person:
                 if person.club_eid.is_none() {
                     person.club_eid = Some(s.club_eid);
                 }
+            }
+        }
+    }
+}
+
+/// Sets `Person::club_eid` from the B, youth and out-of-league squad lists,
+/// for people the first-team pass left unbound.
+///
+/// A person can sit in several such lists — a B squad and a youth squad of
+/// the same club is fine and binds; lists of two different clubs is a
+/// contradiction, and the person stays unbound rather than get a guessed
+/// club. Measured on a 2035 save that is single digits of conflicted people
+/// against tens of thousands bound.
+///
+/// An out-of-league list carries one extra check before it may bind: when
+/// three or more of its members already have a first-team club and their
+/// majority is *not* this list's club, the whole list is refused. A real
+/// out-of-league squad's members are precisely the people no loaded squad
+/// knows — a list full of already-placed players pointing elsewhere is
+/// noise wearing a club's entity id. B and youth lists are exempt: their
+/// known members are loanees, and loanees genuinely point elsewhere.
+fn link_team_members(people: &mut [Person], team_squads: &[squad::Squad], chain: &[person::Identity]) {
+    let offsets: Vec<usize> = people.iter().map(|p| p.offset).collect();
+    let mut eid_to_person: std::collections::HashMap<u32, usize> = std::collections::HashMap::new();
+    for id in chain {
+        let idx = offsets.partition_point(|&o| o <= id.offset);
+        if let Some(i) = idx.checked_sub(1) {
+            eid_to_person.entry(id.eid).or_insert(i);
+        }
+    }
+
+    let mut club_of: std::collections::HashMap<u32, Option<u32>> = std::collections::HashMap::new();
+    for s in team_squads {
+        if s.kind == squad::SquadKind::OutOfLeague {
+            let mut counts: std::collections::HashMap<u32, usize> = std::collections::HashMap::new();
+            let mut known = 0usize;
+            for member in &s.player_eids {
+                let bound = eid_to_person
+                    .get(member)
+                    .and_then(|&i| people.get(i))
+                    .and_then(|p| p.club_eid);
+                if let Some(c) = bound {
+                    *counts.entry(c).or_default() += 1;
+                    known += 1;
+                }
+            }
+            let majority = counts.iter().max_by_key(|(_, &n)| n).map(|(&c, _)| c);
+            if known >= 3 && majority != Some(s.club_eid) {
+                continue;
+            }
+        }
+        for member in &s.player_eids {
+            club_of
+                .entry(*member)
+                .and_modify(|c| {
+                    if *c != Some(s.club_eid) {
+                        *c = None;
+                    }
+                })
+                .or_insert(Some(s.club_eid));
+        }
+    }
+
+    for (member, club) in club_of {
+        let Some(club) = club else { continue };
+        if let Some(person) = eid_to_person.get(&member).and_then(|&i| people.get_mut(i)) {
+            if person.club_eid.is_none() {
+                person.club_eid = Some(club);
             }
         }
     }

@@ -53,9 +53,12 @@ export type SquadAudit = {
  * own squad size rather than presented as gospel.
  *
  * Staff are bound to their club too (`backroom.rs`), so the squad is the
- * playing side only — a club's coaches are not part of its age profile. */
+ * playing side only — a club's coaches are not part of its age profile. And
+ * since the team-squad pass, B and youth players carry the club as well, so
+ * the audit keys on the first-team flag: a first-team age profile diluted by
+ * sixteen-year-old intakes reads younger than the team that plays. */
 export function squadOf(club: Club, players: readonly Player[]): Player[] {
-	return players.filter((p) => p.club === club.short_name && p.is_player);
+	return players.filter((p) => p.club === club.short_name && p.is_player && p.first_team);
 }
 
 /** The people the save employs at this club who are not players: the manager

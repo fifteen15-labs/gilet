@@ -32,6 +32,26 @@ pub struct Squad {
     pub captain_eid: Option<u32>,
     /// Person entity id of the vice-captain, when one is set.
     pub vice_captain_eid: Option<u32>,
+    /// Which of the club's squads this record is — where in the table it was
+    /// found, not an inference.
+    pub kind: SquadKind,
+}
+
+/// The squad kinds the table stores, from each record's separator type byte.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SquadKind {
+    /// The senior squad of a club in a loaded league — the uid-validated
+    /// record [`scan_squads`] claims.
+    FirstTeam,
+    /// A B or reserve side (separator type 0x13).
+    BTeam,
+    /// A youth squad (separator type 0x15).
+    Youth,
+    /// The senior squad of a club outside the loaded leagues — a 0x64 row
+    /// whose uid the club table does not carry. Its members bind with a veto:
+    /// a row whose already-bound members point at a different club is noise,
+    /// not a squad.
+    OutOfLeague,
 }
 
 /// Longest squad list a record may declare. Real first-team squads top out in
@@ -43,6 +63,25 @@ const MAX_EID: u32 = 3_000_000;
 
 /// A record body never runs further than this before the next head.
 const MAX_RECORD: usize = 6_000;
+
+/// Separator type bytes for the squad kinds that carry a club's extra
+/// squads. The byte sits three before the record's entity id, at the tail of
+/// the `01 [type] FF [flag]` separator: 0x13 is the B team, 0x15 the youth
+/// squad. Senior rows read 0x64 — including *nation* teams, whose entity
+/// ids collide with small club eids, which is why 0x64 never binds here.
+const TEAM_TYPE_B: u8 = 0x13;
+const TEAM_TYPE_YOUTH: u8 = 0x15;
+const TEAM_TYPE_SENIOR: u8 = 0x64;
+
+/// Bit set in a 0x64 row's separator flag byte when the row is a
+/// representative side — a national team — rather than a club. Only
+/// meaningful on senior rows: a B row's flag legitimately carries it.
+const REPRESENTATIVE_FLAG: u8 = 0x20;
+
+/// Nation-team entity ids run to 249 — a team row keyed at or below this
+/// could be a national side wearing a small club's eid, so it is refused.
+/// The B and youth squads of the first ~260 database clubs are the cost.
+const MIN_TEAM_CLUB_EID: u32 = 261;
 
 /// Scans a frame for the squad table.
 ///
@@ -82,6 +121,113 @@ pub fn scan_squads(frame: &[u8], club_ids: &[(u32, u32)]) -> Vec<Squad> {
             player_eids,
             captain_eid,
             vice_captain_eid,
+            kind: SquadKind::FirstTeam,
+        });
+    }
+    out
+}
+
+/// Scans the same table for a club's *other* squads — B teams and youth
+/// sides.
+///
+/// The squad table holds several records per club, each behind a separator
+/// ending `[type] FF [flag]`, then `[eid][00 x10][ordinal][uid]`. The senior
+/// record's uid is the club-table uid — that is what [`scan_squads`] claims.
+/// The B (type 0x13) and youth (0x15) records are keyed by the *club's* eid
+/// but carry their own team entity's uid, so the uid check can never accept
+/// them; what proves them real instead is the **ordinal**: the u32 after the
+/// zero run ascends across the whole table, one per record, and the longest
+/// ascending run through it is the table's own spine — the same trick that
+/// separates the club table walk from shadows, on a different key.
+///
+/// Every separator-anchored head bounds its neighbour's record, including
+/// the senior, nation and already-claimed rows in between: an empty record
+/// otherwise reads straight through into the next record's player list and
+/// claims a neighbour's squad as its own, one club over.
+///
+/// 0x64 rows are senior squads. Those whose uid matches the club table are
+/// [`scan_squads`]'s business; the rest are **clubs outside the loaded
+/// leagues**, whose uid the club table no longer carries — accepted here
+/// only when the separator's flag byte has bit 0x20 clear, because that bit
+/// marks the *representative* rows: every national side in the 2035 index
+/// save — men's at nation eids 1..250, women's from 261 up, colliding with
+/// real club eids — reads flag 0x24 where club rows read 0x00/0x04. The flag
+/// bit is only trusted on 0x64 rows: a B row legitimately reads 0x34.
+///
+/// These lists are where the players outside the loaded leagues live —
+/// found 7 August 2026 chasing a Rangers B signing FM showed at Rangers
+/// while Gilet showed no club at all.
+#[must_use]
+pub fn scan_team_squads(frame: &[u8], club_ids: &[(u32, u32)]) -> Vec<Squad> {
+    let by_eid: HashMap<u32, u32> = club_ids.iter().copied().collect();
+
+    // One walk collects every head (as record bounds) and the rows worth
+    // reading.
+    let mut bounds: Vec<usize> = Vec::new();
+    let mut rows: Vec<(usize, u32, u32, SquadKind)> = Vec::new();
+    let mut at = 3usize;
+    while at + 26 <= frame.len() {
+        if frame.get(at + 4..at + 14) != Some(&[0u8; 10][..]) {
+            at += 1;
+            continue;
+        }
+        if frame.get(at.wrapping_sub(2)) != Some(&0xFF) {
+            at += 1;
+            continue;
+        }
+        let (Some(eid), Some(ordinal), Some(uid)) = (
+            read_u32(frame, at),
+            read_u32(frame, at + 14),
+            read_u32(frame, at + 18),
+        ) else {
+            at += 1;
+            continue;
+        };
+        bounds.push(at);
+        let ty = frame.get(at.wrapping_sub(3)).copied().unwrap_or(0);
+        let flag = frame.get(at.wrapping_sub(1)).copied().unwrap_or(0);
+        let kind = match ty {
+            TEAM_TYPE_B => Some(SquadKind::BTeam),
+            TEAM_TYPE_YOUTH => Some(SquadKind::Youth),
+            TEAM_TYPE_SENIOR if flag & REPRESENTATIVE_FLAG == 0 => Some(SquadKind::OutOfLeague),
+            _ => None,
+        };
+        if let Some(kind) = kind {
+            if eid >= MIN_TEAM_CLUB_EID
+                && by_eid.get(&eid).is_some_and(|&club_uid| club_uid != uid)
+            {
+                rows.push((at, eid, ordinal, kind));
+            }
+        }
+        at += 26;
+    }
+
+    // The spine: longest ascending run of ordinals.
+    let indexed: Vec<(usize, u32)> = rows.iter().map(|&(_, _, ord, _)| ord).enumerate().collect();
+    let spine = longest_ascending_run(&indexed);
+
+    let mut out = Vec::new();
+    for &(row, _) in &spine {
+        let Some(&(offset, club_eid, _, kind)) = rows.get(row) else {
+            continue;
+        };
+        let next = bounds.partition_point(|&o| o <= offset);
+        let end = bounds
+            .get(next)
+            .copied()
+            .unwrap_or(frame.len())
+            .min(offset + MAX_RECORD);
+        let (player_eids, captain_eid, vice_captain_eid) = read_list(frame, offset + 26, end);
+        if player_eids.is_empty() {
+            continue;
+        }
+        out.push(Squad {
+            offset,
+            club_eid,
+            player_eids,
+            captain_eid,
+            vice_captain_eid,
+            kind,
         });
     }
     out
@@ -388,6 +534,129 @@ mod tests {
         let full = record(369, 678, &[100, 200, 300], 100, 200);
         for cut in 0..full.len() {
             let _ = scan_squads(full.get(..cut).unwrap(), &clubs);
+        }
+    }
+
+    /// Builds a team-table record: the `01 [type] FF [flag]` separator, then
+    /// `[eid][00 x10][ordinal][uid]`, opaque body bytes, and — when given —
+    /// the FF-marked list with both armband slots unset.
+    fn team_record_flagged(
+        ty: u8,
+        flag: u8,
+        eid: u32,
+        ordinal: u32,
+        uid: u32,
+        players: Option<&[u32]>,
+    ) -> Vec<u8> {
+        let mut v = vec![0x01, ty, 0xFF, flag];
+        v.extend_from_slice(&eid.to_le_bytes());
+        v.extend_from_slice(&[0u8; 10]);
+        v.extend_from_slice(&ordinal.to_le_bytes());
+        v.extend_from_slice(&uid.to_le_bytes());
+        v.extend_from_slice(&[0x0A, 0x80, 0x00, 0x11, 0x22]); // opaque body
+        if let Some(players) = players {
+            v.extend_from_slice(&[0xFF; 4]);
+            v.extend_from_slice(&(players.len() as u16).to_le_bytes());
+            for p in players {
+                v.extend_from_slice(&p.to_le_bytes());
+            }
+            v.extend_from_slice(&[0xFF; 8]); // both armbands unset
+        }
+        v.extend_from_slice(&[0u8; 4]);
+        v
+    }
+
+    fn team_record(ty: u8, eid: u32, ordinal: u32, uid: u32, players: Option<&[u32]>) -> Vec<u8> {
+        team_record_flagged(ty, 0x24, eid, ordinal, uid, players)
+    }
+
+    #[test]
+    fn an_out_of_league_senior_squad_reads() {
+        // A 0x64 row whose uid the club table does not carry, flag bit 0x20
+        // clear — the senior squad of a club outside the loaded leagues.
+        let clubs = [(4321u32, 8765u32)];
+        let buf = team_record_flagged(0x64, 0x00, 4321, 30_000, 0x7741_0001, Some(&[100, 200, 300]));
+
+        let squads = scan_team_squads(&buf, &clubs);
+        assert_eq!(squads.len(), 1);
+        assert_eq!(squads.first().unwrap().kind, SquadKind::OutOfLeague);
+        assert_eq!(squads.first().unwrap().club_eid, 4321);
+    }
+
+    #[test]
+    fn a_representative_flagged_senior_row_is_refused() {
+        // National sides share the 0x64 type over eids that collide with
+        // clubs — women's national teams start just past the men's range —
+        // and carry flag bit 0x20. South Korea's squad must not become club
+        // 4321's players.
+        let clubs = [(4321u32, 8765u32)];
+        let buf = team_record_flagged(0x64, 0x24, 4321, 30_000, 0x7741_0001, Some(&[100, 200, 300]));
+        assert!(scan_team_squads(&buf, &clubs).is_empty());
+    }
+
+    #[test]
+    fn reads_a_b_team_squad_keyed_by_club_eid() {
+        // Rangers' shape in the 2035 save: a 0x13-typed row keyed by the
+        // club's eid with the team entity's uid, list members unknown to the
+        // first-team table, both armbands unset.
+        let clubs = [(979u32, 1569u32)];
+        let buf = team_record(0x13, 979, 24586, 0x7741_7B74, Some(&[31581, 152_165, 118_478]));
+
+        let squads = scan_team_squads(&buf, &clubs);
+        assert_eq!(squads.len(), 1);
+        let b = squads.first().unwrap();
+        assert_eq!(b.club_eid, 979);
+        assert_eq!(b.player_eids, vec![31581, 152_165, 118_478]);
+        assert_eq!(b.captain_eid, None);
+    }
+
+    #[test]
+    fn an_empty_record_does_not_steal_its_neighbours_list() {
+        // The first row has no list of its own; unbounded, it would read
+        // straight through into the next record and claim the other club's
+        // squad. Every head bounds the record before it.
+        let clubs = [(979u32, 1569u32), (980, 1570)];
+        let mut buf = team_record(0x13, 979, 24586, 0x7741_7B74, None);
+        buf.extend(team_record(0x13, 980, 24587, 0x7741_7B75, Some(&[500, 600])));
+
+        let squads = scan_team_squads(&buf, &clubs);
+        assert_eq!(squads.len(), 1, "the empty record must yield nothing");
+        assert_eq!(squads.first().unwrap().club_eid, 980);
+        assert_eq!(squads.first().unwrap().player_eids, vec![500, 600]);
+    }
+
+    #[test]
+    fn a_nation_range_eid_is_refused() {
+        // Nation teams share the table with 0x64-typed senior rows, but a
+        // row at a nation-sized eid could be a national side either way —
+        // South Korea's 26 at entity 79 must not become club 79's players.
+        let clubs = [(79u32, 243u32)];
+        let buf = team_record(0x13, 79, 24586, 0x7741_7B74, Some(&[100, 200, 300]));
+        assert!(scan_team_squads(&buf, &clubs).is_empty());
+    }
+
+    #[test]
+    fn a_senior_typed_row_is_refused() {
+        // 0x64 rows are senior teams — the club-table uid pair claims the
+        // real ones, and nation teams wear the same type over colliding eids.
+        let clubs = [(979u32, 1569u32)];
+        let buf = team_record(0x64, 979, 24586, 0x7741_7B74, Some(&[100, 200]));
+        assert!(scan_team_squads(&buf, &clubs).is_empty());
+    }
+
+    #[test]
+    fn a_row_carrying_the_clubs_own_uid_is_left_to_the_first_team_scan() {
+        let clubs = [(979u32, 1569u32)];
+        let buf = team_record(0x13, 979, 24586, 1569, Some(&[100, 200]));
+        assert!(scan_team_squads(&buf, &clubs).is_empty());
+    }
+
+    #[test]
+    fn team_scan_tolerates_a_truncated_buffer() {
+        let clubs = [(979u32, 1569u32)];
+        let full = team_record(0x13, 979, 24586, 0x7741_7B74, Some(&[100, 200, 300]));
+        for cut in 0..full.len() {
+            let _ = scan_team_squads(full.get(..cut).unwrap(), &clubs);
         }
     }
 }

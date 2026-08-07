@@ -265,17 +265,18 @@ fn links_players_to_their_clubs() {
     // "Man City" covers two club entities — the men's squad of 33 and the
     // women's of 20, separate clubs in FM's database sharing a short name.
     //
-    // Players only: the backroom binds to its club too, so the people at a
-    // club are its squad *and* its staff, and folding the two together is what
-    // would make a squad look three times the size it is.
+    // First-team players only: the backroom binds to its club, and since the
+    // team-squad pass so do the B and youth players — the people at a club
+    // are squad, staff and academy together, and folding them into one count
+    // is what would make a squad look three times the size it is.
     let city_squad = summary
         .players
         .iter()
-        .filter(|p| p.club == "Man City" && p.is_player)
+        .filter(|p| p.club == "Man City" && p.is_player && p.first_team)
         .count();
     assert!(
         (15..=70).contains(&city_squad),
-        "City's squads should be squad-sized, got {city_squad}"
+        "City's first-team squads should be squad-sized, got {city_squad}"
     );
     let city_staff = summary
         .players

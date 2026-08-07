@@ -50,8 +50,12 @@ export type Player = {
 	positions: string[];
 	/** Rating 1-20 for each of the 15 position slots. Empty for staff. */
 	position_ratings: number[];
-	/** Short name of the club whose squad lists this person; empty when unattached. */
+	/** Short name of the club whose squad lists this person; empty when
+	 * unattached. Covers B and youth players, not only the first team. */
 	club: string;
+	/** Whether a first-team squad list carries this person. False for B and
+	 * youth players, staff and the unattached. */
+	first_team: boolean;
 	/** Whether this person is a woman; null when the save can't say. */
 	female: boolean | null;
 	/** Weekly wage in the save's display currency. Null when out of contract. */

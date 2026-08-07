@@ -531,14 +531,23 @@ reproduces the survey; the regression test is
 `a_cross_border_club_resolves_its_squad` in `tests/real_save.rs`, which pins
 Jack Sion to The New Saints.
 
-### The eight u32s after the short name are not teams
+### The eight u32s after the short name are not teams — they are the board
 
 Immediately after the short name sits `01`, six bytes, a `01`/`02` flag, a
 count byte and that many u32s — for Manchester City eight values (6610, 6611,
 7578, ...). These were long suspected to be the club's team list. They are
 not: resolving them as club entity ids gives Badalona, Pittsburgh Riverhounds,
-Stockport Georgians — unrelated small clubs worldwide. What that list actually
-is remains open; it is not needed for squads.
+Stockport Georgians — unrelated small clubs worldwide.
+
+**Resolved 7 August 2026: they are person entity ids — the boardroom.** The
+shape is `01 [u16] [u32 director-of-football] [flag] [count] [count x u32
+board members] 01`, and on the 2035 index save the names check out against
+reality: Jean-Louis Leca as Lens' sporting director with owner Joseph
+Oughourlian on the board, Hugo Viana at Manchester City, Richard Hughes at
+Liverpool, Andrew Cavenagh chairing Rangers. Only ~700 of 20,611 clubs carry
+this exact byte shape — the rest vary and are not yet mapped
+(`OPEN_PROBLEMS.md` §3c; probe: `examples/teamlist.rs`). Not yet surfaced in
+the UI.
 
 ## 5. Players vs staff — a rejected approach (superseded by 6a)
 
@@ -858,6 +867,81 @@ rare shared values, same-club agreement sweeps, id arrays in the club body)
 are preserved in the git history of this file; the root mistake was assuming
 person records had no identifier — they do, the identity block of section 3.
 
+### 6d-quater. B and youth squads — the same table's other rows, SOLVED
+
+Found 7 August 2026 chasing a player FM's search showed at Rangers while
+Gilet showed no club: the squad table holds **several records per club**, and
+the walk above claims only the senior one. Each record sits behind a
+separator ending `01 [type] FF [flag]`, then the familiar head:
+
+```
+01 [type] FF [flag]           separator; type 0x64 senior, 0x13 B, 0x15 youth
+u32   owner_eid               the CLUB's eid for club teams — see below
+10x   00
+u32   ordinal                 ascends across the whole table, one per record
+u32   team_uid                the team entity's own uid
+...   variable body
+                              (optional FF-marked list as in 6d)
+```
+
+Three things stop the obvious parse:
+
+- **The senior row's uid is the club-table uid** — that is what 6d's
+  `(eid, uid)` check accepts. The B and youth rows are keyed by the *club's*
+  eid but carry their **own team entity's uid** (`0x77xxxxxx` when
+  career-generated), so the check can never claim them. What proves them
+  real instead is the **ordinal**: it ascends across the entire table, and
+  the longest ascending run through it is the table's spine.
+- **`0x64` rows include nation teams**, whose owner eids are *nation-team
+  entities* (South Korea's 26-man squad sits at entity 79) and collide with
+  small club eids. Only `0x13`/`0x15` rows bind, and only above eid 260 —
+  the nation range runs to 249. The B and youth squads of the first ~260
+  database clubs are the accepted cost.
+- **Most rows are empty**, and an unbounded list hunt reads straight through
+  an empty record into its neighbour's list — every squad it claims is then
+  one club over (the first scan of this table read exactly that way, off by
+  one club per empty row). Every separator-anchored head bounds the record
+  before it, claimed, senior, nation and empty rows included.
+
+**The 0x64 senior rows bind too — that is where the out-of-league clubs
+live** (same day, one step further). A senior row whose uid matches the
+club table is 6d's business; the rest are clubs outside the loaded leagues,
+their uid regenerated at season rollover. The trap is that **national sides
+share the 0x64 type**: men's at nation eids 1–249, women's from 261 up —
+squarely inside club-eid space, so Denmark Women at entity 262 would read
+as OB's squad. The separator's flag byte splits them: every representative
+row in the index save carries **bit 0x20** (`0x24`) where club rows read
+`0x00`/`0x04`. The bit is only meaningful on senior rows — a legitimate B
+row reads `0x34`. One belt-and-braces veto sits at link time: an
+out-of-league list where three or more members already carry a first-team
+club whose majority is elsewhere is refused whole — a real out-of-league
+squad's members are precisely the people no loaded list knows, and B/youth
+lists are exempt because their known members are loanees, who genuinely
+point elsewhere.
+
+The lists are where the missing players live: **22,495 players bind outside
+the first-team lists on the 2035 index save** (15,788 from B/youth, the
+rest senior out-of-league), 5,950 of the senior bindings with *zero*
+cross-club conflicts. Conflicted players stay unbound: an ambiguous read is
+not a link. Bindings check out against reality: the index case (Jae-Wan
+Choi, Rangers B) matches FM's own search; day-one lists put Jay Spearing in
+Liverpool's youth setup and Adam Rooney at Barton Town, both true in the
+FM26 database; the senior pass reads Khorfakkan, Cruz Azul and the Scottish
+B-loan army correctly on the 2035 save. **Day-one saves gain little from
+the senior pass** (+245): an out-of-league club's senior row exists but is
+*empty* until the game materialises the squad, which is why Willian and
+Calleri still show no club on day one — their contracts now decode
+(Grêmio and São Paulo deals to 31/12/2026, the Brazilian season's end), but
+no list in `game_db` carries them. Secondary lists bind only players no
+first-team list claims, and stay out of squad-size and wage-bill sums.
+
+The known-member "majority" of a B list routinely points at *other* clubs —
+Hearts' list reads 4 known members, all at Cumnock and the like. Those are
+loanees: a B player good enough to be loaned out is bound to the borrowing
+club by its first-team list, and the players actually at the club are
+exactly the ones no other list knows. `regscan.rs` reproduces the whole
+diagnosis; `teambound.rs` prints what the pass binds on any save.
+
 ## 6d-bis. Stub people — squad fillers without person records
 
 Squad lists can reference entity ids that no person record answers to. Those
@@ -924,7 +1008,7 @@ and uid is `None`, because the save genuinely does not store it.
 ## 6e. Contracts — wage and expiry SOLVED
 
 The contract lives in the bytes immediately **before** the person's record
-prefix, within ~220 bytes. The wage row is anchored on the person's own
+prefix, within ~600 bytes. The wage row is anchored on the person's own
 entity id:
 
 ```
@@ -932,9 +1016,25 @@ entity id:
 ```
 
 and the expiry sits earlier in the block as a date pair following a run of
-eight `FF` bytes. Other fields visible in the block but not yet parsed:
-contract start, the date the deal was signed, and several smaller money
-values that look like bonuses and clauses.
+eight `FF` bytes, within 400 bytes of the anchor (measured over 141K
+contracts in a 2035 save: all but 13). Other fields visible in the block but
+not yet parsed: contract start, the date the deal was signed, and several
+smaller money values that look like bonuses and clauses.
+
+**The contract is not the only row anchored on the eid** (found 7 August
+2026). Between it and the record prefix other eid-anchored rows can appear —
+Jae-Wan Choi (2035 save, Rangers B) carries `[eid][u32][00 00 00 00][u32]
+01 00 00 01` eighty bytes before his record, international-duty shaped, with
+the true contract 337 bytes back. The hunt therefore walks *backwards
+through every occurrence* of the eid until one passes the shape test, rather
+than testing only the last; demanding the last occurrence be the contract
+had dropped 63,491 of 141,211 contracts in that save — every player whose
+contract had such a row behind it showed no wage, and the free-agent filter
+(no contract *and* no club) misfiled the ones whose club link is also
+missing (§1 residual 1). Some blocks' expiry slot holds day 0 / year 2048
+rather than a date — those read as no expiry, and the nearby
+`[u16 masked-day][u16 year]` stamps (Choi: day 244 of 2034) are not yet
+understood well enough to claim.
 
 Verified against public figures and an in-game report:
 

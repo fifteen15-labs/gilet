@@ -109,9 +109,14 @@ pub struct PlayerRow {
     pub positions: Vec<String>,
     /// Rating 1-20 for each of the 15 position slots. Empty for staff.
     pub position_ratings: Vec<u8>,
-    /// Short name of the club whose first-team squad lists this person, empty
-    /// when unattached — free agents, national staff, unresolved records.
+    /// Short name of the club this person belongs to, empty when unattached —
+    /// free agents, national staff, unresolved records. Since the team-squad
+    /// pass this covers B and youth players too, not only the first team.
     pub club: String,
+    /// Whether a first-team squad list carries this person. False for B and
+    /// youth players, staff and the unattached — the flag that keeps a squad
+    /// audit meaning the team that plays, not everyone wearing the badge.
+    pub first_team: bool,
     /// Whether this person is a woman, inferred from the forename pool.
     /// `None` when the save has no women's football to derive the split from.
     pub female: Option<bool>,
@@ -462,8 +467,10 @@ fn person_row(
     p: &fm_save::Person,
     now: fm_save::Date,
     club_names: &std::collections::HashMap<u32, &str>,
+    first_team: &std::collections::HashSet<u32>,
 ) -> PlayerRow {
     PlayerRow {
+        first_team: p.eid.is_some_and(|e| first_team.contains(&e)),
         id: p.offset,
         eid: p.eid,
         name: p.full_name.clone(),
@@ -562,6 +569,8 @@ fn stub_rows(
                 staff: None,
                 stub: true,
                 staff_role: None,
+                // Stubs only surface through first-team squad references.
+                first_team: true,
             })
         })
         .collect()
@@ -607,17 +616,28 @@ impl SquadTotals {
 /// are undecoded: a club is as strong as the players it fields. Staff carry no
 /// ability block and so never count towards a squad — their wages are not
 /// decoded at all (`OPEN_PROBLEMS.md` §3c), which is the other reason a wage
-/// bill here is a playing bill.
+/// bill here is a playing bill. Only first-team squad members count:
+/// `club_eid` alone would fold the B and youth lists in (they bind it too,
+/// since the team-squad pass), and a first-team age profile diluted by
+/// sixteen-year-old intakes reads younger than the team that plays.
 fn squad_strength(
     save: &fm_save::Save,
     now: fm_save::Date,
 ) -> std::collections::HashMap<u32, SquadTotals> {
+    let first_team: std::collections::HashSet<u32> = save
+        .squads
+        .iter()
+        .flat_map(|s| s.player_eids.iter().copied())
+        .collect();
     let mut strength: std::collections::HashMap<u32, SquadTotals> =
         std::collections::HashMap::new();
     for p in &save.people {
         let (Some(eid), Some(ability)) = (p.club_eid, p.ability.as_ref()) else {
             continue;
         };
+        if !p.eid.is_some_and(|e| first_team.contains(&e)) {
+            continue;
+        }
         let entry = strength.entry(eid).or_default();
         entry.ability += u32::from(ability.current);
         entry.potential += u32::from(ability.potential);
@@ -676,11 +696,16 @@ pub fn load_save(
     // census is honest, but not shown: a row with no age, club, attributes
     // or contract answers no scouting question and clogs the table.
     // Owner's call, 4 August 2026.
+    let first_team: std::collections::HashSet<u32> = save
+        .squads
+        .iter()
+        .flat_map(|s| s.player_eids.iter().copied())
+        .collect();
     let mut players: Vec<PlayerRow> = save
         .people
         .iter()
         .filter(|p| !p.compact)
-        .map(|p| person_row(p, now, &club_names))
+        .map(|p| person_row(p, now, &club_names, &first_team))
         .collect();
     players.extend(stub_rows(&save, &club_names));
 

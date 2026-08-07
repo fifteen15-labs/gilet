@@ -59,23 +59,54 @@ squad-referenced, so the residuals below are untouched by the fix.
 
 **Residuals, in order of value:**
 
-1. **Players at clubs outside the loaded leagues have no squad list at all.**
-   In the Afan Lido save 6,585 of 27,483 contracted players resolve to no
-   club (8,179 of 27,640 in the aged Ongoing.fm), and probing (diagnose
-   example, "where do the orphans' squad lists
-   hide") shows their eids and uids appear in *no* FF-marked count list in
-   `game_db` — Brazilian, Argentine and MLS squads among them (Willian,
-   Calleri, Acosta). The squad table only materialises for active divisions;
-   FM must derive the rest from something else, likely the contract block,
-   whose club link — if it exists — is not yet found. A naive scan of the
-   ±384 bytes around the person record for known club eids matches only
-   noise, and the contract anchor's post-eid u32 is not a club id either
-   (Haaland 501, Sarr 550 — no relation to Man City/Spurs ids). One lead:
-   the `used_player_data.dat` member holds one entry per player
-   (`[eid u32][tag u8][year 0x07E9][packed bytes]` — Willian and Calleri
-   both present exactly once), so its packed payload may carry the
-   registration club. Next: decode that member, or diff two same-club
-   orphans' full records against a third-club orphan for a shared u32.
+1. **Players at clubs outside the loaded leagues — SOLVED for B/youth
+   squads, 7 August 2026** (`SAVE_FORMAT.md` §6d-quater, `scan_team_squads`
+   in `squad.rs`). The squad table holds several records per club behind
+   `01 [type] FF [flag]` separators — senior (0x64, uid-validated, long
+   claimed), B (0x13) and youth (0x15), the latter two keyed by the club's
+   eid with the *team entity's own uid*, which is why the `(eid, uid)`
+   check could never see them. Validated by the table-wide ascending
+   ordinal, bounded record by record so empty rows cannot steal a
+   neighbour's list, they bind 15,788 club-less players on the 2035 index
+   save (3,328 day one, 5,395 on the 2030 benchmark) with single-digit
+   conflicts, which stay unbound. Index case: Jae-Wan Choi → Rangers,
+   matching FM's own search.
+
+   The morning's earlier notes on this hunt (a "second table" of ~250K
+   team entities, a swapped-head B-club record binding through club_id)
+   were artefacts of a **byte-shifted head read** — "entity 250676" was
+   Rangers' 979 read one byte early — and of empty records claiming their
+   neighbour's list. The nation-team rows are real, though: national
+   selections sit in the same table as 0x64 rows keyed by *nation-team
+   entities* (South Korea at 79, uid 134), whose ids collide with small
+   club eids; they are excluded from binding and would be the road to an
+   "in the national setup" signal.
+
+   **Senior out-of-league squads are bound too on aged saves** (same day,
+   second pass): 0x64 rows whose uid the club table does not carry, accepted
+   when the separator's flag byte has bit 0x20 clear — that bit marks the
+   representative rows, men's national sides at nation eids 1–249 and
+   *women's from 261 up*, inside club-eid space (Denmark Women at 262 would
+   otherwise read as OB's squad; 78 of 79 measured mismatches carried the
+   bit, the one that did not is killed by the link-time majority veto).
+   +6,700 players on the 2035 save, zero cross-club conflicts.
+
+   **Still open in this residual:**
+
+   - **Out-of-league senior squads on day-one saves.** The rows exist but
+     are *empty* until the game materialises the squad — Willian and
+     Calleri still show no club on a fresh save (their contracts decode
+     now: Grêmio and São Paulo to 31/12/2026). No list in `game_db`
+     carries them, so the `used_player_data.dat` lead below stands as the
+     only known route.
+   - "Rangers B" and its kin parse as **headless clubs** (the entity head
+     has `FFFFFFFF` where the standard shape has the first nation copy —
+     eid 15913 uid 2000093024 at 0xe4941e). Accepting that variant would
+     name B clubs as clubs; binding does not need it, since B squads key
+     the parent club's eid.
+   - The old `used_player_data.dat` lead: one entry per player
+     (`[eid u32][tag u8][year 0x07E9][packed bytes]`), packed payload may
+     carry the registration club.
 2. **38 of 15,558 squad-referenced eids do not resolve** (0.24%). They are
    scattered among low eids (1007–1363) plus eid 1 (Maldini — his identity
    block `[1][45][45]` loses the LIS race because his uid, 45, is unusually
@@ -946,9 +977,18 @@ screen, and the roster seat marks the manager. `Person::staff_role`
 carries it; the UI shows it in the Position/Role column and filters on
 it under the Staff kind. Not covered: the fine-grained job (a physio vs
 the head physio, a coach vs a set-piece coach) — FM stores the words
-somewhere still unfound — and the director of football and chairperson,
-who appear in none of the three lists. (The `01 [tag] [uid][uid]` rows
+somewhere still unfound. (The `01 [tag] [uid][uid]` rows
 nearby resolve to no person — team-entity references, not roles.)
+
+**The director of football and the board are FOUND** (7 August 2026,
+found while hunting the club link, `SAVE_FORMAT.md` §4): the u32 run
+right after the club's short name — long dismissed as "not teams" — is
+`01 [u16] [DoF person eid] [flag] [count] [board person eids] 01`.
+Real-world check on the 2035 save: Leca as Lens' sporting director with
+owner Oughourlian on the board, Viana at City, Hughes at Liverpool,
+Cavenagh chairing Rangers. Only ~700 clubs carry this exact shape — the
+variants are unmapped, so nothing is bound or shown yet; probe:
+`examples/teamlist.rs`.
 
 Dead ends recorded so nobody re-treads them: no employer id within ±768
 bytes of a staff record (`staffclub`); `manager_manager.dat` holds one odd
@@ -966,6 +1006,18 @@ just before the person's record prefix, wage anchored on the person's own
 entity id, expiry after an 8×FF run. Verified exactly against FM Scout's
 Haaland (£450K to 30/6/2034) and Musiala's in-game report in the 2035 save
 (£392,499 inside the scouted band, to 30/6/2037).
+
+**The last-occurrence trap — fixed 7 August 2026.** The hunt used to test
+the shape of only the *last* eid occurrence before the record. Players whose
+record is also preceded by a non-contract eid-anchored row (international
+duty, a B-team place) failed that test and read as having no contract at
+all — 63,491 of 141,211 contracted players in the TJ.fm 2035 save, and
+every one whose club link was also missing (§1 residual 1) was misfiled by
+the UI's free-agent filter. The hunt now walks backwards through every
+occurrence until the shape matches, window 220 → 600, expiry search bounded
+to 400 bytes before the anchor (all but 13 of 141K measured within it).
+Jae-Wan Choi (Rangers B, via the South Korea squad list) was the index case:
+contract 337 bytes back behind a `01 00 00 01`-tailed duty row.
 
 **Transfer value is not stored — editor-confirmed 3 Aug 2026.** The pre-game
 editor exposes a per-player DB "Transfer Value" (Haaland £120,000,000), and

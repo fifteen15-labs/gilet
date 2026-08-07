@@ -87,6 +87,46 @@ test against a 2035 save. From a 44 MB save: 49,217 people, 18,663 clubs,
 player row carries their club's short name. **Wages and contract expiry**
 parse from the block before each person record (Haaland £450K/30-6-2034
 exact vs FM Scout), shown as a table column and exported in CSV. **The
+contract is not the last eid-anchored row** (7 Aug 2026): international-duty
+and B-team rows sit between it and the record prefix with a `01 00 00 01`
+tail, and testing only the last occurrence dropped 63,491 of 141,211
+contracts on a 2035 save — every one whose club link is also missing then
+misfiled as a free agent. The hunt now walks back through every eid
+occurrence until the contract shape matches (window 220 → 600, expiry
+bounded 400 from the anchor). Index case Jae-Wan Choi, Rangers B: contract
+337 bytes back, £10,582/week. **The club link for B and youth players is
+bound the same day** (`squad.rs::scan_team_squads`, `SAVE_FORMAT.md`
+§6d-quater): the squad table holds several records per club behind
+`01 [type] FF [flag]` separators — senior 0x64 (uid-validated, long
+claimed), B 0x13 and youth 0x15, keyed by the *club's* eid but carrying the
+team entity's own uid, which is why the `(eid, uid)` check never saw them.
+Proof is the table-wide ascending **ordinal** (LIS spine), and every head
+bounds the record before it — an unbounded list hunt reads through empty
+records into the neighbour's list and lands every squad one club over,
+which cost half a day of phantom "team entities" (one was Rangers' 979
+read one byte early). 15,788 club-less players bind on the 2035 save
+(3,328 day one), conflicts single-digit and left unbound; B lists bind
+only players no first-team list claims and stay out of squad sums. Choi →
+Rangers, matching FM's search; Spearing → Liverpool on day one. Nation
+teams share the 0x64 type keyed by *nation-team entities* (South Korea at
+79) colliding with small club eids — rows at eid ≤ 260 never bind. Same
+hunt resolved the long-standing "eight u32s after the club short name":
+they are **the boardroom** — DoF + board person eids (Leca/Oughourlian at
+Lens, Viana at City, Cavenagh at Rangers), ~700 clubs in the exact shape,
+unmapped variants elsewhere, not yet in the UI (`OPEN_PROBLEMS.md` §3c).
+**Senior squads of out-of-league clubs bind too** (same day): their 0x64
+rows carry regenerated uids the club table lost; the representative rows
+sharing the type — men's NTs at nation eids 1–249, *women's NTs from 261
+up*, inside club-eid space — are split off by flag bit 0x20 in the
+separator (`0x24` vs `0x00`/`0x04`; only meaningful on 0x64 rows — a B row
+legitimately reads `0x34`), plus a link-time veto refusing any
+out-of-league list whose already-bound members' majority points elsewhere
+(B/youth exempt: their known members are loanees, who genuinely point
+elsewhere). 22,495 players total bind outside first-team lists on the 2035
+save, zero senior conflicts; day one gains little — out-of-league senior
+rows sit *empty* until the game materialises them, so Willian/Calleri on a
+fresh save remain the one open case (`used_player_data.dat` lead,
+`OPEN_PROBLEMS.md` §1). **The
 in-game date is `game_db.dat`'s week stamp on both format versions**, its
 day-of-year masked from the low nine bits (`SAVE_FORMAT.md` §1c). The header
 pair it used to prefer is the **real-world time the file was written**: the

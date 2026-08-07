@@ -472,6 +472,82 @@ fn a_cross_border_club_resolves_its_squad() {
     assert_eq!(resolved, squad.player_eids.len(), "every member should resolve to a person");
 }
 
+/// The squad table's 0x13/0x15-typed rows are a club's B and youth squads,
+/// keyed by the club's eid with the team entity's own uid — the rows the
+/// uid-validated first-team walk can never claim. They bind the players
+/// outside the loaded leagues, who otherwise show no club at all.
+///
+/// Day-one anchor: Jay Spearing, in Liverpool's youth setup in the FM26
+/// database, appears in no first-team list — only a team squad links him.
+#[test]
+fn team_squads_bind_players_outside_first_team_lists() {
+    let Some(save) = load_named("Day One.fm") else {
+        eprintln!("skipped: no Day One.fm on this machine");
+        return;
+    };
+
+    assert!(
+        save.team_squads.len() >= 400,
+        "expected hundreds of B/youth squads, got {}",
+        save.team_squads.len()
+    );
+
+    // Every team squad keys a real club, outside the nation-entity range.
+    let club_eids: std::collections::HashSet<u32> =
+        save.clubs.iter().filter_map(|c| c.eid).collect();
+    assert!(save.team_squads.iter().all(|s| club_eids.contains(&s.club_eid)));
+    assert!(save.team_squads.iter().all(|s| s.club_eid > 260));
+
+    let spearing = save
+        .people
+        .iter()
+        .find(|p| p.full_name == "Jay Francis Spearing")
+        .expect("Spearing missing from the people table");
+    let club = spearing.club_eid.expect("Spearing should be linked via a team squad");
+    let liverpool = save
+        .clubs
+        .iter()
+        .find(|c| c.eid == Some(club))
+        .map(|c| c.short_name.as_str());
+    assert_eq!(liverpool, Some("Liverpool"));
+    let in_first_team = save
+        .squads
+        .iter()
+        .any(|s| s.player_eids.contains(&spearing.eid.unwrap()));
+    assert!(!in_first_team, "the anchor only means something off the first-team lists");
+}
+
+/// The index case for the team-squad work: an aged career whose newly
+/// promoted B-team players FM's own search shows at their club while every
+/// list Gilet read left them clubless — and, through the free-agent filter's
+/// "no contract and no club" test, misfiled as free agents. TJ.fm is a live
+/// career, so the assertions stay structural: the player reads as *someone*,
+/// with a club and a wage.
+#[test]
+fn a_b_team_player_carries_his_club_and_wage() {
+    let Some(save) = load_named("TJ.fm") else {
+        eprintln!("skipped: no TJ.fm on this machine");
+        return;
+    };
+
+    let choi = save
+        .people
+        .iter()
+        .find(|p| p.full_name == "Jae-Wan Choi")
+        .expect("Choi missing from the people table");
+    assert!(choi.club_eid.is_some(), "a B-team player must carry his club");
+    assert!(choi.wage.is_some(), "his contract row sits behind a duty row and must still bind");
+
+    // The senior out-of-league rows only materialise on aged saves, so this
+    // career is also where their acceptance is pinned.
+    assert!(
+        save.team_squads
+            .iter()
+            .any(|s| s.kind == fm_save::squad::SquadKind::OutOfLeague),
+        "an aged save should carry out-of-league senior squads"
+    );
+}
+
 /// The last four goalkeeping indices were separated by published FM 26 data
 /// rather than an in-game screen: fminside.net serves the 26.2 database with
 /// display×5 values (the same source class as the FM Scout wage check), and
