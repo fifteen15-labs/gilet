@@ -791,8 +791,16 @@ fn has_object_header(frame: &[u8], at: usize) -> bool {
     frame.get(head).is_some_and(|&b| b <= 0x02) && frame.get(head + 1) == Some(&0x40)
 }
 
-/// How far before the record prefix the contract block can sit.
-const CONTRACT_WINDOW: usize = 220;
+/// How far before the record prefix the contract block can sit. It is not the
+/// nearest block: a player abroad or in a B team carries other eid-anchored
+/// rows between the contract and the record prefix (Jae-Wan Choi's sits 337
+/// bytes back, behind an international-duty row), and on a 2035 save the
+/// measured tail runs to ~600 bytes with nothing beyond.
+const CONTRACT_WINDOW: usize = 600;
+
+/// How far before the wage anchor the expiry's 8xFF run can sit. Measured on
+/// 141K contracts in an aged save: all but 13 sit within 400 bytes.
+const EXPIRY_WINDOW: usize = 400;
 
 /// Latest plausible contract expiry year; beyond this is a misread.
 const MAX_CONTRACT_YEAR: u16 = 2060;
@@ -816,29 +824,34 @@ const MIN_CONTRACT_YEAR: u16 = 1950;
 /// Non-round wages are foreign-currency contracts converted to the display
 /// currency. A person whose block does not match keeps `None` — the
 /// unemployed and the retired genuinely have no contract to read.
+///
+/// The hunt walks backwards through *every* occurrence of the eid, not just
+/// the last: the record prefix is also preceded by other rows anchored on the
+/// same eid — international duty, a B-team place — whose tails do not read
+/// `01 xx 00 FF FF FF FF`. Demanding the shape of the last occurrence threw
+/// the contract away whenever one of those rows sat between it and the
+/// record, which on a 2035 save was 63,000 contracted players shown with no
+/// wage — and every one of them misfiled by a "free agent" filter that
+/// reads no contract *and* no club as unemployment.
 pub fn bind_contracts(frame: &[u8], people: &mut [Person]) {
     for person in people.iter_mut() {
         let Some(eid) = person.eid else { continue };
         let lo = person.offset.saturating_sub(CONTRACT_WINDOW);
-        let Some(p) = rfind_u32(frame, eid, lo, person.offset) else {
+        let Some(p) = rfind_contract_anchor(frame, eid, lo, person.offset) else {
             continue;
         };
-        if frame.get(p + 8..p + 12) != Some(&[0, 0, 0, 0][..]) {
-            continue;
-        }
-        if frame.get(p + 16) != Some(&0x01)
-            || frame.get(p + 18) != Some(&0x00)
-            || frame.get(p + 19..p + 23) != Some(&[0xFF; 4][..])
-        {
-            continue;
-        }
         let wage = read_u32(frame, p + 12);
 
         // Expiry: the date pair after the last 8xFF run before the anchor.
+        let expiry_lo = p.saturating_sub(EXPIRY_WINDOW);
         let until = frame
-            .get(lo..p)
+            .get(expiry_lo..p)
             .and_then(|w| {
-                w.windows(8).enumerate().rev().find(|(_, run)| run == &[0xFF; 8]).map(|(i, _)| lo + i)
+                w.windows(8)
+                    .enumerate()
+                    .rev()
+                    .find(|(_, run)| run == &[0xFF; 8])
+                    .map(|(i, _)| expiry_lo + i)
             })
             .and_then(|q| {
                 let day = read_u16(frame, q + 8)?;
@@ -917,16 +930,28 @@ pub fn bind_gender(people: &mut [Person], boundary: Option<u32>) {
     }
 }
 
-/// Last occurrence of a little-endian `u32` in `frame[lo..hi]`.
-fn rfind_u32(frame: &[u8], value: u32, lo: usize, hi: usize) -> Option<usize> {
-    let needle = value.to_le_bytes();
+/// Last occurrence of `eid` in `frame[lo..hi]` that anchors a contract-shaped
+/// row — `[eid][u32][00 00 00 00][wage u32] 01 xx 00 [FF FF FF FF]`. Earlier
+/// occurrences are tried when a later one fails the shape, because the same
+/// eid also anchors non-contract rows nearer the record prefix.
+fn rfind_contract_anchor(frame: &[u8], eid: u32, lo: usize, hi: usize) -> Option<usize> {
+    let needle = eid.to_le_bytes();
     let window = frame.get(lo..hi)?;
     window
         .windows(4)
         .enumerate()
         .rev()
-        .find(|(_, w)| *w == needle)
+        .filter(|(_, w)| *w == needle)
         .map(|(i, _)| lo + i)
+        .find(|&p| contract_shape_at(frame, p))
+}
+
+/// Whether the bytes at `p` carry the contract row's verified tail.
+fn contract_shape_at(frame: &[u8], p: usize) -> bool {
+    frame.get(p + 8..p + 12) == Some(&[0, 0, 0, 0][..])
+        && frame.get(p + 16) == Some(&0x01)
+        && frame.get(p + 18) == Some(&0x00)
+        && frame.get(p + 19..p + 23) == Some(&[0xFF; 4][..])
 }
 
 /// Finds every `[eid][uid][uid]` triple preceded by three zero bytes, minus
@@ -1502,6 +1527,35 @@ mod tests {
 
         assert_eq!(people.first().unwrap().wage, Some(0));
         assert_eq!(people.first().unwrap().contract_until.map(|d| d.year), Some(2027));
+    }
+
+    #[test]
+    fn a_decoy_row_between_the_contract_and_the_record_does_not_eat_it() {
+        // Jae-Wan Choi's shape in a 2035 save: the contract sits 337 bytes
+        // back, and a later eid-anchored row with a non-contract tail
+        // (international duty) sits between it and the record prefix. The
+        // old hunt took only the *last* occurrence, failed its shape test,
+        // and reported a contracted Rangers player as a free agent.
+        let mut buf = contract(50, 10_582, 181, 2034);
+        buf.extend(vec![0u8; 200]);
+        // The decoy: same eid, zeroes where the contract has them, but a
+        // 01-00-00-01 tail instead of 01-xx-00-FFFFFFFF.
+        buf.extend_from_slice(&50u32.to_le_bytes());
+        buf.extend_from_slice(&2306u32.to_le_bytes());
+        buf.extend_from_slice(&[0u8; 4]);
+        buf.extend_from_slice(&3805u32.to_le_bytes());
+        buf.extend_from_slice(&[0x01, 0x00, 0x00, 0x01]);
+        buf.extend_from_slice(&[0u8; 8]);
+        buf.extend(record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000));
+        buf.extend(identity_block(50, 9_000_001));
+
+        let mut people = scan_people(&buf, &table());
+        bind_identities(&buf, &mut people, 0);
+        bind_contracts(&buf, &mut people);
+
+        let p = people.first().unwrap();
+        assert_eq!(p.wage, Some(10_582), "the earlier, true contract row must win");
+        assert_eq!(p.contract_until.map(|d| (d.year, d.month, d.day)), Some((2034, 6, 30)));
     }
 
     #[test]

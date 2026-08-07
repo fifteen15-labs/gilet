@@ -49,6 +49,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .and_then(|e| clubs.get(&e).copied())
                 .unwrap_or("(none)")
         );
+        match (p.wage, p.contract_until) {
+            (None, None) => println!("contract  none decoded"),
+            (wage, until) => println!(
+                "contract  {} / week, until {}",
+                wage.map_or_else(|| "?".to_owned(), |w| format!("{w}")),
+                until.map_or_else(
+                    || "?".to_owned(),
+                    |d| format!("{:04}-{:02}-{:02}", d.year, d.month, d.day)
+                )
+            ),
+        }
 
         if let Some(s) = &p.staff {
             println!(
