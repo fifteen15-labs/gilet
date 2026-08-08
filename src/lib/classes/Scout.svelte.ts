@@ -104,6 +104,11 @@ class Scout {
 	 * one — replies are only applied when the token still matches. */
 	private searchToken = 0;
 	private searchTimer: ReturnType<typeof setTimeout> | null = null;
+	/** The query text `matchingClubs` filters against. Clubs are held whole on
+	 * the frontend (there is no backend page for them), so unlike player
+	 * search, debouncing has to happen here rather than by delaying a
+	 * request — updated on the same timer as {@link search}. */
+	private debouncedQuery = $state('');
 
 	get clubs(): Club[] {
 		return this.summary?.clubs ?? [];
@@ -241,7 +246,9 @@ class Scout {
 	}
 
 	matchingClubs(): Club[] {
-		const found = this.clubs.filter((c) => matchesClub(c, this.filters));
+		const found = this.clubs.filter((c) =>
+			matchesClub(c, { ...this.filters, query: this.debouncedQuery })
+		);
 		// Clubs with nothing decoded for the chosen column sort last in every
 		// case: an unknown is not a weak squad, a young one or a cheap one.
 		// The youngest squad is the interesting end of the age column, so it
@@ -420,6 +427,7 @@ class Scout {
 		const token = this.searchToken;
 		if (this.searchTimer !== null) clearTimeout(this.searchTimer);
 		this.searchTimer = setTimeout(() => {
+			this.debouncedQuery = filters.query;
 			void searchPlayers(filters, sortKey, sortDirection, profile, RENDER_LIMIT)
 				.then((page) => {
 					if (token !== this.searchToken) return;
