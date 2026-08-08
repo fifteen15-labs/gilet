@@ -1,0 +1,1499 @@
+- generic [active] [ref=f106e1]:
+  - generic [ref=f106e4]:
+    - link "FMINSIDE .NET" [ref=f106e6] [cursor=pointer]:
+      - /url: /
+      - text: FMINSIDE
+      - generic [ref=f106e7]: .NET
+    - generic:
+      - generic:
+        - link:
+          - /url: "#"
+      - list [ref=f106e8]:
+        - listitem [ref=f106e9]:
+          - link "Buy FM26" [ref=f106e10] [cursor=pointer]:
+            - /url: /news/802-buy-football-manager-26
+      - list [ref=f106e11]:
+        - link:
+          - /url: "#"
+        - listitem [ref=f106e12]:
+          - link "Players" [ref=f106e13] [cursor=pointer]:
+            - /url: /players
+        - listitem [ref=f106e14]:
+          - link "Clubs" [ref=f106e15] [cursor=pointer]:
+            - /url: /clubs
+        - listitem [ref=f106e16]:
+          - link "Downloads" [ref=f106e17] [cursor=pointer]:
+            - /url: /downloads
+        - listitem [ref=f106e18]:
+          - link "FMUpdate" [ref=f106e19] [cursor=pointer]:
+            - /url: /fmi-update
+        - listitem [ref=f106e20]:
+          - link "News" [ref=f106e21] [cursor=pointer]:
+            - /url: /news
+        - listitem [ref=f106e22]:
+          - link "Articles" [ref=f106e23] [cursor=pointer]:
+            - /url: /articles
+        - listitem [ref=f106e24]:
+          - link "Shortlists" [ref=f106e25] [cursor=pointer]:
+            - /url: /shortlists
+        - listitem [ref=f106e26]:
+          - link "Guides" [ref=f106e27] [cursor=pointer]:
+            - /url: /guides
+        - listitem [ref=f106e28]:
+          - link "Challenges" [ref=f106e29] [cursor=pointer]:
+            - /url: /challenges
+        - listitem [ref=f106e30]:
+          - link "Videos" [ref=f106e31] [cursor=pointer]:
+            - /url: /videos
+  - list [ref=f106e34]:
+    - listitem [ref=f106e35]: "Essentials:"
+    - listitem [ref=f106e36]:
+      - link "FM26 Wonderkids" [ref=f106e37] [cursor=pointer]:
+        - /url: /players/wonderkids
+    - listitem [ref=f106e38]:
+      - link "FM26 Free transfers" [ref=f106e39] [cursor=pointer]:
+        - /url: /players/free-transfers
+    - listitem [ref=f106e40]:
+      - link "Best Bargains FM26" [ref=f106e41] [cursor=pointer]:
+        - /url: /players/best-bargains
+    - listitem [ref=f106e42]:
+      - link "Contract expiring" [ref=f106e43] [cursor=pointer]:
+        - /url: /players/contract-expiring
+    - listitem [ref=f106e44]:
+      - link "Richest clubs in FM26" [ref=f106e45] [cursor=pointer]:
+        - /url: /clubs/richest/
+    - listitem [ref=f106e46]:
+      - link "FMUpdate" [ref=f106e47] [cursor=pointer]:
+        - /url: /update
+  - generic [ref=f106e49]:
+    - generic [ref=f106e50]:
+      - link "Home/" [ref=f106e51] [cursor=pointer]:
+        - /url: /
+      - link "Clubs/" [ref=f106e52] [cursor=pointer]:
+        - /url: /clubs
+      - link "Football Manager 26/" [ref=f106e53] [cursor=pointer]:
+        - /url: /clubs
+      - link "Grimsby" [ref=f106e54] [cursor=pointer]:
+        - /url: /clubs/658-grimsby
+    - generic [ref=f106e55]:
+      - generic [ref=f106e57]:
+        - heading "Grimsby" [level=1] [ref=f106e58]
+        - generic [ref=f106e60]:
+          - heading "Club info" [level=2] [ref=f106e61]
+          - list [ref=f106e62]:
+            - listitem [ref=f106e63]:
+              - generic [ref=f106e64]: FM version
+              - generic [ref=f106e65]: FM 26 (26.2.0)
+            - listitem [ref=f106e66]:
+              - generic [ref=f106e67]: Gender
+              - generic [ref=f106e68]: Male
+            - listitem [ref=f106e69]:
+              - generic [ref=f106e70]: Name
+              - generic [ref=f106e71]: Grimsby
+            - listitem [ref=f106e72]:
+              - generic [ref=f106e73]: City
+              - generic [ref=f106e74]: Cleethorpes
+            - listitem [ref=f106e75]:
+              - generic [ref=f106e76]: Founded
+              - generic [ref=f106e77]: "1878"
+            - listitem [ref=f106e78]:
+              - generic [ref=f106e79]: Nation
+              - generic [ref=f106e80]: England
+            - listitem [ref=f106e82]:
+              - generic [ref=f106e83]: League
+              - generic [ref=f106e84]: EFL League Two
+            - listitem [ref=f106e86]:
+              - generic [ref=f106e87]: Reputation
+              - generic [ref=f106e88]: "44"
+            - listitem [ref=f106e89]:
+              - generic [ref=f106e90]: Status
+              - generic [ref=f106e91]: Professional
+        - generic [ref=f106e92]:
+          - heading "Facilities & Finances" [level=2] [ref=f106e93]
+          - list [ref=f106e94]:
+            - listitem [ref=f106e95]:
+              - generic [ref=f106e96]: Balance
+              - generic [ref=f106e97]: €2M
+            - listitem [ref=f106e98]:
+              - generic [ref=f106e99]: Transfer Budget
+              - generic [ref=f106e100]: €12K
+            - listitem [ref=f106e101]:
+              - generic [ref=f106e102]: Total Wages
+              - generic [ref=f106e103]: €64K pw
+            - listitem [ref=f106e104]:
+              - generic [ref=f106e105]: Remaining Wages
+              - generic [ref=f106e106]: €64K pw
+            - listitem [ref=f106e107]:
+              - generic [ref=f106e108]: Training facilities
+              - generic [ref=f106e109]: "30"
+            - listitem [ref=f106e110]:
+              - generic [ref=f106e111]: Youth Facilities
+              - generic [ref=f106e112]: "30"
+            - listitem [ref=f106e113]:
+              - generic [ref=f106e114]: Youth Recruitment
+              - generic [ref=f106e115]: "30"
+            - listitem [ref=f106e116]:
+              - generic [ref=f106e117]: Junior Coaching
+              - generic [ref=f106e118]: "30"
+      - generic [ref=f106e119]:
+        - generic [ref=f106e120]:
+          - list [ref=f106e124]:
+            - listitem [ref=f106e125]:
+              - generic [ref=f106e126] [cursor=pointer]:
+                - radio "4-2-3-1" [checked] [ref=f106e127]
+                - text: 4-2-3-1
+            - listitem [ref=f106e128]:
+              - generic [ref=f106e129] [cursor=pointer]:
+                - radio "4-4-2" [ref=f106e130]
+                - text: 4-4-2
+            - listitem [ref=f106e131]:
+              - generic [ref=f106e132] [cursor=pointer]:
+                - radio "4-4-2 Diamond" [ref=f106e133]
+                - text: 4-4-2 Diamond
+            - listitem [ref=f106e134]:
+              - generic [ref=f106e135] [cursor=pointer]:
+                - radio "4-3-3" [ref=f106e136]
+                - text: 4-3-3
+            - listitem [ref=f106e137]:
+              - generic [ref=f106e138] [cursor=pointer]:
+                - radio "3-5-2" [ref=f106e139]
+                - text: 3-5-2
+            - listitem [ref=f106e140]:
+              - generic [ref=f106e141] [cursor=pointer]:
+                - radio "3-4-3" [ref=f106e142]
+                - text: 3-4-3
+          - generic [ref=f106e144]:
+            - generic [ref=f106e145]:
+              - heading "54 Best XI" [level=2] [ref=f106e146]:
+                - generic "This is based on ability of all players" [ref=f106e147]: "54"
+                - text: Best XI
+              - generic [ref=f106e148]:
+                - list [ref=f106e149]:
+                  - listitem [ref=f106e150]: pos
+                  - listitem [ref=f106e151]: name
+                  - listitem "Rating" [ref=f106e152]: rat
+                - generic [ref=f106e153]:
+                  - list [ref=f106e154]:
+                    - listitem [ref=f106e155]:
+                      - generic [ref=f106e156]: gk
+                    - listitem [ref=f106e157]:
+                      - generic [ref=f106e159]:
+                        - generic [ref=f106e160]:
+                          - img [ref=f106e161] [cursor=pointer]
+                          - link "Christy Pym" [ref=f106e162] [cursor=pointer]:
+                            - /url: /players/7-fm-26/29086052-christy-pym
+                        - text: Goalkeeper
+                    - listitem [ref=f106e163]:
+                      - generic [ref=f106e164]: "45"
+                  - list [ref=f106e165]:
+                    - listitem [ref=f106e166]:
+                      - generic [ref=f106e167]: dr
+                    - listitem [ref=f106e168]:
+                      - generic [ref=f106e170]:
+                        - generic [ref=f106e171]:
+                          - img [ref=f106e172] [cursor=pointer]
+                          - link "Tyrell Warren" [ref=f106e173] [cursor=pointer]:
+                            - /url: /players/7-fm-26/28104393-tyrell-warren
+                        - text: Holding Wing-Back
+                    - listitem [ref=f106e174]:
+                      - generic [ref=f106e175]: "42"
+                  - list [ref=f106e176]:
+                    - listitem [ref=f106e177]:
+                      - generic [ref=f106e178]: dc
+                    - listitem [ref=f106e179]:
+                      - generic [ref=f106e181]:
+                        - generic [ref=f106e182]:
+                          - img [ref=f106e183] [cursor=pointer]
+                          - link "Cameron McJannet" [ref=f106e184] [cursor=pointer]:
+                            - /url: /players/7-fm-26/29156496-cameron-mcjannet
+                        - text: Stopping Centre-Back
+                    - listitem [ref=f106e185]:
+                      - generic [ref=f106e186]: "49"
+                  - list [ref=f106e187]:
+                    - listitem [ref=f106e188]:
+                      - generic [ref=f106e189]: dc
+                    - listitem [ref=f106e190]:
+                      - generic [ref=f106e192]:
+                        - generic [ref=f106e193]:
+                          - img [ref=f106e194] [cursor=pointer]
+                          - link "Harvey Rodgers" [ref=f106e195] [cursor=pointer]:
+                            - /url: /players/7-fm-26/28098436-harvey-rodgers
+                        - text: Stopping Centre-Back
+                    - listitem [ref=f106e196]:
+                      - generic [ref=f106e197]: "51"
+                  - list [ref=f106e198]:
+                    - listitem [ref=f106e199]:
+                      - generic [ref=f106e200]: dl
+                    - listitem [ref=f106e201]:
+                      - generic [ref=f106e203]:
+                        - generic [ref=f106e204]:
+                          - img [ref=f106e205] [cursor=pointer]
+                          - link "Jayden Sweeney" [ref=f106e206] [cursor=pointer]:
+                            - /url: /players/7-fm-26/89064934-jayden-sweeney
+                        - text: Pressing Wing-Back
+                    - listitem [ref=f106e207]:
+                      - generic [ref=f106e208]: "50"
+                  - list [ref=f106e209]:
+                    - listitem [ref=f106e210]:
+                      - generic [ref=f106e211]: mc
+                    - listitem [ref=f106e212]:
+                      - generic [ref=f106e214]:
+                        - generic [ref=f106e215]:
+                          - img [ref=f106e216] [cursor=pointer]
+                          - link "Kieran Green" [ref=f106e217] [cursor=pointer]:
+                            - /url: /players/7-fm-26/28093742-kieran-green
+                        - text: Pressing Central Midfielder
+                    - listitem [ref=f106e218]:
+                      - generic [ref=f106e219]: "53"
+                  - list [ref=f106e220]:
+                    - listitem [ref=f106e221]:
+                      - generic [ref=f106e222]: mc
+                    - listitem [ref=f106e223]:
+                      - generic [ref=f106e225]:
+                        - generic [ref=f106e226]:
+                          - img [ref=f106e227] [cursor=pointer]
+                          - link "George McEachran" [ref=f106e228] [cursor=pointer]:
+                            - /url: /players/7-fm-26/28108039-george-mceachran
+                        - text: Advanced Playmaker
+                    - listitem [ref=f106e229]:
+                      - generic [ref=f106e230]: "54"
+                  - list [ref=f106e231]:
+                    - listitem [ref=f106e232]:
+                      - generic [ref=f106e233]: amc
+                    - listitem [ref=f106e234]:
+                      - generic [ref=f106e236]:
+                        - generic [ref=f106e237]:
+                          - img [ref=f106e238] [cursor=pointer]
+                          - link "Darragh Burns" [ref=f106e239] [cursor=pointer]:
+                            - /url: /players/7-fm-26/52097526-darragh-burns
+                        - text: Attacking Midfielder (AMC)
+                    - listitem [ref=f106e240]:
+                      - generic [ref=f106e241]: "48"
+                  - list [ref=f106e242]:
+                    - listitem [ref=f106e243]:
+                      - generic [ref=f106e244]: amr
+                    - listitem [ref=f106e245]:
+                      - generic [ref=f106e247]:
+                        - generic [ref=f106e248]:
+                          - img [ref=f106e249] [cursor=pointer]
+                          - link "Jason Daði Svanþ.." [ref=f106e250] [cursor=pointer]:
+                            - /url: /players/7-fm-26/39054080-jason-dai-svanorsson
+                        - text: Inside Outlet Winger
+                    - listitem [ref=f106e251]:
+                      - generic [ref=f106e252]: "47"
+                  - list [ref=f106e253]:
+                    - listitem [ref=f106e254]:
+                      - generic [ref=f106e255]: aml
+                    - listitem [ref=f106e256]:
+                      - generic [ref=f106e258]:
+                        - generic [ref=f106e259]:
+                          - img [ref=f106e260] [cursor=pointer]
+                          - link "Charles Vernam" [ref=f106e261] [cursor=pointer]:
+                            - /url: /players/7-fm-26/29120982-charles-vernam
+                        - text: Winger
+                    - listitem [ref=f106e262]:
+                      - generic [ref=f106e263]: "54"
+                  - list [ref=f106e264]:
+                    - listitem [ref=f106e265]:
+                      - generic [ref=f106e266]: st
+                    - listitem [ref=f106e267]:
+                      - generic [ref=f106e269]:
+                        - generic [ref=f106e270]:
+                          - img [ref=f106e271] [cursor=pointer]
+                          - link "Jude Soonsup-Bell" [ref=f106e272] [cursor=pointer]:
+                            - /url: /players/7-fm-26/2000016605-jude-soonsup-bell
+                        - text: Channel Forward
+                    - listitem [ref=f106e273]:
+                      - generic [ref=f106e274]: "46"
+            - generic [ref=f106e275]:
+              - heading "54 Most talented XI" [level=2] [ref=f106e276]:
+                - generic "This is based on potential of all players" [ref=f106e277]: "54"
+                - text: Most talented XI
+              - generic [ref=f106e278]:
+                - list [ref=f106e279]:
+                  - listitem [ref=f106e280]: pos
+                  - listitem [ref=f106e281]: name
+                  - listitem "Potential" [ref=f106e282]: POT
+                - generic [ref=f106e283]:
+                  - list [ref=f106e284]:
+                    - listitem [ref=f106e285]:
+                      - generic [ref=f106e286]: gk
+                    - listitem [ref=f106e287]:
+                      - generic [ref=f106e289]:
+                        - generic [ref=f106e290]:
+                          - img [ref=f106e291] [cursor=pointer]
+                          - link "Seb Auton" [ref=f106e292] [cursor=pointer]:
+                            - /url: /players/7-fm262/2000300240-seb-auton
+                        - text: No-Nonsense Goalkeeper
+                    - listitem [ref=f106e293]:
+                      - generic [ref=f106e294]: "36"
+                  - list [ref=f106e295]:
+                    - listitem [ref=f106e296]:
+                      - generic [ref=f106e297]: dr
+                    - listitem [ref=f106e298]:
+                      - generic [ref=f106e300]:
+                        - generic [ref=f106e301]:
+                          - img [ref=f106e302] [cursor=pointer]
+                          - link "Josh Edwards" [ref=f106e303] [cursor=pointer]:
+                            - /url: /players/7-fm262/2000462975-josh-edwards
+                        - text: Pressing Wing-Back
+                    - listitem [ref=f106e304]:
+                      - generic [ref=f106e305]: "21"
+                  - list [ref=f106e306]:
+                    - listitem [ref=f106e307]:
+                      - generic [ref=f106e308]: dc
+                    - listitem [ref=f106e309]:
+                      - generic [ref=f106e311]:
+                        - generic [ref=f106e312]:
+                          - img [ref=f106e313] [cursor=pointer]
+                          - link "Charlie Carrick" [ref=f106e314] [cursor=pointer]:
+                            - /url: /players/7-fm262/2000391874-charlie-carrick
+                        - text: Advanced Centre-Back
+                    - listitem [ref=f106e315]:
+                      - generic [ref=f106e316]: "24"
+                  - list [ref=f106e317]:
+                    - listitem [ref=f106e318]:
+                      - generic [ref=f106e319]: dc
+                    - listitem [ref=f106e320]:
+                      - generic [ref=f106e322]:
+                        - generic [ref=f106e323]:
+                          - img [ref=f106e324] [cursor=pointer]
+                          - link "Maldini Kacurri" [ref=f106e325] [cursor=pointer]:
+                            - /url: /players/7-fm262/2000216553-maldini-kacurri
+                        - text: Stopping Centre-Back
+                    - listitem [ref=f106e326]:
+                      - generic [ref=f106e327]: "58"
+                  - list [ref=f106e328]:
+                    - listitem [ref=f106e329]:
+                      - generic [ref=f106e330]: dl
+                    - listitem [ref=f106e331]:
+                      - generic [ref=f106e333]:
+                        - generic [ref=f106e334]:
+                          - img [ref=f106e335] [cursor=pointer]
+                          - link "Jayden Sweeney" [ref=f106e336] [cursor=pointer]:
+                            - /url: /players/7-fm262/89064934-jayden-sweeney
+                        - text: Pressing Wing-Back
+                    - listitem [ref=f106e337]:
+                      - generic [ref=f106e338]: "55"
+                  - list [ref=f106e339]:
+                    - listitem [ref=f106e340]:
+                      - generic [ref=f106e341]: mc
+                    - listitem [ref=f106e342]:
+                      - generic [ref=f106e344]:
+                        - generic [ref=f106e345]:
+                          - img [ref=f106e346] [cursor=pointer]
+                          - link "Géza Dávid Turi" [ref=f106e347] [cursor=pointer]:
+                            - /url: /players/7-fm262/2000006377-geza-david-turi
+                        - text: Central Midfielder
+                    - listitem [ref=f106e348]:
+                      - generic [ref=f106e349]: "60"
+                  - list [ref=f106e350]:
+                    - listitem [ref=f106e351]:
+                      - generic [ref=f106e352]: mc
+                    - listitem [ref=f106e353]:
+                      - generic [ref=f106e355]:
+                        - generic [ref=f106e356]:
+                          - img [ref=f106e357] [cursor=pointer]
+                          - link "George McEachran" [ref=f106e358] [cursor=pointer]:
+                            - /url: /players/7-fm262/28108039-george-mceachran
+                        - text: Advanced Playmaker
+                    - listitem [ref=f106e359]:
+                      - generic [ref=f106e360]: "58"
+                  - list [ref=f106e361]:
+                    - listitem [ref=f106e362]:
+                      - generic [ref=f106e363]: amc
+                    - listitem [ref=f106e364]:
+                      - generic [ref=f106e366]:
+                        - generic [ref=f106e367]:
+                          - img [ref=f106e368] [cursor=pointer]
+                          - link "Darragh Burns" [ref=f106e369] [cursor=pointer]:
+                            - /url: /players/7-fm262/52097526-darragh-burns
+                        - text: Attacking Midfielder (AMC)
+                    - listitem [ref=f106e370]:
+                      - generic [ref=f106e371]: "58"
+                  - list [ref=f106e372]:
+                    - listitem [ref=f106e373]:
+                      - generic [ref=f106e374]: amr
+                    - listitem [ref=f106e375]:
+                      - generic [ref=f106e377]:
+                        - generic [ref=f106e378]:
+                          - img [ref=f106e379] [cursor=pointer]
+                          - link "Jason Daði Svanþ.." [ref=f106e380] [cursor=pointer]:
+                            - /url: /players/7-fm262/39054080-jason-dai-svanorsson
+                        - text: Inside Outlet Winger
+                    - listitem [ref=f106e381]:
+                      - generic [ref=f106e382]: "65"
+                  - list [ref=f106e383]:
+                    - listitem [ref=f106e384]:
+                      - generic [ref=f106e385]: aml
+                    - listitem [ref=f106e386]:
+                      - generic [ref=f106e388]:
+                        - generic [ref=f106e389]:
+                          - img [ref=f106e390] [cursor=pointer]
+                          - link "Zak Gilsenan" [ref=f106e391] [cursor=pointer]:
+                            - /url: /players/7-fm262/292380015-zak-gilsenan
+                        - text: Playmaking Winger
+                    - listitem [ref=f106e392]:
+                      - generic [ref=f106e393]: "68"
+                  - list [ref=f106e394]:
+                    - listitem [ref=f106e395]:
+                      - generic [ref=f106e396]: st
+                    - listitem [ref=f106e397]:
+                      - generic [ref=f106e399]:
+                        - generic [ref=f106e400]:
+                          - img [ref=f106e401] [cursor=pointer]
+                          - link "Jude Soonsup-Bell" [ref=f106e402] [cursor=pointer]:
+                            - /url: /players/7-fm262/2000016605-jude-soonsup-bell
+                        - text: Channel Forward
+                    - listitem [ref=f106e403]:
+                      - generic [ref=f106e404]: "58"
+        - generic [ref=f106e405]:
+          - heading "Best players" [level=2] [ref=f106e406]
+          - generic [ref=f106e407]:
+            - list [ref=f106e408]:
+              - listitem "Rating" [ref=f106e409]: rating
+              - listitem [ref=f106e410]: name
+              - listitem [ref=f106e411]: age
+              - listitem [ref=f106e412]: clause
+              - listitem [ref=f106e413]: sell vallue
+            - generic [ref=f106e414]:
+              - list [ref=f106e415]:
+                - listitem [ref=f106e416]:
+                  - generic [ref=f106e417]: "54"
+                  - generic [ref=f106e418]: "58"
+                - listitem [ref=f106e419]:
+                  - generic [ref=f106e421]:
+                    - generic [ref=f106e422]:
+                      - img [ref=f106e423] [cursor=pointer]
+                      - link "George McEachran" [ref=f106e424] [cursor=pointer]:
+                        - /url: /players/7-fm-26/28108039-george-mceachran
+                    - generic [ref=f106e425]: DM, MC
+                - listitem [ref=f106e426]: "25"
+                - listitem [ref=f106e427]: "-"
+                - listitem [ref=f106e428]:
+                  - generic [ref=f106e429]: €793K - €1M
+              - list [ref=f106e430]:
+                - listitem [ref=f106e431]:
+                  - generic [ref=f106e432]: "54"
+                  - generic [ref=f106e433]: "55"
+                - listitem [ref=f106e434]:
+                  - generic [ref=f106e436]:
+                    - generic [ref=f106e437]:
+                      - img [ref=f106e438] [cursor=pointer]
+                      - link "Charles Vernam" [ref=f106e439] [cursor=pointer]:
+                        - /url: /players/7-fm-26/29120982-charles-vernam
+                    - generic [ref=f106e440]: AMR, AML, AMC
+                - listitem [ref=f106e441]: "29"
+                - listitem [ref=f106e442]: "-"
+                - listitem [ref=f106e443]:
+                  - generic [ref=f106e444]: €835K - €2M
+              - list [ref=f106e445]:
+                - listitem [ref=f106e446]:
+                  - generic [ref=f106e447]: "53"
+                  - generic [ref=f106e448]: "55"
+                - listitem [ref=f106e449]:
+                  - generic [ref=f106e451]:
+                    - generic [ref=f106e452]:
+                      - img [ref=f106e453] [cursor=pointer]
+                      - link "Kieran Green" [ref=f106e454] [cursor=pointer]:
+                        - /url: /players/7-fm-26/28093742-kieran-green
+                    - generic [ref=f106e455]: DM, MC, AMC
+                - listitem [ref=f106e456]: "28"
+                - listitem [ref=f106e457]: "-"
+                - listitem [ref=f106e458]:
+                  - generic [ref=f106e459]: €677K - €1M
+              - list [ref=f106e460]:
+                - listitem [ref=f106e461]:
+                  - generic [ref=f106e462]: "51"
+                  - generic [ref=f106e463]: "59"
+                - listitem [ref=f106e464]:
+                  - generic [ref=f106e466]:
+                    - generic [ref=f106e467]:
+                      - img [ref=f106e468] [cursor=pointer]
+                      - link "Harvey Rodgers" [ref=f106e469] [cursor=pointer]:
+                        - /url: /players/7-fm-26/28098436-harvey-rodgers
+                    - generic [ref=f106e470]: DR, DC
+                - listitem [ref=f106e471]: "29"
+                - listitem [ref=f106e472]: "-"
+                - listitem [ref=f106e473]:
+                  - generic [ref=f106e474]: €422K - €790K
+              - list [ref=f106e475]:
+                - listitem [ref=f106e476]:
+                  - generic [ref=f106e477]: "50"
+                  - generic [ref=f106e478]: "55"
+                - listitem [ref=f106e479]:
+                  - generic [ref=f106e481]:
+                    - generic [ref=f106e482]:
+                      - img [ref=f106e483] [cursor=pointer]
+                      - link "Jayden Sweeney" [ref=f106e484] [cursor=pointer]:
+                        - /url: /players/7-fm-26/89064934-jayden-sweeney
+                    - generic [ref=f106e485]: DL
+                - listitem [ref=f106e486]: "24"
+                - listitem [ref=f106e487]: "-"
+                - listitem [ref=f106e488]:
+                  - generic [ref=f106e489]: €369K - €692K
+        - generic [ref=f106e490]:
+          - heading "Best talents" [level=2] [ref=f106e491]
+          - generic [ref=f106e492]:
+            - list [ref=f106e493]:
+              - listitem "Rating" [ref=f106e494]: rating
+              - listitem [ref=f106e495]: name
+              - listitem [ref=f106e496]: age
+              - listitem [ref=f106e497]: clause
+              - listitem [ref=f106e498]: sell vallue
+            - generic [ref=f106e499]:
+              - list [ref=f106e500]:
+                - listitem [ref=f106e501]:
+                  - generic [ref=f106e502]: "43"
+                  - generic [ref=f106e503]: "68"
+                - listitem [ref=f106e504]:
+                  - generic [ref=f106e506]:
+                    - generic [ref=f106e507]:
+                      - img [ref=f106e508] [cursor=pointer]
+                      - link "Zak Gilsenan" [ref=f106e509] [cursor=pointer]:
+                        - /url: /players/7-fm-26/292380015-zak-gilsenan
+                    - generic [ref=f106e510]: AMR, AML, AMC
+                - listitem [ref=f106e511]: "22"
+                - listitem [ref=f106e512]: "-"
+                - listitem [ref=f106e513]:
+                  - generic [ref=f106e514]: €644K - €1M
+              - list [ref=f106e515]:
+                - listitem [ref=f106e516]:
+                  - generic [ref=f106e517]: "47"
+                - listitem [ref=f106e520]:
+                  - generic [ref=f106e522]:
+                    - generic [ref=f106e523]:
+                      - img [ref=f106e524] [cursor=pointer]
+                      - link "Tyrell Sellars-Fleming" [ref=f106e525] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000117447-tyrell-sellars-fleming
+                    - generic [ref=f106e526]: MR, ML, ST
+                - listitem [ref=f106e527]: "20"
+                - listitem [ref=f106e528]: "-"
+                - listitem [ref=f106e529]:
+                  - generic [ref=f106e530]: €843K - €2M
+              - list [ref=f106e531]:
+                - listitem [ref=f106e532]:
+                  - generic [ref=f106e533]: "45"
+                - listitem [ref=f106e536]:
+                  - generic [ref=f106e538]:
+                    - generic [ref=f106e539]:
+                      - img [ref=f106e540] [cursor=pointer]
+                      - link "Maldini Kacurri" [ref=f106e541] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000216553-maldini-kacurri
+                    - generic [ref=f106e542]: DC
+                - listitem [ref=f106e543]: "20"
+                - listitem [ref=f106e544]: "-"
+                - listitem [ref=f106e545]:
+                  - generic [ref=f106e546]: €500K - €938K
+              - list [ref=f106e547]:
+                - listitem [ref=f106e548]:
+                  - generic [ref=f106e549]: "46"
+                  - generic [ref=f106e550]: "58"
+                - listitem [ref=f106e551]:
+                  - generic [ref=f106e553]:
+                    - generic [ref=f106e554]:
+                      - img [ref=f106e555] [cursor=pointer]
+                      - link "Evan Khouri" [ref=f106e556] [cursor=pointer]:
+                        - /url: /players/7-fm-26/29235921-evan-khouri
+                    - generic [ref=f106e557]: MC
+                - listitem [ref=f106e558]: "22"
+                - listitem [ref=f106e559]: "-"
+                - listitem [ref=f106e560]:
+                  - generic [ref=f106e561]: €415K - €778K
+              - list [ref=f106e562]:
+                - listitem [ref=f106e563]:
+                  - generic [ref=f106e564]: "46"
+                  - generic [ref=f106e565]: "58"
+                - listitem [ref=f106e566]:
+                  - generic [ref=f106e568]:
+                    - generic [ref=f106e569]:
+                      - img [ref=f106e570] [cursor=pointer]
+                      - link "Jude Soonsup-Bell" [ref=f106e571] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000016605-jude-soonsup-bell
+                    - generic [ref=f106e572]: MR, AMR, ST
+                - listitem [ref=f106e573]: "21"
+                - listitem [ref=f106e574]: "-"
+                - listitem [ref=f106e575]:
+                  - generic [ref=f106e576]: €535K - €1M
+        - generic [ref=f106e577]:
+          - heading "On loan" [level=2] [ref=f106e578]
+          - generic [ref=f106e579]:
+            - list [ref=f106e580]:
+              - listitem "Rating" [ref=f106e581]: rating
+              - listitem [ref=f106e582]: name
+              - listitem [ref=f106e583]: age
+              - listitem [ref=f106e584]: clause
+              - listitem [ref=f106e585]: sell vallue
+            - generic [ref=f106e586]:
+              - list [ref=f106e587]:
+                - listitem [ref=f106e588]:
+                  - generic [ref=f106e589]: "49"
+                  - generic [ref=f106e590]: "54"
+                - listitem [ref=f106e591]:
+                  - generic [ref=f106e593]:
+                    - generic [ref=f106e594]:
+                      - img [ref=f106e595] [cursor=pointer]
+                      - link "Andy Cook" [ref=f106e596] [cursor=pointer]:
+                        - /url: /players/7-fm-26/28017377-andy-cook
+                    - generic [ref=f106e597]: ST
+                - listitem [ref=f106e598]: "35"
+                - listitem [ref=f106e599]: "-"
+                - listitem [ref=f106e600]:
+                  - generic [ref=f106e601]: €51K - €95K
+              - list [ref=f106e602]:
+                - listitem [ref=f106e603]:
+                  - generic [ref=f106e604]: "47"
+                - listitem [ref=f106e607]:
+                  - generic [ref=f106e609]:
+                    - generic [ref=f106e610]:
+                      - img [ref=f106e611] [cursor=pointer]
+                      - link "Tyrell Sellars-Fleming" [ref=f106e612] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000117447-tyrell-sellars-fleming
+                    - generic [ref=f106e613]: MR, ML, ST
+                - listitem [ref=f106e614]: "20"
+                - listitem [ref=f106e615]: "-"
+                - listitem [ref=f106e616]:
+                  - generic [ref=f106e617]: €843K - €2M
+              - list [ref=f106e618]:
+                - listitem [ref=f106e619]:
+                  - generic [ref=f106e620]: "46"
+                  - generic [ref=f106e621]: "56"
+                - listitem [ref=f106e622]:
+                  - generic [ref=f106e624]:
+                    - generic [ref=f106e625]:
+                      - img [ref=f106e626] [cursor=pointer]
+                      - link "Neo Eccleston" [ref=f106e627] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000055688-neo-eccleston
+                    - generic [ref=f106e628]: DR, WBR
+                - listitem [ref=f106e629]: "22"
+                - listitem [ref=f106e630]: "-"
+                - listitem [ref=f106e631]:
+                  - generic [ref=f106e632]: €340K - €638K
+              - list [ref=f106e633]:
+                - listitem [ref=f106e634]:
+                  - generic [ref=f106e635]: "45"
+                  - generic [ref=f106e636]: "63"
+                - listitem [ref=f106e637]:
+                  - generic [ref=f106e639]:
+                    - generic [ref=f106e640]:
+                      - img [ref=f106e641] [cursor=pointer]
+                      - link "Jackson Smith" [ref=f106e642] [cursor=pointer]:
+                        - /url: /players/7-fm-26/28122343-jackson-smith
+                    - generic [ref=f106e643]: GK
+                - listitem [ref=f106e644]: "24"
+                - listitem [ref=f106e645]: "-"
+                - listitem [ref=f106e646]:
+                  - generic [ref=f106e647]: €208K - €391K
+              - list [ref=f106e648]:
+                - listitem [ref=f106e649]:
+                  - generic [ref=f106e650]: "44"
+                  - generic [ref=f106e651]: "60"
+                - listitem [ref=f106e652]:
+                  - generic [ref=f106e654]:
+                    - generic [ref=f106e655]:
+                      - img [ref=f106e656] [cursor=pointer]
+                      - link "Clarke Oduor" [ref=f106e657] [cursor=pointer]:
+                        - /url: /players/7-fm-26/29161007-clarke-oduor
+                    - generic [ref=f106e658]: MC, ML, AMR, AML
+                - listitem [ref=f106e659]: "26"
+                - listitem [ref=f106e660]: "-"
+                - listitem [ref=f106e661]:
+                  - generic [ref=f106e662]: €127K - €237K
+              - list [ref=f106e663]:
+                - listitem [ref=f106e664]:
+                  - generic [ref=f106e665]: "40"
+                - listitem [ref=f106e668]:
+                  - generic [ref=f106e670]:
+                    - generic [ref=f106e671]:
+                      - img [ref=f106e672] [cursor=pointer]
+                      - link "Charlie Casper" [ref=f106e673] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000142140-charlie-casper
+                    - generic [ref=f106e674]: GK
+                - listitem [ref=f106e675]: "20"
+                - listitem [ref=f106e676]: "-"
+                - listitem [ref=f106e677]:
+                  - generic [ref=f106e678]: €88K - €164K
+        - generic [ref=f106e679]:
+          - heading "Full Squad" [level=2] [ref=f106e680]
+          - generic [ref=f106e681]:
+            - list [ref=f106e682]:
+              - listitem "Rating" [ref=f106e683]: rating
+              - listitem [ref=f106e684]: name
+              - listitem [ref=f106e685]: age
+              - listitem [ref=f106e686]: clause
+              - listitem [ref=f106e687]: sell vallue
+            - generic [ref=f106e688]:
+              - list [ref=f106e689]:
+                - listitem [ref=f106e690]:
+                  - generic [ref=f106e691]: "45"
+                  - generic [ref=f106e692]: "63"
+                - listitem [ref=f106e693]:
+                  - generic [ref=f106e695]:
+                    - generic [ref=f106e696]:
+                      - img [ref=f106e697] [cursor=pointer]
+                      - link "Jackson Smith" [ref=f106e698] [cursor=pointer]:
+                        - /url: /players/7-fm-26/28122343-jackson-smith
+                    - generic [ref=f106e699]: GK
+                - listitem [ref=f106e700]: "24"
+                - listitem [ref=f106e701]: "-"
+                - listitem [ref=f106e702]:
+                  - generic [ref=f106e703]: €208K - €391K
+              - list [ref=f106e704]:
+                - listitem [ref=f106e705]:
+                  - generic [ref=f106e706]: "45"
+                  - generic [ref=f106e707]: "58"
+                - listitem [ref=f106e708]:
+                  - generic [ref=f106e710]:
+                    - generic [ref=f106e711]:
+                      - img [ref=f106e712] [cursor=pointer]
+                      - link "Christy Pym" [ref=f106e713] [cursor=pointer]:
+                        - /url: /players/7-fm-26/29086052-christy-pym
+                    - generic [ref=f106e714]: GK
+                - listitem [ref=f106e715]: "30"
+                - listitem [ref=f106e716]: "-"
+                - listitem [ref=f106e717]:
+                  - generic [ref=f106e718]: €105K - €196K
+              - list [ref=f106e719]:
+                - listitem [ref=f106e720]:
+                  - generic [ref=f106e721]: "40"
+                - listitem [ref=f106e724]:
+                  - generic [ref=f106e726]:
+                    - generic [ref=f106e727]:
+                      - img [ref=f106e728] [cursor=pointer]
+                      - link "Charlie Casper" [ref=f106e729] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000142140-charlie-casper
+                    - generic [ref=f106e730]: GK
+                - listitem [ref=f106e731]: "20"
+                - listitem [ref=f106e732]: "-"
+                - listitem [ref=f106e733]:
+                  - generic [ref=f106e734]: €88K - €164K
+              - list [ref=f106e735]:
+                - listitem [ref=f106e736]:
+                  - generic [ref=f106e737]: "23"
+                - listitem [ref=f106e740]:
+                  - generic [ref=f106e742]:
+                    - generic [ref=f106e743]:
+                      - img [ref=f106e744] [cursor=pointer]
+                      - link "Seb Auton" [ref=f106e745] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000300240-seb-auton
+                    - generic [ref=f106e746]: GK
+                - listitem [ref=f106e747]: "19"
+                - listitem [ref=f106e748]: "-"
+                - listitem [ref=f106e749]:
+                  - generic [ref=f106e750]: €10K - €19K
+              - list [ref=f106e751]:
+                - listitem [ref=f106e752]:
+                  - generic [ref=f106e753]: "15"
+                - listitem [ref=f106e756]:
+                  - generic [ref=f106e758]:
+                    - generic [ref=f106e759]:
+                      - img [ref=f106e760] [cursor=pointer]
+                      - link "Hayden Rogers" [ref=f106e761] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000391882-hayden-rogers
+                    - generic [ref=f106e762]: GK
+                - listitem [ref=f106e763]: "18"
+                - listitem [ref=f106e764]: "-"
+                - listitem [ref=f106e765]:
+                  - generic [ref=f106e766]: €5K - €10K
+              - list [ref=f106e767]:
+                - listitem [ref=f106e768]:
+                  - generic [ref=f106e769]: "43"
+                  - generic [ref=f106e770]: "47"
+                - listitem [ref=f106e771]:
+                  - generic [ref=f106e773]:
+                    - generic [ref=f106e774]:
+                      - img [ref=f106e775] [cursor=pointer]
+                      - link "Reece Staunton" [ref=f106e776] [cursor=pointer]:
+                        - /url: /players/7-fm-26/29214239-reece-staunton
+                    - generic [ref=f106e777]: DL, DC, WBL
+                - listitem [ref=f106e778]: "24"
+                - listitem [ref=f106e779]: "-"
+                - listitem [ref=f106e780]:
+                  - generic [ref=f106e781]: €103K - €193K
+              - list [ref=f106e782]:
+                - listitem [ref=f106e783]:
+                  - generic [ref=f106e784]: "50"
+                  - generic [ref=f106e785]: "55"
+                - listitem [ref=f106e786]:
+                  - generic [ref=f106e788]:
+                    - generic [ref=f106e789]:
+                      - img [ref=f106e790] [cursor=pointer]
+                      - link "Jayden Sweeney" [ref=f106e791] [cursor=pointer]:
+                        - /url: /players/7-fm-26/89064934-jayden-sweeney
+                    - generic [ref=f106e792]: DL
+                - listitem [ref=f106e793]: "24"
+                - listitem [ref=f106e794]: "-"
+                - listitem [ref=f106e795]:
+                  - generic [ref=f106e796]: €369K - €692K
+              - list [ref=f106e797]:
+                - listitem [ref=f106e798]:
+                  - generic [ref=f106e799]: "15"
+                - listitem [ref=f106e802]:
+                  - generic [ref=f106e804]:
+                    - generic [ref=f106e805]:
+                      - img [ref=f106e806] [cursor=pointer]
+                      - link "Mamudu Jalloh" [ref=f106e807] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000391889-mamudu-jalloh
+                    - generic [ref=f106e808]: DL, ML
+                - listitem [ref=f106e809]: "17"
+                - listitem [ref=f106e810]: "-"
+                - listitem [ref=f106e811]:
+                  - generic [ref=f106e812]: €4K - €8K
+              - list [ref=f106e813]:
+                - listitem [ref=f106e814]:
+                  - generic [ref=f106e815]: "15"
+                - listitem [ref=f106e818]:
+                  - generic [ref=f106e820]:
+                    - generic [ref=f106e821]:
+                      - img [ref=f106e822] [cursor=pointer]
+                      - link "Tyler Pratt" [ref=f106e823] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000462973-tyler-pratt
+                    - generic [ref=f106e824]: DL, WBL
+                - listitem [ref=f106e825]: "17"
+                - listitem [ref=f106e826]: "-"
+                - listitem [ref=f106e827]:
+                  - generic [ref=f106e828]: €4K - €7K
+              - list [ref=f106e829]:
+                - listitem [ref=f106e830]:
+                  - generic [ref=f106e831]: "49"
+                  - generic [ref=f106e832]: "50"
+                - listitem [ref=f106e833]:
+                  - generic [ref=f106e835]:
+                    - generic [ref=f106e836]:
+                      - img [ref=f106e837] [cursor=pointer]
+                      - link "Cameron McJannet" [ref=f106e838] [cursor=pointer]:
+                        - /url: /players/7-fm-26/29156496-cameron-mcjannet
+                    - generic [ref=f106e839]: DC
+                - listitem [ref=f106e840]: "27"
+                - listitem [ref=f106e841]: "-"
+                - listitem [ref=f106e842]:
+                  - generic [ref=f106e843]: €277K - €519K
+              - list [ref=f106e844]:
+                - listitem [ref=f106e845]:
+                  - generic [ref=f106e846]: "42"
+                  - generic [ref=f106e847]: "46"
+                - listitem [ref=f106e848]:
+                  - generic [ref=f106e850]:
+                    - generic [ref=f106e851]:
+                      - img [ref=f106e852] [cursor=pointer]
+                      - link "Tyrell Warren" [ref=f106e853] [cursor=pointer]:
+                        - /url: /players/7-fm-26/28104393-tyrell-warren
+                    - generic [ref=f106e854]: DR, DC, WBR
+                - listitem [ref=f106e855]: "27"
+                - listitem [ref=f106e856]: "-"
+                - listitem [ref=f106e857]:
+                  - generic [ref=f106e858]: €92K - €172K
+              - list [ref=f106e859]:
+                - listitem [ref=f106e860]:
+                  - generic [ref=f106e861]: "51"
+                  - generic [ref=f106e862]: "59"
+                - listitem [ref=f106e863]:
+                  - generic [ref=f106e865]:
+                    - generic [ref=f106e866]:
+                      - img [ref=f106e867] [cursor=pointer]
+                      - link "Harvey Rodgers" [ref=f106e868] [cursor=pointer]:
+                        - /url: /players/7-fm-26/28098436-harvey-rodgers
+                    - generic [ref=f106e869]: DR, DC
+                - listitem [ref=f106e870]: "29"
+                - listitem [ref=f106e871]: "-"
+                - listitem [ref=f106e872]:
+                  - generic [ref=f106e873]: €422K - €790K
+              - list [ref=f106e874]:
+                - listitem [ref=f106e875]:
+                  - generic [ref=f106e876]: "46"
+                  - generic [ref=f106e877]: "58"
+                - listitem [ref=f106e878]:
+                  - generic [ref=f106e880]:
+                    - generic [ref=f106e881]:
+                      - img [ref=f106e882] [cursor=pointer]
+                      - link "Evan Khouri" [ref=f106e883] [cursor=pointer]:
+                        - /url: /players/7-fm-26/29235921-evan-khouri
+                    - generic [ref=f106e884]: MC
+                - listitem [ref=f106e885]: "22"
+                - listitem [ref=f106e886]: "-"
+                - listitem [ref=f106e887]:
+                  - generic [ref=f106e888]: €415K - €778K
+              - list [ref=f106e889]:
+                - listitem [ref=f106e890]:
+                  - generic [ref=f106e891]: "44"
+                  - generic [ref=f106e892]: "60"
+                - listitem [ref=f106e893]:
+                  - generic [ref=f106e895]:
+                    - generic [ref=f106e896]:
+                      - img [ref=f106e897] [cursor=pointer]
+                      - link "Clarke Oduor" [ref=f106e898] [cursor=pointer]:
+                        - /url: /players/7-fm-26/29161007-clarke-oduor
+                    - generic [ref=f106e899]: MC, ML, AMR, AML
+                - listitem [ref=f106e900]: "26"
+                - listitem [ref=f106e901]: "-"
+                - listitem [ref=f106e902]:
+                  - generic [ref=f106e903]: €127K - €237K
+              - list [ref=f106e904]:
+                - listitem [ref=f106e905]:
+                  - generic [ref=f106e906]: "46"
+                  - generic [ref=f106e907]: "61"
+                - listitem [ref=f106e908]:
+                  - generic [ref=f106e910]:
+                    - generic [ref=f106e911]:
+                      - img [ref=f106e912] [cursor=pointer]
+                      - link "Doug Tharme" [ref=f106e913] [cursor=pointer]:
+                        - /url: /players/7-fm-26/90071457-doug-tharme
+                    - generic [ref=f106e914]: DC
+                - listitem [ref=f106e915]: "26"
+                - listitem [ref=f106e916]: "-"
+                - listitem [ref=f106e917]:
+                  - generic [ref=f106e918]: €148K - €278K
+              - list [ref=f106e919]:
+                - listitem [ref=f106e920]:
+                  - generic [ref=f106e921]: "45"
+                  - generic [ref=f106e922]: "60"
+                - listitem [ref=f106e923]:
+                  - generic [ref=f106e925]:
+                    - generic [ref=f106e926]:
+                      - img [ref=f106e927] [cursor=pointer]
+                      - link "Sam Lavelle" [ref=f106e928] [cursor=pointer]:
+                        - /url: /players/7-fm-26/29128510-sam-lavelle
+                    - generic [ref=f106e929]: DC
+                - listitem [ref=f106e930]: "29"
+                - listitem [ref=f106e931]: "-"
+                - listitem [ref=f106e932]:
+                  - generic [ref=f106e933]: €131K - €246K
+              - list [ref=f106e934]:
+                - listitem [ref=f106e935]:
+                  - generic [ref=f106e936]: "15"
+                - listitem [ref=f106e939]:
+                  - generic [ref=f106e941]:
+                    - generic [ref=f106e942]:
+                      - img [ref=f106e943] [cursor=pointer]
+                      - link "Charlie Carrick" [ref=f106e944] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000391874-charlie-carrick
+                    - generic [ref=f106e945]: DC
+                - listitem [ref=f106e946]: "18"
+                - listitem [ref=f106e947]: "-"
+                - listitem [ref=f106e948]:
+                  - generic [ref=f106e949]: €4K - €8K
+              - list [ref=f106e950]:
+                - listitem [ref=f106e951]:
+                  - generic [ref=f106e952]: "45"
+                - listitem [ref=f106e955]:
+                  - generic [ref=f106e957]:
+                    - generic [ref=f106e958]:
+                      - img [ref=f106e959] [cursor=pointer]
+                      - link "Maldini Kacurri" [ref=f106e960] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000216553-maldini-kacurri
+                    - generic [ref=f106e961]: DC
+                - listitem [ref=f106e962]: "20"
+                - listitem [ref=f106e963]: "-"
+                - listitem [ref=f106e964]:
+                  - generic [ref=f106e965]: €500K - €938K
+              - list [ref=f106e966]:
+                - listitem [ref=f106e967]:
+                  - generic [ref=f106e968]: "15"
+                - listitem [ref=f106e971]:
+                  - generic [ref=f106e973]:
+                    - generic [ref=f106e974]:
+                      - img [ref=f106e975] [cursor=pointer]
+                      - link "Alex Graham" [ref=f106e976] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000391880-alex-graham
+                    - generic [ref=f106e977]: DC
+                - listitem [ref=f106e978]: "18"
+                - listitem [ref=f106e979]: "-"
+                - listitem [ref=f106e980]:
+                  - generic [ref=f106e981]: €4K - €7K
+              - list [ref=f106e982]:
+                - listitem [ref=f106e983]:
+                  - generic [ref=f106e984]: "15"
+                - listitem [ref=f106e987]:
+                  - generic [ref=f106e989]:
+                    - generic [ref=f106e990]:
+                      - img [ref=f106e991] [cursor=pointer]
+                      - link "Charlie Elliot" [ref=f106e992] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000462976-charlie-elliot
+                    - generic [ref=f106e993]: DC
+                - listitem [ref=f106e994]: "17"
+                - listitem [ref=f106e995]: "-"
+                - listitem [ref=f106e996]:
+                  - generic [ref=f106e997]: €4K - €8K
+              - list [ref=f106e998]:
+                - listitem [ref=f106e999]:
+                  - generic [ref=f106e1000]: "15"
+                - listitem [ref=f106e1003]:
+                  - generic [ref=f106e1005]:
+                    - generic [ref=f106e1006]:
+                      - img [ref=f106e1007] [cursor=pointer]
+                      - link "Fortune Onoh" [ref=f106e1008] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000391888-fortune-onoh
+                    - generic [ref=f106e1009]: DM, MC
+                - listitem [ref=f106e1010]: "17"
+                - listitem [ref=f106e1011]: "-"
+                - listitem [ref=f106e1012]:
+                  - generic [ref=f106e1013]: €4K - €8K
+              - list [ref=f106e1014]:
+                - listitem [ref=f106e1015]:
+                  - generic [ref=f106e1016]: "47"
+                  - generic [ref=f106e1017]: "60"
+                - listitem [ref=f106e1018]:
+                  - generic [ref=f106e1020]:
+                    - generic [ref=f106e1021]:
+                      - img [ref=f106e1022] [cursor=pointer]
+                      - link "Géza Dávid Turi" [ref=f106e1023] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000006377-geza-david-turi
+                    - generic [ref=f106e1024]: DM, MC
+                - listitem [ref=f106e1025]: "24"
+                - listitem [ref=f106e1026]: "-"
+                - listitem [ref=f106e1027]:
+                  - generic [ref=f106e1028]: €300K - €562K
+              - list [ref=f106e1029]:
+                - listitem [ref=f106e1030]:
+                  - generic [ref=f106e1031]: "53"
+                  - generic [ref=f106e1032]: "55"
+                - listitem [ref=f106e1033]:
+                  - generic [ref=f106e1035]:
+                    - generic [ref=f106e1036]:
+                      - img [ref=f106e1037] [cursor=pointer]
+                      - link "Kieran Green" [ref=f106e1038] [cursor=pointer]:
+                        - /url: /players/7-fm-26/28093742-kieran-green
+                    - generic [ref=f106e1039]: DM, MC, AMC
+                - listitem [ref=f106e1040]: "28"
+                - listitem [ref=f106e1041]: "-"
+                - listitem [ref=f106e1042]:
+                  - generic [ref=f106e1043]: €677K - €1M
+              - list [ref=f106e1044]:
+                - listitem [ref=f106e1045]:
+                  - generic [ref=f106e1046]: "46"
+                  - generic [ref=f106e1047]: "56"
+                - listitem [ref=f106e1048]:
+                  - generic [ref=f106e1050]:
+                    - generic [ref=f106e1051]:
+                      - img [ref=f106e1052] [cursor=pointer]
+                      - link "Neo Eccleston" [ref=f106e1053] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000055688-neo-eccleston
+                    - generic [ref=f106e1054]: DR, WBR
+                - listitem [ref=f106e1055]: "22"
+                - listitem [ref=f106e1056]: "-"
+                - listitem [ref=f106e1057]:
+                  - generic [ref=f106e1058]: €340K - €638K
+              - list [ref=f106e1059]:
+                - listitem [ref=f106e1060]:
+                  - generic [ref=f106e1061]: "15"
+                - listitem [ref=f106e1064]:
+                  - generic [ref=f106e1066]:
+                    - generic [ref=f106e1067]:
+                      - img [ref=f106e1068] [cursor=pointer]
+                      - link "Josh Edwards" [ref=f106e1069] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000462975-josh-edwards
+                    - generic [ref=f106e1070]: DR
+                - listitem [ref=f106e1071]: "17"
+                - listitem [ref=f106e1072]: "-"
+                - listitem [ref=f106e1073]:
+                  - generic [ref=f106e1074]: €4K - €8K
+              - list [ref=f106e1075]:
+                - listitem [ref=f106e1076]:
+                  - generic [ref=f106e1077]: "15"
+                - listitem [ref=f106e1080]:
+                  - generic [ref=f106e1082]:
+                    - generic [ref=f106e1083]:
+                      - img [ref=f106e1084] [cursor=pointer]
+                      - link "Kian Hawley" [ref=f106e1085] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000391892-kian-hawley
+                    - generic [ref=f106e1086]: MC
+                - listitem [ref=f106e1087]: "18"
+                - listitem [ref=f106e1088]: "-"
+                - listitem [ref=f106e1089]:
+                  - generic [ref=f106e1090]: €5K - €9K
+              - list [ref=f106e1091]:
+                - listitem [ref=f106e1092]:
+                  - generic [ref=f106e1093]: "30"
+                - listitem [ref=f106e1096]:
+                  - generic [ref=f106e1098]:
+                    - generic [ref=f106e1099]:
+                      - img [ref=f106e1100] [cursor=pointer]
+                      - link "Henry Brown" [ref=f106e1101] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000296642-henry-brown
+                    - generic [ref=f106e1102]: MR, ML, AMR, AMC
+                - listitem [ref=f106e1103]: "18"
+                - listitem [ref=f106e1104]: "-"
+                - listitem [ref=f106e1105]:
+                  - generic [ref=f106e1106]: €51K - €95K
+              - list [ref=f106e1107]:
+                - listitem [ref=f106e1108]:
+                  - generic [ref=f106e1109]: "47"
+                  - generic [ref=f106e1110]: "65"
+                - listitem [ref=f106e1111]:
+                  - generic [ref=f106e1113]:
+                    - generic [ref=f106e1114]:
+                      - img [ref=f106e1115] [cursor=pointer]
+                      - link "Jason Daði Svanþórsson" [ref=f106e1116] [cursor=pointer]:
+                        - /url: /players/7-fm-26/39054080-jason-dai-svanorsson
+                    - generic [ref=f106e1117]: MR, ML, AMR, AML
+                - listitem [ref=f106e1118]: "25"
+                - listitem [ref=f106e1119]: "-"
+                - listitem [ref=f106e1120]:
+                  - generic [ref=f106e1121]: €230K - €431K
+              - list [ref=f106e1122]:
+                - listitem [ref=f106e1123]:
+                  - generic [ref=f106e1124]: "54"
+                  - generic [ref=f106e1125]: "58"
+                - listitem [ref=f106e1126]:
+                  - generic [ref=f106e1128]:
+                    - generic [ref=f106e1129]:
+                      - img [ref=f106e1130] [cursor=pointer]
+                      - link "George McEachran" [ref=f106e1131] [cursor=pointer]:
+                        - /url: /players/7-fm-26/28108039-george-mceachran
+                    - generic [ref=f106e1132]: DM, MC
+                - listitem [ref=f106e1133]: "25"
+                - listitem [ref=f106e1134]: "-"
+                - listitem [ref=f106e1135]:
+                  - generic [ref=f106e1136]: €793K - €1M
+              - list [ref=f106e1137]:
+                - listitem [ref=f106e1138]:
+                  - generic [ref=f106e1139]: "15"
+                - listitem [ref=f106e1142]:
+                  - generic [ref=f106e1144]:
+                    - generic [ref=f106e1145]:
+                      - img [ref=f106e1146] [cursor=pointer]
+                      - link "Lennon Peterson" [ref=f106e1147] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000462980-lennon-peterson
+                    - generic [ref=f106e1148]: DM
+                - listitem [ref=f106e1149]: "17"
+                - listitem [ref=f106e1150]: "-"
+                - listitem [ref=f106e1151]:
+                  - generic [ref=f106e1152]: €4K - €7K
+              - list [ref=f106e1153]:
+                - listitem [ref=f106e1154]:
+                  - generic [ref=f106e1155]: "15"
+                - listitem [ref=f106e1158]:
+                  - generic [ref=f106e1160]:
+                    - generic [ref=f106e1161]:
+                      - img [ref=f106e1162] [cursor=pointer]
+                      - link "George Smith" [ref=f106e1163] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000462979-george-smith
+                    - generic [ref=f106e1164]: MC, ML, AML, AMC
+                - listitem [ref=f106e1165]: "17"
+                - listitem [ref=f106e1166]: "-"
+                - listitem [ref=f106e1167]:
+                  - generic [ref=f106e1168]: €4K - €8K
+              - list [ref=f106e1169]:
+                - listitem [ref=f106e1170]:
+                  - generic [ref=f106e1171]: "45"
+                  - generic [ref=f106e1172]: "49"
+                - listitem [ref=f106e1173]:
+                  - generic [ref=f106e1175]:
+                    - generic [ref=f106e1176]:
+                      - img [ref=f106e1177] [cursor=pointer]
+                      - link "Justin Amaluzor" [ref=f106e1178] [cursor=pointer]:
+                        - /url: /players/7-fm-26/29164662-justin-amaluzor
+                    - generic [ref=f106e1179]: MR, ML, AMR, AML
+                - listitem [ref=f106e1180]: "29"
+                - listitem [ref=f106e1181]: "-"
+                - listitem [ref=f106e1182]:
+                  - generic [ref=f106e1183]: €89K - €167K
+              - list [ref=f106e1184]:
+                - listitem [ref=f106e1185]:
+                  - generic [ref=f106e1186]: "15"
+                - listitem [ref=f106e1189]:
+                  - generic [ref=f106e1191]:
+                    - generic [ref=f106e1192]:
+                      - img [ref=f106e1193] [cursor=pointer]
+                      - link "Corey Foster" [ref=f106e1194] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000391876-corey-foster
+                    - generic [ref=f106e1195]: MR, ML, AMR
+                - listitem [ref=f106e1196]: "17"
+                - listitem [ref=f106e1197]: "-"
+                - listitem [ref=f106e1198]:
+                  - generic [ref=f106e1199]: €4K - €7K
+              - list [ref=f106e1200]:
+                - listitem [ref=f106e1201]:
+                  - generic [ref=f106e1202]: "47"
+                - listitem [ref=f106e1205]:
+                  - generic [ref=f106e1207]:
+                    - generic [ref=f106e1208]:
+                      - img [ref=f106e1209] [cursor=pointer]
+                      - link "Tyrell Sellars-Fleming" [ref=f106e1210] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000117447-tyrell-sellars-fleming
+                    - generic [ref=f106e1211]: MR, ML, ST
+                - listitem [ref=f106e1212]: "20"
+                - listitem [ref=f106e1213]: "-"
+                - listitem [ref=f106e1214]:
+                  - generic [ref=f106e1215]: €843K - €2M
+              - list [ref=f106e1216]:
+                - listitem [ref=f106e1217]:
+                  - generic [ref=f106e1218]: "45"
+                  - generic [ref=f106e1219]: "60"
+                - listitem [ref=f106e1220]:
+                  - generic [ref=f106e1222]:
+                    - generic [ref=f106e1223]:
+                      - img [ref=f106e1224] [cursor=pointer]
+                      - link "Jamie Walker" [ref=f106e1225] [cursor=pointer]:
+                        - /url: /players/7-fm-26/61028661-jamie-walker
+                    - generic [ref=f106e1226]: AML, AMC
+                - listitem [ref=f106e1227]: "32"
+                - listitem [ref=f106e1228]: "-"
+                - listitem [ref=f106e1229]:
+                  - generic [ref=f106e1230]: €105K - €197K
+              - list [ref=f106e1231]:
+                - listitem [ref=f106e1232]:
+                  - generic [ref=f106e1233]: "54"
+                  - generic [ref=f106e1234]: "55"
+                - listitem [ref=f106e1235]:
+                  - generic [ref=f106e1237]:
+                    - generic [ref=f106e1238]:
+                      - img [ref=f106e1239] [cursor=pointer]
+                      - link "Charles Vernam" [ref=f106e1240] [cursor=pointer]:
+                        - /url: /players/7-fm-26/29120982-charles-vernam
+                    - generic [ref=f106e1241]: AMR, AML, AMC
+                - listitem [ref=f106e1242]: "29"
+                - listitem [ref=f106e1243]: "-"
+                - listitem [ref=f106e1244]:
+                  - generic [ref=f106e1245]: €835K - €2M
+              - list [ref=f106e1246]:
+                - listitem [ref=f106e1247]:
+                  - generic [ref=f106e1248]: "43"
+                  - generic [ref=f106e1249]: "68"
+                - listitem [ref=f106e1250]:
+                  - generic [ref=f106e1252]:
+                    - generic [ref=f106e1253]:
+                      - img [ref=f106e1254] [cursor=pointer]
+                      - link "Zak Gilsenan" [ref=f106e1255] [cursor=pointer]:
+                        - /url: /players/7-fm-26/292380015-zak-gilsenan
+                    - generic [ref=f106e1256]: AMR, AML, AMC
+                - listitem [ref=f106e1257]: "22"
+                - listitem [ref=f106e1258]: "-"
+                - listitem [ref=f106e1259]:
+                  - generic [ref=f106e1260]: €644K - €1M
+              - list [ref=f106e1261]:
+                - listitem [ref=f106e1262]:
+                  - generic [ref=f106e1263]: "48"
+                  - generic [ref=f106e1264]: "58"
+                - listitem [ref=f106e1265]:
+                  - generic [ref=f106e1267]:
+                    - generic [ref=f106e1268]:
+                      - img [ref=f106e1269] [cursor=pointer]
+                      - link "Darragh Burns" [ref=f106e1270] [cursor=pointer]:
+                        - /url: /players/7-fm-26/52097526-darragh-burns
+                    - generic [ref=f106e1271]: WBR, MR, AMR, AML
+                - listitem [ref=f106e1272]: "23"
+                - listitem [ref=f106e1273]: "-"
+                - listitem [ref=f106e1274]:
+                  - generic [ref=f106e1275]: €368K - €690K
+              - list [ref=f106e1276]:
+                - listitem [ref=f106e1277]:
+                  - generic [ref=f106e1278]: "46"
+                  - generic [ref=f106e1279]: "56"
+                - listitem [ref=f106e1280]:
+                  - generic [ref=f106e1282]:
+                    - generic [ref=f106e1283]:
+                      - img [ref=f106e1284] [cursor=pointer]
+                      - link "Jaze Kabia" [ref=f106e1285] [cursor=pointer]:
+                        - /url: /players/7-fm-26/52090417-jaze-kabia
+                    - generic [ref=f106e1286]: AMR, ST
+                - listitem [ref=f106e1287]: "25"
+                - listitem [ref=f106e1288]: "-"
+                - listitem [ref=f106e1289]:
+                  - generic [ref=f106e1290]: €165K - €309K
+              - list [ref=f106e1291]:
+                - listitem [ref=f106e1292]:
+                  - generic [ref=f106e1293]: "46"
+                  - generic [ref=f106e1294]: "58"
+                - listitem [ref=f106e1295]:
+                  - generic [ref=f106e1297]:
+                    - generic [ref=f106e1298]:
+                      - img [ref=f106e1299] [cursor=pointer]
+                      - link "Jude Soonsup-Bell" [ref=f106e1300] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000016605-jude-soonsup-bell
+                    - generic [ref=f106e1301]: MR, AMR, ST
+                - listitem [ref=f106e1302]: "21"
+                - listitem [ref=f106e1303]: "-"
+                - listitem [ref=f106e1304]:
+                  - generic [ref=f106e1305]: €535K - €1M
+              - list [ref=f106e1306]:
+                - listitem [ref=f106e1307]:
+                  - generic [ref=f106e1308]: "15"
+                - listitem [ref=f106e1311]:
+                  - generic [ref=f106e1313]:
+                    - generic [ref=f106e1314]:
+                      - img [ref=f106e1315] [cursor=pointer]
+                      - link "Kristian Catchpole" [ref=f106e1316] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000462978-kristian-catchpole
+                    - generic [ref=f106e1317]: MC
+                - listitem [ref=f106e1318]: "16"
+                - listitem [ref=f106e1319]: "-"
+                - listitem [ref=f106e1320]:
+                  - generic [ref=f106e1321]: €6K - €11K
+              - list [ref=f106e1322]:
+                - listitem [ref=f106e1323]:
+                  - generic [ref=f106e1324]: "15"
+                - listitem [ref=f106e1327]:
+                  - generic [ref=f106e1329]:
+                    - generic [ref=f106e1330]:
+                      - img [ref=f106e1331] [cursor=pointer]
+                      - link "Charlie Hatton" [ref=f106e1332] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000391871-charlie-hatton
+                    - generic [ref=f106e1333]: MR
+                - listitem [ref=f106e1334]: "17"
+                - listitem [ref=f106e1335]: "-"
+                - listitem [ref=f106e1336]:
+                  - generic [ref=f106e1337]: €4K - €7K
+              - list [ref=f106e1338]:
+                - listitem [ref=f106e1339]:
+                  - generic [ref=f106e1340]: "42"
+                - listitem [ref=f106e1343]:
+                  - generic [ref=f106e1345]:
+                    - generic [ref=f106e1346]:
+                      - img [ref=f106e1347] [cursor=pointer]
+                      - link "Cameron Gardner" [ref=f106e1348] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000296648-cameron-gardner
+                    - generic [ref=f106e1349]: AMR, AML, ST
+                - listitem [ref=f106e1350]: "20"
+                - listitem [ref=f106e1351]: "-"
+                - listitem [ref=f106e1352]:
+                  - generic [ref=f106e1353]: €113K - €213K
+              - list [ref=f106e1354]:
+                - listitem [ref=f106e1355]:
+                  - generic [ref=f106e1356]: "49"
+                  - generic [ref=f106e1357]: "54"
+                - listitem [ref=f106e1358]:
+                  - generic [ref=f106e1360]:
+                    - generic [ref=f106e1361]:
+                      - img [ref=f106e1362] [cursor=pointer]
+                      - link "Andy Cook" [ref=f106e1363] [cursor=pointer]:
+                        - /url: /players/7-fm-26/28017377-andy-cook
+                    - generic [ref=f106e1364]: ST
+                - listitem [ref=f106e1365]: "35"
+                - listitem [ref=f106e1366]: "-"
+                - listitem [ref=f106e1367]:
+                  - generic [ref=f106e1368]: €51K - €95K
+              - list [ref=f106e1369]:
+                - listitem [ref=f106e1370]:
+                  - generic [ref=f106e1371]: "15"
+                - listitem [ref=f106e1374]:
+                  - generic [ref=f106e1376]:
+                    - generic [ref=f106e1377]:
+                      - img [ref=f106e1378] [cursor=pointer]
+                      - link "Harvey Booth" [ref=f106e1379] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000462974-harvey-booth
+                    - generic [ref=f106e1380]: ST
+                - listitem [ref=f106e1381]: "17"
+                - listitem [ref=f106e1382]: "-"
+                - listitem [ref=f106e1383]:
+                  - generic [ref=f106e1384]: €4K - €8K
+              - list [ref=f106e1385]:
+                - listitem [ref=f106e1386]:
+                  - generic [ref=f106e1387]: "15"
+                - listitem [ref=f106e1390]:
+                  - generic [ref=f106e1392]:
+                    - generic [ref=f106e1393]:
+                      - img [ref=f106e1394] [cursor=pointer]
+                      - link "Elliot Smith" [ref=f106e1395] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000391883-elliot-smith
+                    - generic [ref=f106e1396]: ST
+                - listitem [ref=f106e1397]: "18"
+                - listitem [ref=f106e1398]: "-"
+                - listitem [ref=f106e1399]:
+                  - generic [ref=f106e1400]: €6K - €10K
+              - list [ref=f106e1401]:
+                - listitem [ref=f106e1402]:
+                  - generic [ref=f106e1403]: "15"
+                - listitem [ref=f106e1406]:
+                  - generic [ref=f106e1408]:
+                    - generic [ref=f106e1409]:
+                      - img [ref=f106e1410] [cursor=pointer]
+                      - link "Carlo Midwinter" [ref=f106e1411] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000391878-carlo-midwinter
+                    - generic [ref=f106e1412]: ST
+                - listitem [ref=f106e1413]: "17"
+                - listitem [ref=f106e1414]: "-"
+                - listitem [ref=f106e1415]:
+                  - generic [ref=f106e1416]: €4K - €8K
+              - list [ref=f106e1417]:
+                - listitem [ref=f106e1418]:
+                  - generic [ref=f106e1419]: "15"
+                - listitem [ref=f106e1422]:
+                  - generic [ref=f106e1424]:
+                    - generic [ref=f106e1425]:
+                      - img [ref=f106e1426] [cursor=pointer]
+                      - link "Ted Sharp" [ref=f106e1427] [cursor=pointer]:
+                        - /url: /players/7-fm-26/2000462977-ted-sharp
+                    - generic [ref=f106e1428]: ST
+                - listitem [ref=f106e1429]: "17"
+                - listitem [ref=f106e1430]: "-"
+                - listitem [ref=f106e1431]:
+                  - generic [ref=f106e1432]: €6K - €10K
+        - generic [ref=f106e1433]:
+          - heading "Comments" [level=2] [ref=f106e1434]
+          - paragraph [ref=f106e1436]: No comments yet, be the first!
+          - generic [ref=f106e1438]:
+            - generic [ref=f106e1439]:
+              - generic [ref=f106e1440]: Name
+              - generic [ref=f106e1441]: Pick a name or leave blank to comment as guest
+              - 'textbox "Guest #129581070" [ref=f106e1442]'
+            - generic [ref=f106e1443]:
+              - generic [ref=f106e1444]: Email
+              - generic [ref=f106e1445]: Enter your e-mail to be notified on reply
+              - textbox "Email" [ref=f106e1446]
+            - textbox "Your comment" [ref=f106e1447]
+            - generic [ref=f106e1448]: Be respectful and kind in your comments, failure to do so will result in a permanent ban
+            - link "Submit" [ref=f106e1449] [cursor=pointer]:
+              - /url: "#"
+  - list [ref=f106e1451]:
+    - listitem [ref=f106e1452]:
+      - link "Follow us on Instagram" [ref=f106e1453] [cursor=pointer]:
+        - /url: https://www.instagram.com/fminside/
+    - listitem [ref=f106e1454]:
+      - link "Join us on Facebook" [ref=f106e1455] [cursor=pointer]:
+        - /url: https://www.facebook.com/fminsidefm
+    - listitem [ref=f106e1456]:
+      - link "Stay on top through X" [ref=f106e1457] [cursor=pointer]:
+        - /url: https://twitter.com/fminside
+    - listitem [ref=f106e1458]:
+      - link "Watch us on Youtube" [ref=f106e1459] [cursor=pointer]:
+        - /url: https://www.youtube.com/channel/UCKYHiYV4ZQ1YWy2rgCCYgRA
+  - generic [ref=f106e1461]:
+    - paragraph [ref=f106e1462]:
+      - generic [ref=f106e1463]: Copyright © 2004 - 2026 fminside.net
+      - text: Not affiliated with Sports Interactive or SEGA in any way. All trademarks are property of their respective owners. Our website has been created by and for fans of Football Manager
+    - generic [ref=f106e1465]:
+      - generic [ref=f106e1466]:
+        - generic: More on FMInside
+        - list [ref=f106e1467]:
+          - link:
+            - /url: "#"
+          - listitem [ref=f106e1468]:
+            - link "About us" [ref=f106e1469] [cursor=pointer]:
+              - /url: /about-us
+          - listitem [ref=f106e1470]:
+            - link "Advertise" [ref=f106e1471] [cursor=pointer]:
+              - /url: /advertise-on-fminside
+          - listitem [ref=f106e1472]:
+            - link "Staff" [ref=f106e1473] [cursor=pointer]:
+              - /url: /staff
+          - listitem [ref=f106e1474]:
+            - link "Write for us" [ref=f106e1475] [cursor=pointer]:
+              - /url: /write-for-us
+          - listitem [ref=f106e1476]:
+            - link "Vacancies" [ref=f106e1477] [cursor=pointer]:
+              - /url: /vacancies
+          - listitem [ref=f106e1478]:
+            - link "Links" [ref=f106e1479] [cursor=pointer]:
+              - /url: /links
+          - listitem [ref=f106e1480]:
+            - link "Terms" [ref=f106e1481] [cursor=pointer]:
+              - /url: /terms-of-use
+          - listitem [ref=f106e1482]:
+            - link "Privacy" [ref=f106e1483] [cursor=pointer]:
+              - /url: /privacy-policy
+          - listitem [ref=f106e1484]:
+            - link "Contact" [ref=f106e1485] [cursor=pointer]:
+              - /url: /contact
+      - generic [ref=f106e1486]:
+        - generic: Partners
+        - list [ref=f106e1487]:
+          - listitem [ref=f106e1488]:
+            - link "Playwire" [ref=f106e1489] [cursor=pointer]:
+              - /url: https://www.playwire.com/contact-direct-sales
+          - listitem [ref=f106e1490]:
+            - link "Managers United" [ref=f106e1491] [cursor=pointer]:
+              - /url: https://manutd.nl
+          - listitem [ref=f106e1492]:
+            - link "Ontbrand" [ref=f106e1493] [cursor=pointer]:
+              - /url: https://ontbrand.com

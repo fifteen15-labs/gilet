@@ -10,13 +10,24 @@
 	 */
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { auditBackroom } from '$lib/utils/audit';
-	import type { Club } from '$lib/tauri/commands';
+	import { clubPeople, type Club, type Player } from '$lib/tauri/commands';
 	import type { Filters } from '$lib/utils/filter';
 
 	type Props = { club: Club };
 	const { club }: Props = $props();
 
-	const audit = $derived(auditBackroom(club, scout.players));
+	/** The people at this club, fetched from the backend where the rows live.
+	 * The name guard drops a stale reply when the panel moves to another club
+	 * before the first fetch lands. */
+	let people = $state.raw<Player[]>([]);
+	$effect(() => {
+		const wanted = club.short_name;
+		void clubPeople(wanted).then((rows) => {
+			if (wanted === club.short_name) people = rows;
+		});
+	});
+
+	const audit = $derived(auditBackroom(club, people));
 
 	/** Jumps to the people table showing this club's staff, by department. */
 	function drill(role: Filters['staffRole']) {

@@ -15,6 +15,7 @@
 	import { abilityOf, flagsFor, headroom, potentialOf } from '$lib/utils/flags';
 	import { formatWage } from '$lib/utils/money';
 	import { coverage } from '$lib/utils/positions';
+	import { score } from '$lib/utils/score';
 
 	const players = $derived(scout.compared);
 	const names = $derived(scout.summary?.attribute_names ?? []);
@@ -156,7 +157,7 @@
 									type="button"
 									class="shrink-0 text-xs text-[var(--color-faint)] hover:text-[var(--color-hivis)]"
 									aria-label="Remove {player.name} from the board"
-									onclick={() => scout.togglePinned(player.id)}>×</button
+									onclick={() => scout.togglePinned(player)}>×</button
 								>
 							</div>
 						</th>
@@ -181,7 +182,9 @@
 				{/each}
 
 				{#if profile}
-					{@const scores = players.map((p) => scout.scores.get(p.id) ?? null)}
+					<!-- Scored here rather than looked up: the backend scores the
+						table's page, and a pinned player may be off it. -->
+					{@const scores = players.map((p) => score(p, profile))}
 					{@const best = leaders(scores)}
 					<tr class="border-b border-[var(--color-line-soft)]">
 						<td class="py-1 pr-4 text-xs text-[var(--color-mist)]" title="Your weights, not an FM figure">

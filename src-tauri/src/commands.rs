@@ -145,6 +145,10 @@ pub struct PlayerRow {
     /// read from the entity object one id below this person's own. `None` for
     /// anyone the save gives no such object, which is most players.
     pub staff: Option<StaffSheet>,
+    /// Game reputation on the editor's 0-200 scale, bound only where the
+    /// save's player line repeats this person's own CA/PA — `None` is an
+    /// undecoded reading, never a nobody.
+    pub reputation: Option<ReputationRow>,
     /// True for a stub — a non-contract squad filler the save stores without
     /// a person record. Identity and club are known; name, age and attributes
     /// are not decoded, and the row says so rather than vanishing.
@@ -154,6 +158,24 @@ pub struct PlayerRow {
     /// the department staff lists. `None` for players, the unemployed, and
     /// staff bound outside the department triple.
     pub staff_role: Option<String>,
+}
+
+/// A person's three game reputations, 0-200 as the editor stores them.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReputationRow {
+    /// Standing in their home nation.
+    pub home: u16,
+    /// Standing where they currently play.
+    pub current: u16,
+    /// Worldwide standing — the reputation that decides who takes your call.
+    pub world: u16,
+}
+
+impl From<fm_save::person::Reputation> for ReputationRow {
+    fn from(r: fm_save::person::Reputation) -> Self {
+        Self { home: r.home, current: r.current, world: r.world }
+    }
 }
 
 /// A person's non-player sheet, as `fm-save` decodes it.
@@ -248,6 +270,94 @@ pub struct SaveSummary {
     pub parse_millis: u64,
 }
 
+/// The loaded save, kept in the backend so searches run here rather than
+/// shipping a quarter of a million rows to the frontend and filtering them
+/// in JavaScript on the UI thread.
+#[derive(Default)]
+pub struct LoadedSave(pub std::sync::Mutex<Option<std::sync::Arc<SaveSummary>>>);
+
+/// A nation present in the save, for the filter dropdowns. `name` is empty
+/// for identifiers the format work has not named — they still group and
+/// filter, they just cannot say which flag they are.
+#[derive(Debug, Clone, Serialize)]
+pub struct NationOption {
+    pub id: u16,
+    pub name: String,
+}
+
+/// What the frontend receives on open: everything in [`SaveSummary`] except
+/// the player rows, plus the derived facts the filter bar used to compute by
+/// scanning them. The rows stay in [`LoadedSave`] and are queried in pages.
+#[derive(Debug, Clone, Serialize)]
+pub struct SaveOverview {
+    pub goalkeeping_indices: Vec<usize>,
+    pub attribute_names: Vec<String>,
+    pub position_names: Vec<String>,
+    pub path: String,
+    pub clubs: Vec<ClubRow>,
+    pub game_date: Option<String>,
+    pub game_shortlists: Vec<GameShortlistRow>,
+    pub frames: usize,
+    pub decompressed_bytes: usize,
+    pub parse_millis: u64,
+    /// How many people the table can show — the header's census figure.
+    pub people_count: usize,
+    /// Whether any row carries a decoded ability, gender or trait reading —
+    /// what decides if those filters are offered at all.
+    pub ability_known: bool,
+    pub gender_known: bool,
+    pub flags_known: bool,
+    /// Distinct nations, named ones alphabetical and the unnamed tail by
+    /// identifier — the same ordering the frontend used to derive per load.
+    pub nations: Vec<NationOption>,
+}
+
+impl SaveOverview {
+    fn of(summary: &SaveSummary) -> Self {
+        let players = &summary.players;
+        let mut seen: std::collections::HashMap<u16, &str> = std::collections::HashMap::new();
+        for p in players {
+            if let Some(id) = p.nation_id {
+                seen.entry(id).or_insert(p.nation.as_str());
+            }
+        }
+        // Unnamed identifiers still group and filter; they read as "#98" at
+        // the bottom of the dropdown rather than as blank rows.
+        let mut nations: Vec<NationOption> = seen
+            .into_iter()
+            .map(|(id, name)| NationOption {
+                id,
+                name: if name.is_empty() { format!("#{id}") } else { name.to_owned() },
+            })
+            .collect();
+        nations.sort_by(|a, b| match (a.name.starts_with('#'), b.name.starts_with('#')) {
+            (true, false) => std::cmp::Ordering::Greater,
+            (false, true) => std::cmp::Ordering::Less,
+            (true, true) => a.id.cmp(&b.id),
+            (false, false) => a.name.cmp(&b.name),
+        });
+        Self {
+            goalkeeping_indices: summary.goalkeeping_indices.clone(),
+            attribute_names: summary.attribute_names.clone(),
+            position_names: summary.position_names.clone(),
+            path: summary.path.clone(),
+            clubs: summary.clubs.clone(),
+            game_date: summary.game_date.clone(),
+            game_shortlists: summary.game_shortlists.clone(),
+            frames: summary.frames,
+            decompressed_bytes: summary.decompressed_bytes,
+            parse_millis: summary.parse_millis,
+            people_count: players.len(),
+            ability_known: players.iter().any(|p| p.ability.is_some()),
+            gender_known: players.iter().any(|p| p.female.is_some()),
+            flags_known: players
+                .iter()
+                .any(|p| !p.attributes.is_empty() || p.professionalism.is_some()),
+            nations,
+        }
+    }
+}
+
 /// How far through parsing the backend is, emitted as it goes.
 #[derive(Debug, Clone, Serialize)]
 pub struct ParseProgress {
@@ -282,12 +392,15 @@ pub async fn open_save(
     app: tauri::AppHandle,
     path: String,
     today: Vec<u16>,
-) -> Result<SaveSummary, CommandError> {
-    tauri::async_runtime::spawn_blocking(move || {
+) -> Result<SaveOverview, CommandError> {
+    use tauri::Manager as _;
+
+    let emitter = app.clone();
+    let summary = tauri::async_runtime::spawn_blocking(move || {
         use tauri::Emitter as _;
         load_save(path, &today, |stage| {
             // A dropped progress event is not worth failing a parse over.
-            let _ = app.emit(
+            let _ = emitter.emit(
                 PARSE_PROGRESS_EVENT,
                 ParseProgress {
                     fraction: stage.progress(),
@@ -297,7 +410,134 @@ pub async fn open_save(
         })
     })
     .await
-    .map_err(|e| CommandError::Parse(format!("parsing did not finish: {e}")))?
+    .map_err(|e| CommandError::Parse(format!("parsing did not finish: {e}")))??;
+
+    let overview = SaveOverview::of(&summary);
+    let state = app.state::<LoadedSave>();
+    if let Ok(mut slot) = state.0.lock() {
+        *slot = Some(std::sync::Arc::new(summary));
+    }
+    Ok(overview)
+}
+
+/// The loaded rows, or the error every query command shares when no save is
+/// open — the frontend never calls these before `open_save`, so seeing this
+/// message means the state was dropped, not that the user did anything wrong.
+fn loaded(state: &tauri::State<'_, LoadedSave>) -> Result<std::sync::Arc<SaveSummary>, CommandError> {
+    state
+        .0
+        .lock()
+        .ok()
+        .and_then(|slot| slot.clone())
+        .ok_or_else(|| CommandError::Parse("no save is loaded".to_owned()))
+}
+
+/// The search context a filter set needs: the named shortlist's members and
+/// the save's own position slot ordering.
+fn search_context(summary: &SaveSummary, filters: &crate::search::Filters) -> crate::search::Context {
+    let shortlist_eids: std::collections::HashSet<u32> = match filters.shortlist.as_deref() {
+        Some(name) => summary
+            .game_shortlists
+            .iter()
+            .find(|l| l.name.as_deref().unwrap_or("") == name)
+            .map(|l| l.player_eids.iter().copied().collect())
+            .unwrap_or_default(),
+        None => std::collections::HashSet::new(),
+    };
+    let position_slots: std::collections::HashMap<String, usize> = summary
+        .position_names
+        .iter()
+        .enumerate()
+        .filter(|(_, name)| !name.is_empty())
+        .map(|(index, name)| (name.clone(), index))
+        .collect();
+    crate::search::Context { shortlist_eids, position_slots }
+}
+
+/// Filters, scores and sorts the loaded rows, returning one page and the
+/// true total. The heavy lifting the frontend used to do per keystroke.
+///
+/// # Errors
+/// Fails when no save is loaded.
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command]
+pub fn search_players(
+    state: tauri::State<'_, LoadedSave>,
+    filters: crate::search::Filters,
+    sort_key: String,
+    sort_direction: String,
+    profile: Option<crate::shortlist::ScoringProfile>,
+    limit: usize,
+) -> Result<crate::search::SearchPage, CommandError> {
+    let summary = loaded(&state)?;
+    let context = search_context(&summary, &filters);
+    Ok(crate::search::run(
+        &summary.players,
+        &filters,
+        &sort_key,
+        &sort_direction,
+        profile.as_ref(),
+        &context,
+        limit,
+    ))
+}
+
+/// Every matching player's entity id and name, for writing a whole result
+/// set into an in-save shortlist without shipping the rows.
+///
+/// # Errors
+/// Fails when no save is loaded.
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command]
+pub fn search_eids(
+    state: tauri::State<'_, LoadedSave>,
+    filters: crate::search::Filters,
+    profile: Option<crate::shortlist::ScoringProfile>,
+) -> Result<Vec<crate::search::SearchHit>, CommandError> {
+    let summary = loaded(&state)?;
+    let context = search_context(&summary, &filters);
+    Ok(crate::search::matching_eids(
+        &summary.players,
+        &filters,
+        profile.as_ref(),
+        &context,
+    ))
+}
+
+/// One row by exact name — how the sidebar opens a shortlist member in the
+/// detail panel.
+///
+/// # Errors
+/// Fails when no save is loaded.
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command]
+pub fn player_by_name(
+    state: tauri::State<'_, LoadedSave>,
+    name: String,
+) -> Result<Option<PlayerRow>, CommandError> {
+    let summary = loaded(&state)?;
+    Ok(summary.players.iter().find(|p| p.name == name).cloned())
+}
+
+/// Everyone whose club label matches a short name — squad, backroom, B and
+/// youth players together; the audits split them by `first_team` and
+/// `is_player` on their side. Tens of rows, not thousands.
+///
+/// # Errors
+/// Fails when no save is loaded.
+#[allow(clippy::needless_pass_by_value)]
+#[tauri::command]
+pub fn club_people(
+    state: tauri::State<'_, LoadedSave>,
+    short_name: String,
+) -> Result<Vec<PlayerRow>, CommandError> {
+    let summary = loaded(&state)?;
+    Ok(summary
+        .players
+        .iter()
+        .filter(|p| p.club == short_name)
+        .cloned()
+        .collect())
 }
 
 /// Edits one in-game shortlist inside the save file itself.
@@ -473,6 +713,7 @@ fn person_row(
         first_team: p.eid.is_some_and(|e| first_team.contains(&e)),
         id: p.offset,
         eid: p.eid,
+        reputation: p.reputation.map(ReputationRow::from),
         name: p.full_name.clone(),
         born: p
             .date_of_birth
@@ -567,6 +808,7 @@ fn stub_rows(
                 controversy: None,
                 // A stub is a presence, not a person: no sheet to read.
                 staff: None,
+                reputation: None,
                 stub: true,
                 staff_role: None,
                 // Stubs only surface through first-team squad references.

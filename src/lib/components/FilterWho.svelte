@@ -6,53 +6,27 @@
 	 * of how good they are, which is the second row's job.
 	 */
 	import { scout } from '$lib/classes/Scout.svelte';
-	import { nationsIn, type Filters } from '$lib/utils/filter';
-	import { hasFlagData } from '$lib/utils/flags';
+	import { type Filters } from '$lib/utils/filter';
 	import { POSITIONS } from '$lib/utils/positions';
 
 	type Props = {
 		/** A year past the save's own date — what "expiring" means here. */
 		expiryCutoff: string;
-		/** Whether any ability was decoded, which the Bargains screener needs. */
-		abilityKnown: boolean;
 	};
-	const { expiryCutoff, abilityKnown }: Props = $props();
+	const { expiryCutoff }: Props = $props();
 
 	/** The flag rules read hidden attributes and the personality run; without
 	 * either there is nothing to flag, so the toggles hide rather than filter
-	 * everyone out. */
-	const flagsKnown = $derived(scout.players.some(hasFlagData));
+	 * everyone out. Derived by the backend at load, since the rows live there. */
+	const flagsKnown = $derived(scout.summary?.flags_known ?? false);
 	/** Gender derives from the save's own squads; without women's football it
 	 * stays unknown and the filter hides rather than lying. */
-	const genderKnown = $derived(scout.players.some((p) => p.female !== null));
-	const nations = $derived(nationsIn(scout.players));
+	const genderKnown = $derived(scout.summary?.gender_known ?? false);
+	const nations = $derived(scout.summary?.nations ?? []);
 	const gameLists = $derived(scout.summary?.game_shortlists ?? []);
 
 	function setStaffRole(value: string) {
 		scout.filters.staffRole = value as Filters['staffRole'];
-	}
-
-	/**
-	 * The bargain board: players whose contract is running down, with real room
-	 * left to grow and nothing on the report to explain why they are cheap.
-	 * Ordered by headroom, because that is what the search is actually about.
-	 *
-	 * No wage cap is baked in. Wages differ by orders of magnitude between a
-	 * save's top division and its fifth, so any figure hard-coded here would be
-	 * wrong for most saves — the Max wage box on the row below is the lever, and
-	 * it is left where the user can see it.
-	 */
-	function bargains() {
-		scout.screen(
-			{
-				kind: 'players',
-				contract: 'expiring',
-				expiryCutoff,
-				minHeadroom: 20,
-				risk: 'clean'
-			},
-			'headroom'
-		);
 	}
 </script>
 
@@ -257,19 +231,5 @@
 				</button>
 			</div>
 		{/if}
-
-		<button
-			type="button"
-			class="rounded-[2px] border border-[var(--color-signal-dim)] px-2 py-1 text-xs text-[var(--color-signal)]
-				transition-colors hover:border-[var(--color-signal)]
-				disabled:cursor-not-allowed disabled:opacity-40"
-			disabled={!abilityKnown}
-			title={abilityKnown
-				? 'Clears the bar and searches for players with a contract expiring within a year, at least 20 points of room to grow, and no red flags — sorted by room to grow. Everything it sets stays editable here; add a wage cap to suit your budget.'
-				: 'This save has no ability data, and the search is built on room to grow'}
-			onclick={bargains}
-		>
-			Bargains
-		</button>
 	{/if}
 </div>

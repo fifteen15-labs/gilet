@@ -1,0 +1,42 @@
+name: 'Gilet Setup'
+description: 'Install Bun + Node, restore dep cache.'
+
+inputs:
+  install:
+    description: 'Run `bun install --frozen-lockfile`.'
+    required: false
+    default: 'true'
+  bun-version:
+    description: 'Bun version. Matches package.json packageManager.'
+    required: false
+    default: '1.3.6'
+  node-version:
+    description: 'Node major version. Required by some toolchain plugins.'
+    required: false
+    default: '24'
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: ${{ inputs.bun-version }}
+
+    - name: Setup Node
+      uses: actions/setup-node@v7
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Restore Bun global install cache
+      uses: actions/cache@v6
+      with:
+        path: ~/.bun/install/cache
+        key: ${{ runner.os }}-bun-${{ inputs.bun-version }}-${{ hashFiles('bun.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-bun-${{ inputs.bun-version }}-
+
+    - name: Install dependencies
+      if: inputs.install == 'true'
+      shell: bash
+      run: bun install --frozen-lockfile

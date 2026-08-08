@@ -4,8 +4,8 @@
 	import { profiles } from '$lib/classes/Profiles.svelte';
 
 	const profile = $derived(profiles.active);
-	const total = $derived(scout.results.length);
-	const rows = $derived(scout.visibleResults);
+	const total = $derived(scout.total);
+	const rows = $derived(scout.rows);
 	/** The shared column carries positions for players and the backroom role
 	 * for staff; the header follows the kind filter so it names what the
 	 * rows actually show. */

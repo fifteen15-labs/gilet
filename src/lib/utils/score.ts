@@ -55,21 +55,6 @@ export function score(player: Player, profile: ScoringProfile): number | null {
 	return Math.round((total / weight) * 10) / 10;
 }
 
-/** Scores every player once, keyed by row id. Players who cannot be scored are
- * left out rather than stored as zero. */
-export function scoreAll(
-	players: readonly Player[],
-	profile: ScoringProfile | null
-): ReadonlyMap<number, number> {
-	const scores = new Map<number, number>();
-	if (profile === null) return scores;
-	for (const player of players) {
-		const value = score(player, profile);
-		if (value !== null) scores.set(player.id, value);
-	}
-	return scores;
-}
-
 /** Indices the profile actually weights, in attribute order. */
 export function weightedIndices(profile: ScoringProfile): number[] {
 	return Object.entries(profile.weights)

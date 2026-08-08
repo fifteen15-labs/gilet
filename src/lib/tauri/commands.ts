@@ -125,9 +125,18 @@ export type GameShortlist = {
 	player_eids: number[];
 };
 
+/** A nation present in the save, for the filter dropdowns. `name` is empty
+ * for identifiers the format work has not named. */
+export type NationOption = { id: number; name: string };
+
+/**
+ * What `open_save` returns: everything about the save except the player
+ * rows. Those stay in the backend — a quarter of a million rows filtered in
+ * JavaScript froze the UI on every keystroke, so searches ask Rust for pages
+ * instead ({@link searchPlayers}).
+ */
 export type SaveSummary = {
 	path: string;
-	players: Player[];
 	clubs: Club[];
 	/** Attribute indices that belong to the goalkeeping set. */
 	goalkeeping_indices: number[];
@@ -143,7 +152,27 @@ export type SaveSummary = {
 	frames: number;
 	decompressed_bytes: number;
 	parse_millis: number;
+	/** How many people the table can show — the header's census figure. */
+	people_count: number;
+	/** Whether any row carries a decoded ability, gender or trait reading —
+	 * what decides if those filters are offered at all. */
+	ability_known: boolean;
+	gender_known: boolean;
+	flags_known: boolean;
+	/** Distinct nations, named ones alphabetical, unnamed tail by id. */
+	nations: NationOption[];
 };
+
+/** One page of search results from the backend. `scores` is aligned with
+ * `rows`: each row's score under the profile the search was run with. */
+export type SearchPage = {
+	total: number;
+	rows: Player[];
+	scores: (number | null)[];
+};
+
+/** A matching player's identity, for shortlist writes. */
+export type SearchHit = { eid: number; name: string };
 
 /** Where the file dialogs should open, resolved per platform in Rust. */
 export type Locations = {
@@ -212,6 +241,40 @@ export function openSave(path: string): Promise<SaveSummary> {
 /** Subscribes to parse progress. Resolves to the function that stops listening. */
 export function onParseProgress(handle: (progress: ParseProgress) => void): Promise<UnlistenFn> {
 	return listen<ParseProgress>('parse-progress', (event) => handle(event.payload));
+}
+
+/**
+ * Runs the current search in the backend: filter, score under the profile,
+ * sort, and return the first `limit` rows with the true total.
+ */
+export function searchPlayers(
+	filters: unknown,
+	sortKey: string,
+	sortDirection: string,
+	profile: ScoringProfile | null,
+	limit: number
+): Promise<SearchPage> {
+	return invoke<SearchPage>('search_players', { filters, sortKey, sortDirection, profile, limit });
+}
+
+/** Every matching player's eid and name — what a shortlist write needs,
+ * without shipping the rows. Staff rows are already excluded. */
+export function searchEids(
+	filters: unknown,
+	profile: ScoringProfile | null
+): Promise<SearchHit[]> {
+	return invoke<SearchHit[]>('search_eids', { filters, profile });
+}
+
+/** One row by exact name — how the sidebar opens a shortlist member. */
+export function playerByName(name: string): Promise<Player | null> {
+	return invoke<Player | null>('player_by_name', { name });
+}
+
+/** Everyone whose club label matches a short name, for the squad and
+ * backroom audits. Tens of rows, not thousands. */
+export function clubPeople(shortName: string): Promise<Player[]> {
+	return invoke<Player[]>('club_people', { shortName });
 }
 
 export function exportCsv(path: string, rows: Player[]): Promise<void> {

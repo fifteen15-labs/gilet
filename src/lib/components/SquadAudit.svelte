@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { auditSquad } from '$lib/utils/audit';
-	import type { Club } from '$lib/tauri/commands';
+	import { clubPeople, type Club, type Player } from '$lib/tauri/commands';
 
 	type Props = { club: Club };
 	const { club }: Props = $props();
@@ -15,7 +15,18 @@
 		return `${Number(base.slice(0, 4)) + 1}${base.slice(4)}`;
 	});
 
-	const audit = $derived(auditSquad(club, scout.players, expiryCutoff));
+	/** The people at this club, fetched from the backend where the rows live.
+	 * The name guard drops a stale reply when the panel moves to another club
+	 * before the first fetch lands. */
+	let people = $state.raw<Player[]>([]);
+	$effect(() => {
+		const wanted = club.short_name;
+		void clubPeople(wanted).then((rows) => {
+			if (wanted === club.short_name) people = rows;
+		});
+	});
+
+	const audit = $derived(auditSquad(club, people, expiryCutoff));
 	/** The widest position count, so the bars are relative to this squad rather
 	 * than to some absolute idea of a full one. */
 	const busiest = $derived(Math.max(1, ...audit.positions.map((p) => p.count)));

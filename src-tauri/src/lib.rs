@@ -4,6 +4,7 @@
 //! `fm-save`, which is pure and testable on its own.
 
 pub mod commands;
+pub mod search;
 pub mod shortlist;
 
 use serde::Serialize;
@@ -29,9 +30,14 @@ impl Serialize for CommandError {
 pub fn run() {
     let result = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .manage(commands::LoadedSave::default())
         .invoke_handler(tauri::generate_handler![
             commands::default_locations,
             commands::open_save,
+            commands::search_players,
+            commands::search_eids,
+            commands::player_by_name,
+            commands::club_people,
             commands::staff_attribute_names,
             commands::export_csv,
             commands::import_csv,

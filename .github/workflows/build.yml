@@ -1,0 +1,199 @@
+name: Build Desktop
+
+# Single-package release flow (gilet has no knope/monorepo orchestration like
+# trove) — tauri-action creates the GitHub Release itself from the pushed tag
+# and uploads the signed bundle + updater manifest into it directly. Default
+# GITHUB_TOKEN is enough: this job never pushes a tag itself, so there is no
+# cross-workflow trigger to route a PAT around.
+#
+# CDN mirror reuses trove's existing R2 bucket (trove-cdn) under a
+# gilet-specific prefix — see scripts/ci/rewrite-updater-manifest.mjs.
+# Requires CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID and the APPLE_* /
+# TAURI_SIGNING_* secrets to be visible to this repo (org secrets once this
+# repo is under trove-ink, or repo secrets otherwise).
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing v* tag to rebuild.'
+        required: true
+
+concurrency:
+  group: build-desktop-${{ inputs.tag || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build (macOS)
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - uses: ./.github/actions/setup
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          target: aarch64-apple-darwin
+
+      - name: Build Tauri app
+        id: build
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Auto-updater signing. tauri-action signs the update artifacts
+          # with this minisign private key and its password; the matching
+          # public key must be added to tauri.conf.json's plugin.updater
+          # config once the in-app updater is wired up (not yet — this only
+          # produces the signed artifacts and manifest CI needs).
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          projectPath: .
+          tagName: ${{ inputs.tag || github.ref_name }}
+          releaseName: 'Gilet ${{ inputs.tag || github.ref_name }}'
+          releaseDraft: false
+          prerelease: false
+          uploadUpdaterJson: true
+          args: --target aarch64-apple-darwin
+
+      # tauri-action notarizes + staples the .app bundle itself, but the .dmg
+      # it wraps that .app in afterward is a separate artifact Apple has never
+      # seen — Gatekeeper rejects it outright without its own notarization
+      # pass (same issue trove's pipeline hit — #2989 there).
+      - name: Notarize and staple the DMG
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          DMG=$(find "target/aarch64-apple-darwin/release/bundle/dmg" -name '*.dmg' | head -1)
+          if [ -z "${DMG}" ]; then
+            echo "::error::No .dmg found under target/aarch64-apple-darwin/release/bundle/dmg to notarize."
+            exit 1
+          fi
+          xcrun notarytool submit "${DMG}" \
+            --apple-id "${APPLE_ID}" \
+            --password "${APPLE_PASSWORD}" \
+            --team-id "${APPLE_TEAM_ID}" \
+            --wait
+          xcrun stapler staple "${DMG}"
+          gh release upload "${RELEASE_TAG}" "${DMG}" --clobber --repo "${GITHUB_REPOSITORY}"
+
+      - name: Upload artifacts to R2
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          BUNDLE_DIR="target/aarch64-apple-darwin/release/bundle"
+          for ext in dmg app.tar.gz; do
+            find "$BUNDLE_DIR" -name "*.${ext}" 2>/dev/null | while read -r artifact; do
+              filename=$(basename "$artifact")
+              bunx wrangler r2 object put "trove-cdn/releases/gilet/${RELEASE_TAG}/${filename}" \
+                --file="$artifact" \
+                --content-type="application/octet-stream" \
+                --remote
+              echo "Uploaded: gilet/${RELEASE_TAG}/${filename}"
+            done
+          done
+
+      - name: Publish checksums
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          BUNDLE_DIR="target/aarch64-apple-darwin/release/bundle"
+          SUMS="SHA256SUMS-aarch64-apple-darwin.txt"
+
+          : > "${SUMS}"
+          find "${BUNDLE_DIR}" \( -name '*.dmg' -o -name '*.app.tar.gz' \) -print0 2>/dev/null |
+            while IFS= read -r -d '' artifact; do
+              ( cd "$(dirname "${artifact}")" && shasum -a 256 "$(basename "${artifact}")" )
+            done >> "${SUMS}"
+
+          if [ ! -s "${SUMS}" ]; then
+            echo "::error::No artifacts found under ${BUNDLE_DIR} to checksum."
+            exit 1
+          fi
+          cat "${SUMS}"
+
+          gh release upload "${RELEASE_TAG}" "${SUMS}" --clobber --repo "${GITHUB_REPOSITORY}"
+          bunx wrangler r2 object put "trove-cdn/releases/gilet/${RELEASE_TAG}/${SUMS}" \
+            --file="${SUMS}" \
+            --content-type="text/plain" \
+            --remote
+
+      # tauri-action's latest.json points at this repo's own release assets.
+      # gilet is public, so those URLs already work anonymously — this mirror
+      # is for a stable CDN path independent of GitHub's asset URLs, matching
+      # trove's pattern rather than fixing a private-repo blocker.
+      #
+      # Versioned copy first: if the run dies part-way, the channel head still
+      # points at the previous, fully-mirrored release.
+      - name: Publish the updater manifest to the CDN
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          gh release download "${RELEASE_TAG}" --pattern latest.json --output latest.json \
+            --repo "${GITHUB_REPOSITORY}"
+          node scripts/ci/rewrite-updater-manifest.mjs latest.json "${RELEASE_TAG}"
+
+          bunx wrangler r2 object put "trove-cdn/releases/gilet/${RELEASE_TAG}/latest.json" \
+            --file=latest.json \
+            --content-type="application/json" \
+            --remote
+          bunx wrangler r2 object put "trove-cdn/releases/gilet/desktop/latest.json" \
+            --file=latest.json \
+            --content-type="application/json" \
+            --remote
+
+          gh release upload "${RELEASE_TAG}" latest.json --clobber --repo "${GITHUB_REPOSITORY}"
+
+      - name: Verify the CDN serves this release
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          CDN_HEAD="https://cdn.trove.ink/releases/gilet/desktop/latest.json"
+          EXPECTED="${RELEASE_TAG#v}"
+          for attempt in $(seq 1 12); do
+            VERSION=$(curl -fsSL "${CDN_HEAD}?ci=${GITHUB_RUN_ID}-${attempt}" | jq -r '.version' 2>/dev/null || true)
+            if [ "${VERSION}" = "${EXPECTED}" ]; then
+              echo "CDN channel head serves ${VERSION}."
+              exit 0
+            fi
+            echo "CDN channel head serves '${VERSION:-<unreachable>}', expected ${EXPECTED} (attempt ${attempt}/12); retrying"
+            sleep 5
+          done
+          echo "::error::${CDN_HEAD} did not serve ${EXPECTED} after 12 attempts. If the object is present in R2 this is propagation delay, not a failed publish."
+          exit 1

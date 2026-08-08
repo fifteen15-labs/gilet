@@ -1,11 +1,12 @@
 import { profiles } from '$lib/classes/Profiles.svelte';
-import { scoreAll } from '$lib/utils/score';
 import {
 	addPlayersToGameShortlist,
 	clearGameShortlist,
 	editGameShortlist,
 	onParseProgress,
 	openSave,
+	searchEids,
+	searchPlayers,
 	type Club,
 	type GameShortlist,
 	type Player,
@@ -13,14 +14,11 @@ import {
 } from '$lib/tauri/commands';
 import {
 	emptyFilters,
-	matches,
 	matchesClub,
-	sortPlayers,
 	type Filters,
 	type SortDirection,
 	type SortKey
 } from '$lib/utils/filter';
-import { positionSlots } from '$lib/utils/positions';
 
 /** Which record type the table is showing. */
 export type Tab = 'people' | 'clubs';
@@ -37,7 +35,6 @@ export type Search = {
 	filters: Filters;
 	sortKey: SortKey;
 	sortDirection: SortDirection;
-	selectedId: number | null;
 };
 
 /** Rows rendered at once. The full database is ~12,000 people; searching
@@ -47,6 +44,10 @@ const RENDER_LIMIT = 400;
 
 /** How many players fit side by side before the columns stop being readable. */
 const COMPARE_LIMIT = 4;
+
+/** How long a keystroke burst may run before a search is sent. Long enough
+ * to coalesce typing, short enough that results feel attached to it. */
+const SEARCH_DEBOUNCE_MS = 120;
 
 /** Owns the loaded save and how the table is filtered and sorted. */
 class Scout {
@@ -69,7 +70,7 @@ class Scout {
 	 * every switch away, so the strip must label the active tab from the live
 	 * filters, not from here. */
 	searches = $state<Search[]>([
-		{ id: 1, filters: { ...emptyFilters }, sortKey: 'name', sortDirection: 'asc', selectedId: null }
+		{ id: 1, filters: { ...emptyFilters }, sortKey: 'name', sortDirection: 'asc' }
 	]);
 	activeSearch = $state(0);
 	/** Next search id — ids are per-session, only the strip's keys. */
@@ -78,19 +79,36 @@ class Scout {
 	 * closest thing to a league level while competitions are undecoded. Age
 	 * and wages sort on the same decoded squad. */
 	clubSort = $state<'name' | 'strength' | 'age' | 'wages'>('name');
-	/** Record the detail panel is showing, by row id. */
+	/** Record the detail panel is showing, by row id — what highlights the
+	 * table row and resolves the selected club. */
 	selectedId = $state<number | null>(null);
-	/** Rows pinned for side-by-side comparison, in the order they were added. */
-	pinned = $state<number[]>([]);
+	/** The selected person's row. Held as the object rather than looked up:
+	 * the frontend only has the page of rows the backend returned, and a
+	 * selection must survive the filters changing under it. */
+	selectedRow = $state<Player | null>(null);
+	/** Rows pinned for side-by-side comparison, in the order they were added.
+	 * Objects, not ids, for the same reason as {@link selectedRow}. */
+	pinned = $state<Player[]>([]);
 	/** Whether the compare board has the main area instead of the table. */
 	comparing = $state(false);
 
-	get players(): Player[] {
-		return this.summary?.players ?? [];
-	}
+	/** The current page of results, the true total behind it, and each
+	 * visible row's score — all computed by the backend (`search_players`),
+	 * which is where the quarter of a million rows live. */
+	total = $state(0);
+	rows = $state.raw<Player[]>([]);
+	scores = $state.raw<ReadonlyMap<number, number>>(new Map());
+	/** Bumped for every search so a slow response cannot overwrite a newer
+	 * one — replies are only applied when the token still matches. */
+	private searchToken = 0;
+	private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 	get clubs(): Club[] {
 		return this.summary?.clubs ?? [];
+	}
+
+	get peopleCount(): number {
+		return this.summary?.people_count ?? 0;
 	}
 
 	get loaded(): boolean {
@@ -99,12 +117,18 @@ class Scout {
 
 	get selectedPlayer(): Player | null {
 		if (this.tab !== 'people' || this.selectedId === null) return null;
-		return this.players.find((p) => p.id === this.selectedId) ?? null;
+		return this.selectedRow;
 	}
 
 	get selectedClub(): Club | null {
 		if (this.tab !== 'clubs' || this.selectedId === null) return null;
 		return this.clubs.find((c) => c.id === this.selectedId) ?? null;
+	}
+
+	/** Opens a person in the detail panel, or closes it with `null`. */
+	select(player: Player | null): void {
+		this.selectedRow = player;
+		this.selectedId = player?.id ?? null;
 	}
 
 	matchingClubs(): Club[] {
@@ -133,7 +157,7 @@ class Scout {
 
 	show(tab: Tab): void {
 		this.tab = tab;
-		this.selectedId = null;
+		this.select(null);
 		this.comparing = false;
 	}
 
@@ -145,19 +169,18 @@ class Scout {
 			id: current.id,
 			filters: $state.snapshot(this.filters),
 			sortKey: this.sortKey,
-			sortDirection: this.sortDirection,
-			selectedId: this.selectedId
+			sortDirection: this.sortDirection
 		};
 	}
 
 	/** Loads a snapshot into the live fields. Merged over {@link emptyFilters}
 	 * like a saved preset, for the same reason: a missing field must be the
-	 * default, not undefined. */
+	 * default, not undefined. Selection does not travel between searches. */
 	private restoreSearch(search: Search): void {
 		this.filters = { ...emptyFilters, ...search.filters };
 		this.sortKey = search.sortKey;
 		this.sortDirection = search.sortDirection;
-		this.selectedId = search.selectedId;
+		this.select(null);
 	}
 
 	/** Opens a fresh, empty search and switches to it. */
@@ -167,8 +190,7 @@ class Scout {
 			id: this.nextSearchId,
 			filters: { ...emptyFilters },
 			sortKey: 'name',
-			sortDirection: 'asc',
-			selectedId: null
+			sortDirection: 'asc'
 		};
 		this.nextSearchId += 1;
 		this.searches = [...this.searches, fresh];
@@ -195,7 +217,7 @@ class Scout {
 		if (!this.searches[index]) return;
 		if (this.searches.length === 1) {
 			this.searches = [
-				{ id: this.nextSearchId, filters: { ...emptyFilters }, sortKey: 'name', sortDirection: 'asc', selectedId: null }
+				{ id: this.nextSearchId, filters: { ...emptyFilters }, sortKey: 'name', sortDirection: 'asc' }
 			];
 			this.nextSearchId += 1;
 			this.activeSearch = 0;
@@ -217,11 +239,9 @@ class Scout {
 	}
 
 	/** The pinned players, in pin order — the order the columns appear in. */
-	readonly compared: Player[] = $derived(
-		this.pinned
-			.map((id) => this.players.find((p) => p.id === id))
-			.filter((p): p is Player => p !== undefined)
-	);
+	get compared(): Player[] {
+		return this.pinned;
+	}
 
 	get compareLimit(): number {
 		return COMPARE_LIMIT;
@@ -232,19 +252,19 @@ class Scout {
 	}
 
 	isPinned(id: number): boolean {
-		return this.pinned.includes(id);
+		return this.pinned.some((p) => p.id === id);
 	}
 
 	/** Pins or unpins a player for comparison. Silently refuses past the limit
 	 * rather than dropping someone the user pinned on purpose. */
-	togglePinned(id: number): void {
-		if (this.pinned.includes(id)) {
-			this.pinned = this.pinned.filter((p) => p !== id);
+	togglePinned(player: Player): void {
+		if (this.isPinned(player.id)) {
+			this.pinned = this.pinned.filter((p) => p.id !== player.id);
 			if (this.pinned.length === 0) this.comparing = false;
 			return;
 		}
 		if (this.pinned.length >= COMPARE_LIMIT) return;
-		this.pinned = [...this.pinned, id];
+		this.pinned = [...this.pinned, player];
 	}
 
 	clearPinned(): void {
@@ -257,7 +277,7 @@ class Scout {
 	showSquad(shortName: string): void {
 		this.filters = { ...emptyFilters, query: shortName };
 		this.tab = 'people';
-		this.selectedId = null;
+		this.select(null);
 	}
 
 	/**
@@ -272,45 +292,43 @@ class Scout {
 	}
 
 	/**
-	 * Everything matching the current filters, sorted. Not capped — the count
-	 * shown to the user has to be the true one.
+	 * Runs the current search in the backend, debounced so a keystroke burst
+	 * costs one round trip. Called from an `$effect` in the page that reads
+	 * the filters, sort and profile — the reactive graph decides *when*, the
+	 * backend does the work, and a stale reply is dropped by token.
 	 *
-	 * Derived, not a method: filtering and sorting 49,000 people is the most
-	 * expensive thing the app does, and the filter bar, the table header and
-	 * the table body all want the same answer. As a method it ran three times
-	 * per keystroke and the UI stopped keeping up with typing.
+	 * Filtering and sorting a quarter of a million rows used to happen here
+	 * in a `$derived`, on the UI thread, per keystroke — which is what made
+	 * large searches drag.
 	 */
-	/** Every player's score under the active profile, or empty when none is
-	 * selected. Computed once per profile change rather than per row. */
-	readonly scores: ReadonlyMap<number, number> = $derived(scoreAll(this.players, profiles.active));
-
-	/** The save's own position slot ordering, so "accomplished at DM" can read
-	 * the right rating without a second copy of the list in the frontend. */
-	readonly positionSlots: ReadonlyMap<string, number> = $derived(
-		positionSlots(this.summary?.position_names ?? [])
-	);
-
-	/** Members of the shortlist the filter names, by entity id. Empty when no
-	 * shortlist is being filtered to. */
-	readonly shortlistEids: ReadonlySet<number> = $derived.by(() => {
-		// A preset saved before shortlist filtering existed carries no key at
-		// all, and undefined is not a shortlist named "".
-		const name = this.filters.shortlist ?? null;
-		if (name === null) return new Set<number>();
-		const list = (this.summary?.game_shortlists ?? []).find((l) => (l.name ?? '') === name);
-		return new Set(list?.player_eids ?? []);
-	});
-
-	readonly results: Player[] = $derived.by(() => {
-		const context = {
-			shortlistEids: this.shortlistEids,
-			positionSlots: this.positionSlots
-		};
-		const found = this.players.filter((p) => matches(p, this.filters, this.scores, context));
-		return sortPlayers(found, this.sortKey, this.sortDirection, this.scores);
-	});
-
-	readonly visibleResults: Player[] = $derived(this.results.slice(0, RENDER_LIMIT));
+	search(): void {
+		if (this.summary === null) return;
+		const filters = $state.snapshot(this.filters);
+		const sortKey = this.sortKey;
+		const sortDirection = this.sortDirection;
+		const profile = profiles.active ? $state.snapshot(profiles.active) : null;
+		this.searchToken += 1;
+		const token = this.searchToken;
+		if (this.searchTimer !== null) clearTimeout(this.searchTimer);
+		this.searchTimer = setTimeout(() => {
+			void searchPlayers(filters, sortKey, sortDirection, profile, RENDER_LIMIT)
+				.then((page) => {
+					if (token !== this.searchToken) return;
+					this.total = page.total;
+					this.rows = page.rows;
+					const scored = new Map<number, number>();
+					page.rows.forEach((row, i) => {
+						const value = page.scores[i];
+						if (value !== null && value !== undefined) scored.set(row.id, value);
+					});
+					this.scores = scored;
+				})
+				.catch((e: unknown) => {
+					if (token !== this.searchToken) return;
+					this.error = e instanceof Error ? e.message : String(e);
+				});
+		}, SEARCH_DEBOUNCE_MS);
+	}
 
 	get renderLimit(): number {
 		return RENDER_LIMIT;
@@ -403,26 +421,27 @@ class Scout {
 	async addResultsToGameShortlist(list: GameShortlist): Promise<void> {
 		if (!this.summary || !this.summary.game_date) return;
 		const [year, month, day] = this.summary.game_date.split('-').map(Number);
-		// FM's in-save shortlists hold players; a staff row filtered in under
-		// a staff search must not be written into one.
-		const rows = this.results.filter(
-			(p) => p.eid !== null && (p.is_player || p.staff === null)
-		);
-		const eids = rows.map((p) => p.eid ?? 0);
-		if (eids.length === 0) return;
 		this.error = null;
 		this.notice = null;
 		try {
-			const added = await addPlayersToGameShortlist(this.summary.path, list.name, eids, [
-				year,
-				month,
-				day
-			]);
+			// The full matching set lives in the backend; asking for the ids
+			// is how the whole result — not just the visible page — gets
+			// written. Staff rows and rows without an entity id are already
+			// excluded there: FM's in-save shortlists hold players.
+			const profile = profiles.active ? $state.snapshot(profiles.active) : null;
+			const hits = await searchEids($state.snapshot(this.filters), profile);
+			if (hits.length === 0) return;
+			const added = await addPlayersToGameShortlist(
+				this.summary.path,
+				list.name,
+				hits.map((h) => h.eid),
+				[year, month, day]
+			);
 			const have = new Set(list.player_eids);
-			const fresh = rows.filter((p) => p.eid !== null && !have.has(p.eid));
-			list.players = [...list.players, ...fresh.map((p) => p.name)];
-			list.player_eids = [...list.player_eids, ...fresh.map((p) => p.eid ?? 0)];
-			const skipped = this.results.length - rows.length;
+			const fresh = hits.filter((h) => !have.has(h.eid));
+			list.players = [...list.players, ...fresh.map((h) => h.name)];
+			list.player_eids = [...list.player_eids, ...fresh.map((h) => h.eid)];
+			const skipped = this.total - hits.length;
 			this.notice =
 				`Added ${added.toLocaleString()} to ${list.name ?? '(unnamed)'} in the save.` +
 				(skipped > 0
@@ -442,7 +461,7 @@ class Scout {
 	async reload(): Promise<void> {
 		const path = this.summary?.path;
 		if (!path) return;
-		this.selectedId = null;
+		this.select(null);
 		await this.open(path);
 	}
 
@@ -459,7 +478,7 @@ class Scout {
 		this.filters = { ...emptyFilters, ...patch };
 		this.sortKey = sortKey;
 		this.sortDirection = 'desc';
-		this.selectedId = null;
+		this.select(null);
 		this.tab = 'people';
 		this.comparing = false;
 	}

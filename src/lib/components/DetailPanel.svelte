@@ -34,7 +34,7 @@
 				type="button"
 				class="text-lg leading-none text-[var(--color-faint)] hover:text-[var(--color-bright)]"
 				aria-label="Close details"
-				onclick={() => (scout.selectedId = null)}>×</button
+				onclick={() => scout.select(null)}>×</button
 			>
 		</div>
 
@@ -193,7 +193,7 @@
 						title={scout.compareFull && !scout.isPinned(player.id)
 							? `The board holds ${scout.compareLimit}. Remove one first.`
 							: 'Pin this player to the compare board'}
-						onclick={() => scout.togglePinned(player.id)}
+						onclick={() => scout.togglePinned(player)}
 					>
 						{scout.isPinned(player.id) ? '− Remove from compare' : '+ Compare'}
 					</button>

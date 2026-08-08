@@ -30,6 +30,19 @@
 		void appVersion().then((v) => (version = v));
 	});
 
+	// The search driver: reading the filters, sort and profile here is what
+	// makes the effect rerun when any of them change; the work itself happens
+	// in the backend, debounced inside `search`. A class singleton cannot own
+	// an $effect, so the page provides the reactive context.
+	$effect(() => {
+		void $state.snapshot(scout.filters);
+		void scout.sortKey;
+		void scout.sortDirection;
+		void profiles.active;
+		void scout.summary;
+		scout.search();
+	});
+
 	async function chooseSave() {
 		const picked = await open({
 			multiple: false,
@@ -72,7 +85,7 @@
 						date unknown
 					</span>
 				{/if}
-				<span>{scout.players.length.toLocaleString()} people</span>
+				<span>{scout.peopleCount.toLocaleString()} people</span>
 				<span>{scout.summary?.parse_millis}ms</span>
 			</p>
 		{/if}
@@ -147,7 +160,7 @@
 				</div>
 			{:else}
 				<div class="flex items-center gap-1 border-b border-[var(--color-line)] px-4 pt-2">
-					{#each [{ key: 'people', label: `People (${scout.players.length.toLocaleString()})` }, { key: 'clubs', label: `Clubs (${scout.clubs.length.toLocaleString()})` }] as t (t.key)}
+					{#each [{ key: 'people', label: `People (${scout.peopleCount.toLocaleString()})` }, { key: 'clubs', label: `Clubs (${scout.clubs.length.toLocaleString()})` }] as t (t.key)}
 						<button
 							type="button"
 							class="border-b-2 px-3 pb-2 text-xs transition-colors

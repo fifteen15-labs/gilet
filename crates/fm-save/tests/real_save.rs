@@ -980,3 +980,90 @@ fn nobody_is_born_outside_a_footballing_lifetime() {
         "nation identifier past the end of FM's table: {highest:?}"
     );
 }
+
+/// Player reputation binds from the tag-02 line behind the one-eid-below
+/// object, gated on the line repeating the player's own CA/PA. Haaland's
+/// day-one line is his editor page exactly — Game Reputations 9350 current,
+/// 9300 home, 9300 world, stored home/current/world ×50 — and coverage is
+/// near-total, not a lucky handful. The historical "unrecoverable" verdict
+/// (`OPEN_PROBLEMS.md` §3b) read the line after the person's *own* identity
+/// copy, which belongs to the next person over.
+#[test]
+fn player_reputation_reads_haalands_editor_page() {
+    let Some(save) = load_named("Day One.fm") else {
+        eprintln!("skipped: no Day One.fm on this machine");
+        return;
+    };
+
+    let haaland = save
+        .people
+        .iter()
+        .find(|p| p.full_name == "Erling Braut Haaland")
+        .expect("Haaland missing from the people table");
+    let rep = haaland.reputation.expect("Haaland should carry a reputation");
+    assert_eq!((rep.home, rep.current, rep.world), (186, 187, 186));
+
+    let players = save.people.iter().filter(|p| p.is_player()).count();
+    let with_rep = save
+        .people
+        .iter()
+        .filter(|p| p.is_player() && p.reputation.is_some())
+        .count();
+    assert!(
+        with_rep * 100 >= players * 95,
+        "reputation coverage collapsed: {with_rep} of {players} players"
+    );
+}
+
+/// The human manager reads from `humans.dat` and their club falls out of the
+/// manager-seat binding — no club id is stored in the member itself. The
+/// Day One career is a Bala Town save.
+#[test]
+fn the_human_manager_resolves_to_their_club() {
+    let Some(save) = load_named("Day One.fm") else {
+        eprintln!("skipped: no Day One.fm on this machine");
+        return;
+    };
+
+    let eid = save.human_eid.expect("human eid should read from humans.dat");
+    let human = save
+        .people
+        .iter()
+        .find(|p| p.eid == Some(eid))
+        .expect("human eid should resolve to a person");
+    let club_eid = human.club_eid.expect("the Day One human manages a club");
+    let club = save
+        .clubs
+        .iter()
+        .find(|c| c.eid == Some(club_eid))
+        .expect("the human's club should resolve");
+    assert_eq!(club.name, "Bala Town");
+}
+
+/// The active tactic reads from `tactics_man.dat`: name and style in the
+/// clear, eleven slots from the position masks, the stored XI in slot order.
+/// The Port Talbot career carries a real 4-2-3-1; its keeper slot must
+/// resolve to a person, and a fresh career must read no tactic at all
+/// rather than a template.
+#[test]
+fn the_active_tactic_reads_name_shape_and_eleven() {
+    let Some(save) = load_named("Port Talbot.fm") else {
+        eprintln!("skipped: no Port Talbot.fm on this machine");
+        return;
+    };
+
+    let tactic = save.tactic.as_ref().expect("Port Talbot has an active tactic");
+    assert_eq!(tactic.name, "GYR - BLACK PANTHER 4231 FM26");
+    assert_eq!(tactic.style.as_deref(), Some("Custom Gegenpress"));
+    assert_eq!(
+        tactic.positions,
+        ["GK", "DR", "DC", "DC", "DL", "AMC", "DM", "DM", "AMR", "AML", "ST"]
+    );
+    assert_eq!(tactic.starters.len(), 11);
+    let keeper = save.people.iter().find(|p| p.eid == Some(tactic.starters[0]));
+    assert!(keeper.is_some(), "the XI's keeper slot should resolve to a person");
+
+    if let Some(fresh) = load_named("Heybridge Swifts.fm") {
+        assert!(fresh.tactic.is_none(), "a career with no tactic set must read none");
+    }
+}

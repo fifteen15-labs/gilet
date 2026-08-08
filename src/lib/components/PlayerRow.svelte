@@ -34,7 +34,7 @@
 	class="group cursor-pointer border-b border-[var(--color-line-soft)] hover:bg-[var(--color-panel)]
 		{scout.selectedId === player.id ? 'bg-[var(--color-raised)]' : ''}
 		{scout.isPinned(player.id) ? 'border-l-2 border-l-[var(--color-hivis)]' : ''}"
-	onclick={() => (scout.selectedId = player.id)}
+	onclick={() => scout.select(player)}
 >
 	<td class="py-1.5 pr-4 pl-3 text-sm text-[var(--color-bright)]">
 		{#if player.stub}

@@ -20,6 +20,7 @@ pub mod container;
 pub mod date;
 pub mod error;
 pub mod gamedate;
+pub mod humans;
 pub mod manifest;
 pub mod person;
 pub mod shortlist;
@@ -27,6 +28,7 @@ pub mod squad;
 pub mod staff;
 pub mod strings;
 pub mod stub;
+pub mod tactic;
 
 pub use ability::Ability;
 pub use club::Club;
@@ -62,6 +64,13 @@ pub struct Save {
     /// The human manager's in-game shortlists, from the `scout_man.dat`
     /// member. Empty when the save's manifest or that member cannot be read.
     pub shortlists: Vec<GameShortlist>,
+    /// The human manager's person entity id, from the `humans.dat` member.
+    /// Their club is that person's `club_eid`; `None` there means genuinely
+    /// unemployed — an unemployed career's member reads exactly this way.
+    pub human_eid: Option<u32>,
+    /// The human's active tactic, from the `tactics_man.dat` member. `None`
+    /// on a career that has not set one up yet — the member says so itself.
+    pub tactic: Option<tactic::Tactic>,
     /// Decompressed size of every frame, kept so the UI can report what was
     /// read without holding 187 MB of frame payloads alive.
     pub frame_sizes: Vec<usize>,
@@ -207,11 +216,13 @@ impl Save {
 
             // Non-player sheets sit on the entity object one eid below the
             // person's own, so they are matched by id rather than by position.
-            let mut staff_by_eid: std::collections::HashMap<u32, staff::Staff> =
-                staff::scan_staff(&frame.data)
-                    .into_iter()
-                    .map(|s| (s.eid.saturating_add(1), s))
-                    .collect();
+            // The same walk collects the tag-02 player lines, which bind
+            // below — after abilities, whose CA/PA pair is their entry test.
+            let (sheets, lines) = staff::scan_objects(&frame.data);
+            let mut staff_by_eid: std::collections::HashMap<u32, staff::Staff> = sheets
+                .into_iter()
+                .map(|s| (s.eid.saturating_add(1), s))
+                .collect();
             for person in &mut people {
                 if let Some(sheet) = person.eid.and_then(|e| staff_by_eid.remove(&e)) {
                     person.staff = Some(sheet);
@@ -229,6 +240,34 @@ impl Save {
             {
                 if let Some(person) = owner.and_then(|i| people.get_mut(i)) {
                     person.ability = Some(ability.clone());
+                }
+            }
+
+            // Player reputation lines use the sheets' one-eid-below key, and
+            // must also repeat the person's parsed CA/PA exactly — the pair
+            // works as a checksum, so a chance triple or a neighbour's line
+            // has no way to bind. A line that matches nobody stays unbound;
+            // a person without one keeps `None`, which the UI must show as
+            // undecoded rather than unknown-and-lowly.
+            let mut lines_by_eid: std::collections::HashMap<u32, staff::PlayerLine> =
+                lines.into_iter().map(|l| (l.eid.saturating_add(1), l)).collect();
+            for person in &mut people {
+                let Some(line) = person.eid.and_then(|e| lines_by_eid.get(&e)) else {
+                    continue;
+                };
+                let matches = person.ability.as_ref().is_some_and(|a| {
+                    u16::from(a.current) == line.current_ability
+                        && u16::from(a.potential) == line.potential_ability
+                });
+                if matches {
+                    person.reputation = Some(person::Reputation {
+                        home: line.home_reputation,
+                        current: line.current_reputation,
+                        world: line.world_reputation,
+                    });
+                    if let Some(eid) = person.eid {
+                        lines_by_eid.remove(&eid);
+                    }
                 }
             }
 
@@ -260,6 +299,15 @@ impl Save {
             .map(|f| shortlist::scan_shortlists(&f.data))
             .unwrap_or_default();
 
+        // The human's identity only counts when it resolves to a parsed
+        // person — an eid pointing at nobody reads as no reading.
+        let human_eid = named_frame(&frames, "humans.dat")
+            .and_then(|f| humans::scan_human(&f.data))
+            .filter(|eid| people.iter().any(|p| p.eid == Some(*eid)));
+
+        let tactic = named_frame(&frames, "tactics_man.dat")
+            .and_then(|f| tactic::scan_tactic(&f.data));
+
         // Stub people are only worth keeping where a squad references an
         // entity id that no parsed person answers to — those members would
         // otherwise vanish from squad lists without a trace.
@@ -286,6 +334,8 @@ impl Save {
             stubs,
             game_date,
             shortlists,
+            human_eid,
+            tactic,
             frame_sizes,
         })
     }

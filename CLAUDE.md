@@ -10,10 +10,16 @@ read the running game's memory with `ReadProcessMemory`. That is Windows-only
 and cannot port — `task_for_pid` on macOS needs root or a debugger entitlement.
 Gilet reads the `.fm` file, which is the same format on every platform.
 
-**Never invent a number.** The save format is only partly understood. A field
+**Never fake a fact; predict freely, labelled as prediction** (owner's
+refinement, 8 Aug 2026). The save format is only partly understood. A field
 that has not been confirmed against real data is `None`, and the UI shows an
-undecoded state. A wrong Current Ability is worse than a missing one, because
-the whole point of the tool is trusting the figure.
+undecoded state — a wrong Current Ability is worse than a missing one, because
+the whole point of the tool is trusting the figure. That rule is about *parsed
+facts*. Deriving a judgement from decoded data — a score, a flag, a predicted
+transfer interest — is what a scouting tool is for: fine so long as it is
+presented as Gilet's estimate with its inputs visible, never dressed up as the
+save's own number. The flag chips and scoring profiles already follow this
+shape.
 
 **Format knowledge lives in `fm-save`.** That crate is pure: bytes in, data out,
 no Tauri and no filesystem. It is testable on its own and every claim in it is
@@ -56,6 +62,20 @@ Frontend follows trove's conventions: Svelte 5 runes, shared state in singleton
 classes under `src/lib/classes/*.svelte.ts`, pure transforms in
 `src/lib/utils/`, and all Tauri calls behind `src/lib/tauri/commands.ts` so the
 backend can be stubbed in one place. Components split at 300 lines.
+
+**The rows live in the backend** (8 Aug 2026): filtering a quarter of a
+million rows in JavaScript froze the UI per keystroke, so `open_save` keeps
+the `SaveSummary` in Tauri state (`LoadedSave`) and returns a `SaveOverview`
+without the player rows. The frontend asks for pages: `search_players`
+(filter + score + sort in `src-tauri/src/search.rs`, a line-for-line port of
+the old `filter.ts` rules — every "an unknown is not a low value" decision
+kept), `search_eids` for shortlist writes, `player_by_name` for the sidebar,
+`club_people` for the audits. `Scout.search()` debounces 120ms and drops
+stale replies by token; the `$effect` in `+page.svelte` is what makes it
+reactive, since a module-level class cannot own an effect. Selection and the
+compare pins hold row *objects*, not ids — the frontend only has the current
+page. Search rules are tested against a real save in
+`src-tauri/tests/search_save.rs`.
 
 ## Current state
 

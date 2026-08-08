@@ -144,6 +144,37 @@ impl Staff {
     }
 }
 
+/// A player's live-state line: the five u16s behind a tag-`02` object —
+/// `[home rep][current rep][world rep][CA][PA]` — in the same one-eid-below,
+/// previous-record-tail arrangement the staff sheets use. The ability pair
+/// repeats the player's own CA/PA, which is what makes the line bindable at
+/// all: a line only attaches to a person when both values match the ability
+/// block already parsed, so a misattributed line has no way in. That gate is
+/// the fix for the historical misread — the run after a person's *own*
+/// identity holds the *next* person's line, which once read Haaland at 5250
+/// and buried player reputation as "unrecoverable" (`OPEN_PROBLEMS.md` §3b).
+/// Haaland's true line reads 9300/9350/9300 with his exact 184/195, the
+/// multiset of his editor page.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PlayerLine {
+    /// Offset of the identity triple the line sits behind.
+    pub offset: usize,
+    /// Entity id of the object, one below the person's own.
+    pub eid: u32,
+    /// The object's database id.
+    pub uid: u32,
+    /// Reputation in the player's home nation, 0-200.
+    pub home_reputation: u16,
+    /// Reputation where they currently play, 0-200.
+    pub current_reputation: u16,
+    /// Worldwide reputation, 0-200.
+    pub world_reputation: u16,
+    /// Player Current Ability, 0-200 — the bind check, not a new reading.
+    pub current_ability: u16,
+    /// Player Potential Ability, 0-200 — the bind check, not a new reading.
+    pub potential_ability: u16,
+}
+
 fn read_u32(b: &[u8], at: usize) -> Option<u32> {
     let s = b.get(at..at.checked_add(4)?)?;
     Some(u32::from_le_bytes(<[u8; 4]>::try_from(s).ok()?))
@@ -157,7 +188,23 @@ fn read_u16(b: &[u8], at: usize) -> Option<u16> {
 /// Entity ids stay comfortably below this, matching the person scan.
 const MAX_EID: u32 = 3_000_000;
 
+/// One decoded object from the frame walk: a staff sheet or a player line,
+/// which share the identity-triple anchor and differ only in the tag byte.
+enum ObjectHit {
+    Sheet(Staff),
+    Line(PlayerLine),
+}
+
 /// Finds every attribute block in a frame, each behind an identity triple.
+///
+/// Kept for the research examples; the parser itself calls [`scan_objects`]
+/// so one walk feeds both the sheets and the player lines.
+#[must_use]
+pub fn scan_staff(frame: &[u8]) -> Vec<Staff> {
+    scan_objects(frame).0
+}
+
+/// Finds every staff sheet and player line in a frame, in one walk.
 ///
 /// The anchor is the `[eid][uid][uid]` triple itself, accepted with either
 /// an entity object header — a type byte of 0-2, then `0x40`, seven bytes
@@ -167,27 +214,38 @@ const MAX_EID: u32 = 3_000_000;
 /// headerless identity was invisible to the old header-first scan — Arne
 /// Slot's CA-165 sheet among them, behind Verberne's headerless triple.
 ///
-/// The five u16s are then found by searching forward for a reading where
-/// both abilities are sane and the 54 bytes eight past them are all 1-100.
-/// A bare run of small numbers is no signature, but 54 consecutive non-zero
-/// bytes under 101 will not occur by chance.
+/// A tag byte of `01` after the triple is a sheet; `02` is a player line.
+///
+/// For sheets, the five u16s are found by searching forward for a reading
+/// where both abilities are sane and the 54 bytes eight past them are all
+/// 1-100. A bare run of small numbers is no signature, but 54 consecutive
+/// non-zero bytes under 101 will not occur by chance. Player lines carry
+/// their five u16s immediately after the tag and have no block to prove
+/// themselves with — bounds checks here, and the CA/PA match at binding.
 #[must_use]
-pub fn scan_staff(frame: &[u8]) -> Vec<Staff> {
-    let mut out = Vec::new();
+pub fn scan_objects(frame: &[u8]) -> (Vec<Staff>, Vec<PlayerLine>) {
+    let mut sheets = Vec::new();
+    let mut lines = Vec::new();
     let mut at = 3usize;
     while at + 17 <= frame.len() {
-        let Some(found) = read_object(frame, at) else {
-            at += 1;
-            continue;
-        };
-        at = found.offset.saturating_add(BLOCK_LEN);
-        out.push(found);
+        match read_object(frame, at) {
+            Some(ObjectHit::Sheet(found)) => {
+                at = found.offset.saturating_add(BLOCK_LEN);
+                sheets.push(found);
+            }
+            Some(ObjectHit::Line(found)) => {
+                // Step past the triple, tag and five u16s just read.
+                at = found.offset.saturating_add(23);
+                lines.push(found);
+            }
+            None => at += 1,
+        }
     }
-    out
+    (sheets, lines)
 }
 
 /// Reads the block behind the identity triple at `at`, if there is one.
-fn read_object(frame: &[u8], at: usize) -> Option<Staff> {
+fn read_object(frame: &[u8], at: usize) -> Option<ObjectHit> {
     let headed = at >= 7
         && frame.get(at - 7).is_some_and(|&b| b <= 0x02)
         && frame.get(at - 6) == Some(&0x40);
@@ -203,13 +261,16 @@ fn read_object(frame: &[u8], at: usize) -> Option<Staff> {
     if u1 != u2 || u1 == 0 || u1 == u32::MAX || eid == 0 || eid >= MAX_EID {
         return None;
     }
-    // The sheet-bearing object is tagged `01` after the triple; other tags
-    // (a compact entry's `10`, a reference's flags) carry no block.
-    if frame.get(at + 12) != Some(&0x01) {
-        return None;
+    // The sheet-bearing object is tagged `01` after the triple, the player
+    // line `02`; other tags (a compact entry's `10`, a reference's flags)
+    // carry no block.
+    match frame.get(at + 12) {
+        Some(&0x01) => {}
+        Some(&0x02) => return read_line(frame, at, eid, u1).map(ObjectHit::Line),
+        _ => return None,
     }
 
-    (at + 13..at + 13 + FIELD_SEARCH).find_map(|fields| {
+    let sheet = (at + 13..at + 13 + FIELD_SEARCH).find_map(|fields| {
         let vals: Vec<u16> = (0..5).filter_map(|i| read_u16(frame, fields + i * 2)).collect();
         let (&home, &current, &world, &ca, &pa) = (
             vals.first()?,
@@ -253,6 +314,45 @@ fn read_object(frame: &[u8], at: usize) -> Option<Staff> {
             potential_ability: pa,
             attributes,
         })
+    });
+    sheet.map(ObjectHit::Sheet)
+}
+
+/// Reads the five u16s of a tag-`02` player line, which sit immediately
+/// after the tag with no preamble. Day-one values are the DB's, raw 0-200
+/// scaled by 50 — but they are *live*: years of play walk them off the ×50
+/// grid (Haaland's 2030 line reads 8934/9396/9996 with his exact 195/195),
+/// so no multiple-of-50 test can be applied here. The shape test is bounds
+/// only; the binding above demands the CA/PA pair match the person's parsed
+/// ability, which is what keeps a chance triple out.
+fn read_line(frame: &[u8], at: usize, eid: u32, uid: u32) -> Option<PlayerLine> {
+    let fields = at + 13;
+    let vals: Vec<u16> = (0..5).filter_map(|i| read_u16(frame, fields + i * 2)).collect();
+    let (&home, &current, &world, &ca, &pa) = (
+        vals.first()?,
+        vals.get(1)?,
+        vals.get(2)?,
+        vals.get(3)?,
+        vals.get(4)?,
+    );
+    if home > MAX_REPUTATION || current > MAX_REPUTATION || world > MAX_REPUTATION {
+        return None;
+    }
+    if ca == 0 || ca > MAX_ABILITY || pa < ca || pa > MAX_ABILITY {
+        return None;
+    }
+    // Round to nearest rather than floor: a drifted 9996 is the editor's
+    // 200, not 199.
+    let scaled = |v: u16| (v + REPUTATION_SCALE / 2) / REPUTATION_SCALE;
+    Some(PlayerLine {
+        offset: at,
+        eid,
+        uid,
+        home_reputation: scaled(home),
+        current_reputation: scaled(current),
+        world_reputation: scaled(world),
+        current_ability: ca,
+        potential_ability: pa,
     })
 }
 

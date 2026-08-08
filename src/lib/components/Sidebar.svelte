@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { profiles } from '$lib/classes/Profiles.svelte';
+	import { playerByName } from '$lib/tauri/commands';
 
 	/** Opens the scoring-profile editor, which takes over the right-hand
 	 * column. The page owns that state because the editor and the detail panel
@@ -20,12 +21,13 @@
 
 	const inSave = $derived(scout.summary?.game_shortlists ?? []);
 
-	/** Selecting a member in the sidebar opens them in the detail panel. */
-	function open(name: string) {
-		const player = scout.players.find((p) => p.name === name);
+	/** Selecting a member in the sidebar opens them in the detail panel. The
+	 * rows live in the backend, so the lookup is a query. */
+	async function open(name: string) {
+		const player = await playerByName(name);
 		if (player) {
 			scout.tab = 'people';
-			scout.selectedId = player.id;
+			scout.select(player);
 		}
 	}
 </script>

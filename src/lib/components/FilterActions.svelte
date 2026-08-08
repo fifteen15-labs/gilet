@@ -9,7 +9,7 @@
 	 */
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { savedFilters } from '$lib/classes/SavedFilters.svelte';
-	import { describeFilters, nationsIn } from '$lib/utils/filter';
+	import { describeFilters } from '$lib/utils/filter';
 
 	type Props = {
 		/** Whether the bar is filtering anything at all. */
@@ -28,9 +28,9 @@
 	const target = $derived(
 		gameLists.find((l) => (l.name ?? '') === targetList) ?? gameLists[0] ?? null
 	);
-	const nations = $derived(nationsIn(scout.players));
+	const nations = $derived(scout.summary?.nations ?? []);
 	const nationName = $derived(nations.find((n) => n.id === scout.filters.nationId)?.name);
-	const resultCount = $derived(scout.results.length);
+	const resultCount = $derived(scout.total);
 
 	async function submitPreset(event: SubmitEvent) {
 		event.preventDefault();

@@ -10,9 +10,9 @@
 	import FilterTraits from './FilterTraits.svelte';
 	import FilterWho from './FilterWho.svelte';
 	import { scout } from '$lib/classes/Scout.svelte';
-	import { hasAbilityData, hasAnyFilter } from '$lib/utils/filter';
+	import { hasAnyFilter } from '$lib/utils/filter';
 
-	const abilityKnown = $derived(hasAbilityData(scout.players));
+	const abilityKnown = $derived(scout.summary?.ability_known ?? false);
 	const filtered = $derived(hasAnyFilter(scout.filters));
 	/** A contract counts as expiring when it ends within a year of the save's
 	 * own date (falling back to the system clock when the date is unknown). */
@@ -24,7 +24,7 @@
 </script>
 
 <div class="border-b border-[var(--color-line)] px-4 py-2">
-	<FilterWho {expiryCutoff} {abilityKnown} />
+	<FilterWho {expiryCutoff} />
 
 	<div class="mt-2 flex flex-wrap items-center gap-3">
 		<!-- The numeric bounds only mean anything against people, so the clubs
