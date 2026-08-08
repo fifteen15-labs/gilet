@@ -9,3 +9,6 @@ research/frames-ongoing/
 research/*.bin
 research/save_manifest.json
 research/__pycache__/
+
+# local CI signing key — never commit
+.ci-keys/
