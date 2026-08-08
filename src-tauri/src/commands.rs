@@ -145,10 +145,6 @@ pub struct PlayerRow {
     /// read from the entity object one id below this person's own. `None` for
     /// anyone the save gives no such object, which is most players.
     pub staff: Option<StaffSheet>,
-    /// Game reputation on the editor's 0-200 scale, bound only where the
-    /// save's player line repeats this person's own CA/PA — `None` is an
-    /// undecoded reading, never a nobody.
-    pub reputation: Option<ReputationRow>,
     /// True for a stub — a non-contract squad filler the save stores without
     /// a person record. Identity and club are known; name, age and attributes
     /// are not decoded, and the row says so rather than vanishing.
@@ -158,24 +154,6 @@ pub struct PlayerRow {
     /// the department staff lists. `None` for players, the unemployed, and
     /// staff bound outside the department triple.
     pub staff_role: Option<String>,
-}
-
-/// A person's three game reputations, 0-200 as the editor stores them.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ReputationRow {
-    /// Standing in their home nation.
-    pub home: u16,
-    /// Standing where they currently play.
-    pub current: u16,
-    /// Worldwide standing — the reputation that decides who takes your call.
-    pub world: u16,
-}
-
-impl From<fm_save::person::Reputation> for ReputationRow {
-    fn from(r: fm_save::person::Reputation) -> Self {
-        Self { home: r.home, current: r.current, world: r.world }
-    }
 }
 
 /// A person's non-player sheet, as `fm-save` decodes it.
@@ -713,7 +691,6 @@ fn person_row(
         first_team: p.eid.is_some_and(|e| first_team.contains(&e)),
         id: p.offset,
         eid: p.eid,
-        reputation: p.reputation.map(ReputationRow::from),
         name: p.full_name.clone(),
         born: p
             .date_of_birth
@@ -808,7 +785,6 @@ fn stub_rows(
                 controversy: None,
                 // A stub is a presence, not a person: no sheet to read.
                 staff: None,
-                reputation: None,
                 stub: true,
                 staff_role: None,
                 // Stubs only surface through first-team squad references.

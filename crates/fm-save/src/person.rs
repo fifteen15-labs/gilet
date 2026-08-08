@@ -59,11 +59,6 @@ pub struct Person {
     /// the entity object one eid below this person's own. `None` when no such
     /// object carries a block, which is most players.
     pub staff: Option<crate::staff::Staff>,
-    /// Game reputation, bound from the player line behind the same
-    /// one-eid-below object the staff sheet uses — and only where the line's
-    /// CA/PA pair repeats this person's parsed ability exactly, so a
-    /// misattributed line cannot bind. `None` is undecoded, not obscurity.
-    pub reputation: Option<Reputation>,
     /// True for a compact entry: aged saves fold people who have left the
     /// loaded game world down to a name reference and an identity, so only
     /// `full_name`, `eid` and `uid` are real. Everything else is genuinely
@@ -74,19 +69,6 @@ pub struct Person {
     /// the unemployed, and anyone bound through a list outside the
     /// department triple.
     pub staff_role: Option<crate::backroom::Role>,
-}
-
-/// A person's three game reputations, on the editor's raw 0-200 scale — the
-/// same scale the staff sheet's reputations use. The save stores them ×50
-/// (0-10000); Haaland's day-one line reads back his editor page exactly.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Reputation {
-    /// Standing in the person's home nation.
-    pub home: u16,
-    /// Standing where they currently play.
-    pub current: u16,
-    /// Worldwide standing — the one that decides who takes your call.
-    pub world: u16,
 }
 
 impl Person {
@@ -562,7 +544,6 @@ fn parse_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<(Person, u
             // both scans have run.
             ability: None,
             staff: None,
-            reputation: None,
             compact: false,
             staff_role: None,
         },
@@ -680,7 +661,6 @@ fn compact_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<Person> 
         contract_until: None,
         ability: None,
         staff: None,
-        reputation: None,
         compact: true,
         staff_role: None,
     })
