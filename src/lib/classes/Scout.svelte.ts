@@ -194,6 +194,13 @@ class Scout {
 		if (mine) this.screen({ kind: 'players', query: mine.shortName }, 'ability');
 	}
 
+	/** Opens my club's squad audit, where cover-by-position shows where the
+	 * squad is thin and each position links to an upgrade search. */
+	showWeaknesses(): void {
+		const mine = this.activeMyClub;
+		if (mine) this.openClubByEid(mine.eid);
+	}
+
 	/** Screens the table to players who fit the active tactic — anyone who can
 	 * cover (10+) a position the tactic asks for, ranked by ability. The tier
 	 * is "can cover" rather than "natural" because a tactic-fit search is about

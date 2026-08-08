@@ -97,6 +97,15 @@
 						>
 							In table
 						</button>
+						<button
+							type="button"
+							class="rounded-[2px] border border-[var(--color-line)] px-2 py-1 text-xs text-[var(--color-mist)]
+								transition-colors hover:border-[var(--color-hivis)] hover:text-[var(--color-hivis)]"
+							title="Open the squad audit — where the squad is thin by position, each linking to an upgrade search"
+							onclick={() => scout.showWeaknesses()}
+						>
+							Weaknesses
+						</button>
 					</div>
 					{#if tactic}
 						<div class="mt-2 border-t border-[var(--color-line)] pt-2">

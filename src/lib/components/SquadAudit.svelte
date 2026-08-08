@@ -35,6 +35,22 @@
 	function drill(patch: Parameters<typeof scout.screen>[0]) {
 		scout.screen({ query: club.short_name, ...patch }, 'age');
 	}
+
+	/** Scouts the whole database for a player who plays this position and beats
+	 * the club's best there — the upgrade search a weakness points to. With no
+	 * decoded incumbent it drops the ability floor rather than inventing one, so
+	 * an uncovered position still lists candidates. */
+	function scoutUpgrade(code: string, best: number | null) {
+		scout.screen(
+			{
+				kind: 'players',
+				position: code,
+				positionTier: 'natural',
+				minAbility: best === null ? null : best + 1
+			},
+			'ability'
+		);
+	}
 </script>
 
 {#if audit.counted === 0}
@@ -80,23 +96,35 @@
 		<h4 class="eyebrow mt-4 mb-1.5">Cover by position</h4>
 		<div class="mb-1 space-y-0.5">
 			{#each audit.positions as slot (slot.code)}
-				<div class="flex items-center gap-2">
+				{@const thin = slot.count <= 1}
+				<button
+					type="button"
+					class="flex w-full items-center gap-2 rounded-[2px] px-1 py-0.5 text-left transition-colors
+						hover:bg-[var(--color-raised)]"
+					title={slot.count === 0
+						? `Nobody plays ${slot.code} — scout for one`
+						: `Best ${slot.code}: CA ${slot.best ?? '—'}. Scout for an upgrade (better than your best there)`}
+					onclick={() => scoutUpgrade(slot.code, slot.best)}
+				>
 					<span class="w-9 shrink-0 text-xs text-[var(--color-mist)]">{slot.code}</span>
 					<div class="h-1.5 flex-1 rounded-[1px] bg-[var(--color-raised)]">
 						{#if slot.count > 0}
 							<div
-								class="h-full rounded-[1px] bg-[var(--color-signal)]"
+								class="h-full rounded-[1px] {thin ? 'bg-[var(--color-hivis-dim)]' : 'bg-[var(--color-signal)]'}"
 								style="width: {(slot.count / busiest) * 100}%"
 							></div>
 						{/if}
 					</div>
+					<span class="tabular w-8 shrink-0 text-right text-xs text-[var(--color-faint)]">
+						{slot.best === null ? '·' : slot.best}
+					</span>
 					<span
 						class="tabular w-4 shrink-0 text-right text-xs
-							{slot.count === 0 ? 'text-[var(--color-hivis)]' : 'text-[var(--color-faint)]'}"
+							{slot.count === 0 ? 'text-[var(--color-hivis)]' : thin ? 'text-[var(--color-hivis-dim)]' : 'text-[var(--color-faint)]'}"
 					>
 						{slot.count}
 					</span>
-				</div>
+				</button>
 			{/each}
 		</div>
 		<p class="mb-3 text-xs leading-relaxed text-[var(--color-faint)]">
@@ -105,8 +133,9 @@
 			{:else}
 				Every position has someone who plays there.
 			{/if}
-			A player counts under every position they are comfortable in, so the bars total more than
-			the squad.
+			The right-hand figure is the best current ability there. Click a position to scout an
+			upgrade. A player counts under every position they are comfortable in, so the bars total
+			more than the squad.
 		</p>
 
 		<h4 class="eyebrow mt-4 mb-1.5">Worth a look</h4>

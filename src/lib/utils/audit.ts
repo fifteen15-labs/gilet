@@ -23,7 +23,14 @@ export type AgeBands = {
 	unknown: number;
 };
 
-export type PositionCount = { code: string; count: number };
+export type PositionCount = {
+	code: string;
+	count: number;
+	/** Best current ability among the squad players who play there. Null when
+	 * nobody does, or none of them has a decoded ability — a position with no
+	 * reading is thin, not strong. */
+	best: number | null;
+};
 
 export type SquadAudit = {
 	/** Players matched to this club from the loaded people. */
@@ -94,6 +101,7 @@ export function auditSquad(
 	const agesKnown: number[] = [];
 	const rooms: number[] = [];
 	const perPosition = new Map<string, number>(POSITIONS.map((code) => [code, 0]));
+	const bestPosition = new Map<string, number | null>(POSITIONS.map((code) => [code, null]));
 
 	for (const player of squad) {
 		if (player.age === null) ages.unknown += 1;
@@ -112,13 +120,23 @@ export function auditSquad(
 		const room = headroom(player);
 		if (room !== null) rooms.push(room);
 
+		const ability = abilityOf(player);
 		for (const code of player.positions) {
 			const seen = perPosition.get(code);
-			if (seen !== undefined) perPosition.set(code, seen + 1);
+			if (seen === undefined) continue;
+			perPosition.set(code, seen + 1);
+			if (ability !== null) {
+				const best = bestPosition.get(code) ?? null;
+				if (best === null || ability > best) bestPosition.set(code, ability);
+			}
 		}
 	}
 
-	const positions = POSITIONS.map((code) => ({ code, count: perPosition.get(code) ?? 0 }));
+	const positions = POSITIONS.map((code) => ({
+		code,
+		count: perPosition.get(code) ?? 0,
+		best: bestPosition.get(code) ?? null
+	}));
 
 	return {
 		counted: squad.length,
