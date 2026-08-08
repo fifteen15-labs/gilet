@@ -25,6 +25,21 @@ import { positionSlots } from '$lib/utils/positions';
 /** Which record type the table is showing. */
 export type Tab = 'people' | 'clubs';
 
+/**
+ * One search the user can come back to: a filter set with its sort and
+ * selection. The active search's fields live on {@link Scout} directly —
+ * everything already reads `scout.filters` — and are copied into this
+ * snapshot only when the user switches away.
+ */
+export type Search = {
+	/** Stable key for the tab strip; never reused within a session. */
+	id: number;
+	filters: Filters;
+	sortKey: SortKey;
+	sortDirection: SortDirection;
+	selectedId: number | null;
+};
+
 /** Rows rendered at once. The full database is ~12,000 people; searching
  * narrows far faster than scrolling, so the table stays cheap and the count
  * tells the user what is being held back. */
@@ -49,6 +64,16 @@ class Scout {
 	sortKey = $state<SortKey>('name');
 	sortDirection = $state<SortDirection>('asc');
 	tab = $state<Tab>('people');
+	/** Every open search. The entry at {@link activeSearch} is a stale
+	 * snapshot while its state lives in the fields above; it is refreshed on
+	 * every switch away, so the strip must label the active tab from the live
+	 * filters, not from here. */
+	searches = $state<Search[]>([
+		{ id: 1, filters: { ...emptyFilters }, sortKey: 'name', sortDirection: 'asc', selectedId: null }
+	]);
+	activeSearch = $state(0);
+	/** Next search id — ids are per-session, only the strip's keys. */
+	private nextSearchId = 2;
 	/** How the clubs table is ordered. Strength is the useful one: it is the
 	 * closest thing to a league level while competitions are undecoded. Age
 	 * and wages sort on the same decoded squad. */
@@ -110,6 +135,85 @@ class Scout {
 		this.tab = tab;
 		this.selectedId = null;
 		this.comparing = false;
+	}
+
+	/** Copies the live filter state into the active search's snapshot. */
+	private storeActiveSearch(): void {
+		const current = this.searches[this.activeSearch];
+		if (!current) return;
+		this.searches[this.activeSearch] = {
+			id: current.id,
+			filters: $state.snapshot(this.filters),
+			sortKey: this.sortKey,
+			sortDirection: this.sortDirection,
+			selectedId: this.selectedId
+		};
+	}
+
+	/** Loads a snapshot into the live fields. Merged over {@link emptyFilters}
+	 * like a saved preset, for the same reason: a missing field must be the
+	 * default, not undefined. */
+	private restoreSearch(search: Search): void {
+		this.filters = { ...emptyFilters, ...search.filters };
+		this.sortKey = search.sortKey;
+		this.sortDirection = search.sortDirection;
+		this.selectedId = search.selectedId;
+	}
+
+	/** Opens a fresh, empty search and switches to it. */
+	newSearch(): void {
+		this.storeActiveSearch();
+		const fresh: Search = {
+			id: this.nextSearchId,
+			filters: { ...emptyFilters },
+			sortKey: 'name',
+			sortDirection: 'asc',
+			selectedId: null
+		};
+		this.nextSearchId += 1;
+		this.searches = [...this.searches, fresh];
+		this.activeSearch = this.searches.length - 1;
+		this.restoreSearch(fresh);
+		this.comparing = false;
+		this.tab = 'people';
+	}
+
+	/** Switches to the search at `index`, keeping the one being left. */
+	switchSearch(index: number): void {
+		if (index === this.activeSearch) return;
+		const target = this.searches[index];
+		if (!target) return;
+		this.storeActiveSearch();
+		this.activeSearch = index;
+		this.restoreSearch(target);
+		this.comparing = false;
+	}
+
+	/** Closes the search at `index`. Closing the last one standing clears it
+	 * instead — there is always a search to type into. */
+	closeSearch(index: number): void {
+		if (!this.searches[index]) return;
+		if (this.searches.length === 1) {
+			this.searches = [
+				{ id: this.nextSearchId, filters: { ...emptyFilters }, sortKey: 'name', sortDirection: 'asc', selectedId: null }
+			];
+			this.nextSearchId += 1;
+			this.activeSearch = 0;
+			const only = this.searches[0];
+			if (only) this.restoreSearch(only);
+			return;
+		}
+		const wasActive = index === this.activeSearch;
+		this.searches = this.searches.filter((_, i) => i !== index);
+		if (wasActive) {
+			const next = Math.min(index, this.searches.length - 1);
+			this.activeSearch = next;
+			const target = this.searches[next];
+			if (target) this.restoreSearch(target);
+			this.comparing = false;
+		} else if (index < this.activeSearch) {
+			this.activeSearch -= 1;
+		}
 	}
 
 	/** The pinned players, in pin order — the order the columns appear in. */

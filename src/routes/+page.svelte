@@ -6,6 +6,7 @@
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import PlayerTable from '$lib/components/PlayerTable.svelte';
 	import ProfileEditor from '$lib/components/ProfileEditor.svelte';
+	import SearchTabs from '$lib/components/SearchTabs.svelte';
 	import Sidebar from '$lib/components/Sidebar.svelte';
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { savedFilters } from '$lib/classes/SavedFilters.svelte';
@@ -177,6 +178,7 @@
 				{#if scout.comparing}
 					<CompareBoard />
 				{:else}
+					<SearchTabs />
 					<FilterBar />
 					{#if scout.tab === 'people'}
 						<PlayerTable />
