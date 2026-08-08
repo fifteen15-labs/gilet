@@ -194,6 +194,21 @@ class Scout {
 		if (mine) this.screen({ kind: 'players', query: mine.shortName }, 'ability');
 	}
 
+	/** Screens the table to players who fit the active tactic — anyone who can
+	 * cover (10+) a position the tactic asks for, ranked by ability. The tier
+	 * is "can cover" rather than "natural" because a tactic-fit search is about
+	 * who could slot in, and the honest natural-only view is one click away on
+	 * the tier control the screen leaves visible. */
+	showTacticFit(): void {
+		const tactic = this.tactic;
+		if (!tactic || tactic.positions.length === 0) return;
+		const positions = [...new Set(tactic.positions)];
+		this.screen(
+			{ kind: 'players', tacticPositions: positions, positionTier: 'accomplished' },
+			'ability'
+		);
+	}
+
 	get peopleCount(): number {
 		return this.summary?.people_count ?? 0;
 	}

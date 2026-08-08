@@ -133,3 +133,34 @@ fn an_unknown_shortlist_matches_nobody() {
     );
     assert_eq!(page.total, 0);
 }
+
+#[test]
+fn tactic_positions_keep_only_players_who_cover_one() {
+    let summary = save_or_skip!();
+    // A goalkeeper-or-striker fit: the two positions never overlap in one
+    // player, so every result must be natural in exactly one of them, and no
+    // outfield-only or keeper-only player is wrongly dropped.
+    let filters = search::Filters {
+        kind: Some("players".to_owned()),
+        tactic_positions: Some(vec!["GK".to_owned(), "ST".to_owned()]),
+        position_tier: Some("natural".to_owned()),
+        ..Default::default()
+    };
+    let page = search::run(
+        &summary.players,
+        &filters,
+        "ability",
+        "desc",
+        None,
+        &context(&summary),
+        400,
+    );
+    assert!(page.total > 0, "a database holds keepers and strikers");
+    for row in &page.rows {
+        assert!(
+            row.positions.iter().any(|p| p == "GK" || p == "ST"),
+            "{} plays neither GK nor ST but passed the tactic filter",
+            row.name
+        );
+    }
+}

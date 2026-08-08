@@ -82,6 +82,10 @@ export type Filters = {
 	minProfessionalism: number | null;
 	/** Minimum hidden Ambition, 1-20 — whether they want the step up. */
 	minAmbition: number | null;
+	/** Positions the active tactic asks for — the "fit my tactic" search. A
+	 * player passes when they play any of them, at the tier `positionTier`
+	 * sets. Null when not filtering by a tactic. */
+	tacticPositions: string[] | null;
 };
 
 export const emptyFilters: Filters = {
@@ -110,7 +114,8 @@ export const emptyFilters: Filters = {
 	minSetPiece: null,
 	minReputation: null,
 	minProfessionalism: null,
-	minAmbition: null
+	minAmbition: null,
+	tacticPositions: null
 };
 
 /**
@@ -178,6 +183,9 @@ export function describeFilters(filters: Filters, nationName?: string): string {
 	if (filters.setPiece !== null && filters.minSetPiece !== null) {
 		const skill = SET_PIECES.find((s) => s.key === filters.setPiece);
 		if (skill) parts.push(`${skill.label} ${filters.minSetPiece}+`);
+	}
+	if (filters.tacticPositions !== null && filters.tacticPositions.length > 0) {
+		parts.push(`fits tactic (${filters.tacticPositions.join(', ')})`);
 	}
 	if (filters.query.trim() !== '') parts.push(`"${filters.query.trim()}"`);
 	return parts.length > 0 ? parts.join(' · ') : 'All players';

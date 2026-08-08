@@ -72,6 +72,9 @@ pub struct Filters {
     pub min_reputation: Option<u16>,
     pub min_professionalism: Option<u8>,
     pub min_ambition: Option<u8>,
+    /// Positions the active tactic asks for. A row passes when it plays any of
+    /// them, at the tier `position_tier` sets — the "fit my tactic" search.
+    pub tactic_positions: Option<Vec<String>>,
 }
 
 /// One page of results: the true total, the rows the table renders, and each
@@ -276,6 +279,27 @@ pub fn matches(
                 return false;
             }
         } else if !row.positions.iter().any(|p| p == position) {
+            return false;
+        }
+    }
+    if let Some(wanted) = filters.tactic_positions.as_deref() {
+        // A player fits when they play any position the tactic asks for. At the
+        // "can cover" tier a 10+ rating in the slot counts; otherwise it must be
+        // one of their natural positions — an unread rating fails the bound, it
+        // does not pass it at zero.
+        let accomplished = filters.position_tier.as_deref() == Some("accomplished");
+        let fits = wanted.iter().any(|position| {
+            if accomplished {
+                context
+                    .position_slots
+                    .get(position)
+                    .and_then(|&slot| row.position_ratings.get(slot))
+                    .is_some_and(|rating| *rating >= ACCOMPLISHED)
+            } else {
+                row.positions.iter().any(|p| p == position)
+            }
+        });
+        if !fits {
             return false;
         }
     }

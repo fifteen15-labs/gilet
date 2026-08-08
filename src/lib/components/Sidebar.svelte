@@ -99,9 +99,20 @@
 						</button>
 					</div>
 					{#if tactic}
-						<p class="mt-2 truncate border-t border-[var(--color-line)] pt-2 text-xs text-[var(--color-faint)]" title="Your active tactic">
-							{tactic.name}
-						</p>
+						<div class="mt-2 border-t border-[var(--color-line)] pt-2">
+							<p class="truncate text-xs text-[var(--color-faint)]" title="Your active tactic">
+								{tactic.name}
+							</p>
+							<button
+								type="button"
+								class="mt-1 rounded-[2px] border border-[var(--color-line)] px-2 py-1 text-xs text-[var(--color-mist)]
+									transition-colors hover:border-[var(--color-hivis)] hover:text-[var(--color-hivis)]"
+								title="Find players who can cover the positions your active tactic asks for, ranked by ability"
+								onclick={() => scout.showTacticFit()}
+							>
+								Fit tactic
+							</button>
+						</div>
 					{/if}
 				{:else}
 					<p class="text-xs leading-relaxed text-[var(--color-faint)]">
