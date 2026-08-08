@@ -196,6 +196,8 @@ impl Save {
                 squads = squad::scan_squads(&frame.data, &club_ids);
                 link_members(&mut people, &squads, &chain);
 
+                bind_club_reputations(&frame.data, &mut clubs, &club_ids);
+
                 link_backroom(&frame.data, &mut people, &clubs, &club_ids);
 
                 // B and youth squads bind last, and only people neither a
@@ -219,15 +221,7 @@ impl Save {
             // The same walk collects the tag-02 player lines, which bind
             // below — after abilities, whose CA/PA pair is their entry test.
             let (sheets, lines) = staff::scan_objects(&frame.data);
-            let mut staff_by_eid: std::collections::HashMap<u32, staff::Staff> = sheets
-                .into_iter()
-                .map(|s| (s.eid.saturating_add(1), s))
-                .collect();
-            for person in &mut people {
-                if let Some(sheet) = person.eid.and_then(|e| staff_by_eid.remove(&e)) {
-                    person.staff = Some(sheet);
-                }
-            }
+            bind_staff_sheets(&mut people, sheets);
 
             // Attribute blocks sit ahead of the person they belong to, so they
             // are scanned separately and matched on afterwards.
@@ -243,33 +237,7 @@ impl Save {
                 }
             }
 
-            // Player reputation lines use the sheets' one-eid-below key, and
-            // must also repeat the person's parsed CA/PA exactly — the pair
-            // works as a checksum, so a chance triple or a neighbour's line
-            // has no way to bind. A line that matches nobody stays unbound;
-            // a person without one keeps `None`, which the UI must show as
-            // undecoded rather than unknown-and-lowly.
-            let mut lines_by_eid: std::collections::HashMap<u32, staff::PlayerLine> =
-                lines.into_iter().map(|l| (l.eid.saturating_add(1), l)).collect();
-            for person in &mut people {
-                let Some(line) = person.eid.and_then(|e| lines_by_eid.get(&e)) else {
-                    continue;
-                };
-                let matches = person.ability.as_ref().is_some_and(|a| {
-                    u16::from(a.current) == line.current_ability
-                        && u16::from(a.potential) == line.potential_ability
-                });
-                if matches {
-                    person.reputation = Some(person::Reputation {
-                        home: line.home_reputation,
-                        current: line.current_reputation,
-                        world: line.world_reputation,
-                    });
-                    if let Some(eid) = person.eid {
-                        lines_by_eid.remove(&eid);
-                    }
-                }
-            }
+            bind_player_reputations(&mut people, lines);
 
             // Compact entries — people aged saves fold down to a name and an
             // identity (person.rs, `scan_compact`) — join last, after every
@@ -369,6 +337,64 @@ fn named_frame<'a>(frames: &'a [Frame], name: &str) -> Option<&'a Frame> {
     let frame = frames.get(index)?;
     let plain = members.get(index).map(|m| m.plain)?;
     (frame.data.len() as u64 == plain).then_some(frame)
+}
+
+/// Attaches each non-player sheet to its person, matched on the entity object
+/// one eid below the person's own.
+fn bind_staff_sheets(people: &mut [Person], sheets: Vec<staff::Staff>) {
+    let mut by_eid: std::collections::HashMap<u32, staff::Staff> = sheets
+        .into_iter()
+        .map(|s| (s.eid.saturating_add(1), s))
+        .collect();
+    for person in people.iter_mut() {
+        if let Some(sheet) = person.eid.and_then(|e| by_eid.remove(&e)) {
+            person.staff = Some(sheet);
+        }
+    }
+}
+
+/// Sets `Club::reputation` from the roster table, keyed by club entity id.
+/// The same table the manager seat comes from carries the club's standing.
+fn bind_club_reputations(frame: &[u8], clubs: &mut [Club], club_ids: &[(u32, u32)]) {
+    let reputations = backroom::scan_club_reputations(frame, club_ids);
+    for club in clubs.iter_mut() {
+        if let Some(&rep) = club.eid.as_ref().and_then(|e| reputations.get(e)) {
+            club.reputation = Some(rep);
+        }
+    }
+}
+
+/// Binds each player's reputation from the tag-02 lines the object walk found.
+///
+/// A line keys on the sheets' one-eid-below rule, and must also repeat the
+/// person's parsed CA/PA exactly — the pair is a checksum, so a chance triple
+/// or a neighbour's line has no way to bind. A line that matches nobody stays
+/// unbound; a person without one keeps `None`, which the UI must render as
+/// undecoded rather than unknown-and-lowly. This misattribution, reading the
+/// line after a person's *own* identity copy, is what once buried player
+/// reputation as "unrecoverable" (`OPEN_PROBLEMS.md` §3b).
+fn bind_player_reputations(people: &mut [Person], lines: Vec<staff::PlayerLine>) {
+    let mut by_eid: std::collections::HashMap<u32, staff::PlayerLine> =
+        lines.into_iter().map(|l| (l.eid.saturating_add(1), l)).collect();
+    for person in people.iter_mut() {
+        let Some(line) = person.eid.and_then(|e| by_eid.get(&e)) else {
+            continue;
+        };
+        let matches = person.ability.as_ref().is_some_and(|a| {
+            u16::from(a.current) == line.current_ability
+                && u16::from(a.potential) == line.potential_ability
+        });
+        if matches {
+            person.reputation = Some(person::Reputation {
+                home: line.home_reputation,
+                current: line.current_reputation,
+                world: line.world_reputation,
+            });
+            if let Some(eid) = person.eid {
+                by_eid.remove(&eid);
+            }
+        }
+    }
 }
 
 /// Sets `Person::club_eid` for the backroom: managers from the roster

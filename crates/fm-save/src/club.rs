@@ -21,6 +21,12 @@ pub struct Club {
     pub name: String,
     /// Short name as FM displays it in tables, e.g. `"Man City"`.
     pub short_name: String,
+    /// The club's reputation, 0-10000 as the editor scales it, from the
+    /// roster table (`backroom::scan_club_reputations`). `None` when the club
+    /// has no roster row — an undecoded reputation, not a lowly one. Where a
+    /// club fields several competition rows the highest is taken, which is its
+    /// senior-league standing.
+    pub reputation: Option<u16>,
 }
 
 /// The three bytes before the name length in the long-verified club shape:
@@ -144,6 +150,8 @@ fn parse_at(frame: &[u8], len_at: usize, head: Option<(u32, u32)>) -> Option<Clu
         uid,
         name,
         short_name,
+        // Filled after the roster table is scanned, keyed by club uid.
+        reputation: None,
     })
 }
 

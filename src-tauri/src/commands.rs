@@ -234,6 +234,45 @@ pub struct ClubRow {
     /// total, whenever this is below `squad_size`, and the UI says so rather
     /// than presenting a partial sum as the club's outgoings.
     pub wages_known: usize,
+    /// The club's reputation, 0-10000, from the roster table. `None` when the
+    /// club has no roster row — undecoded, not a reputation of zero.
+    pub reputation: Option<u16>,
+}
+
+/// The club the human manager runs, resolved from `humans.dat` through the
+/// manager's own record. `None` means the human is unemployed — an
+/// unemployed career's member reads exactly this way — or the save carries
+/// no human at all.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MyClub {
+    /// The club's entity id — what squad and roster records key on, and what
+    /// the frontend matches rows against.
+    pub eid: u32,
+    pub name: String,
+    pub short_name: String,
+    /// The manager's own person eid, so the UI can point at their record.
+    pub manager_eid: u32,
+    /// The manager's name, for the sidebar header.
+    pub manager_name: String,
+}
+
+/// The human's active tactic, as `fm-save` reads it from `tactics_man.dat`.
+///
+/// Positions are the eleven slot names in team-sheet order; `starter_eids` is
+/// index-aligned with them when a selection is stored. Roles and duties are
+/// not decoded, so a tactic-fit search keys on positions and says so.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TacticRow {
+    pub name: String,
+    /// The style name ("Custom Gegenpress"), when one is set.
+    pub style: Option<String>,
+    /// Eleven position names in slot order.
+    pub positions: Vec<String>,
+    /// The starting XI's person entity ids, index-aligned with `positions`.
+    /// Empty when the save stores no selection yet.
+    pub starter_eids: Vec<u32>,
 }
 
 /// An in-game shortlist, with entity ids resolved to the same names the
@@ -268,6 +307,10 @@ pub struct SaveSummary {
     pub frames: usize,
     pub decompressed_bytes: usize,
     pub parse_millis: u64,
+    /// The club the human runs, when a save records one.
+    pub my_club: Option<MyClub>,
+    /// The human's active tactic, when one is set.
+    pub tactic: Option<TacticRow>,
 }
 
 /// The loaded save, kept in the backend so searches run here rather than
@@ -310,6 +353,10 @@ pub struct SaveOverview {
     /// Distinct nations, named ones alphabetical and the unnamed tail by
     /// identifier — the same ordering the frontend used to derive per load.
     pub nations: Vec<NationOption>,
+    /// The club the human runs, when a save records one.
+    pub my_club: Option<MyClub>,
+    /// The human's active tactic, when one is set.
+    pub tactic: Option<TacticRow>,
 }
 
 impl SaveOverview {
@@ -347,6 +394,8 @@ impl SaveOverview {
             frames: summary.frames,
             decompressed_bytes: summary.decompressed_bytes,
             parse_millis: summary.parse_millis,
+            my_club: summary.my_club.clone(),
+            tactic: summary.tactic.clone(),
             people_count: players.len(),
             ability_known: players.iter().any(|p| p.ability.is_some()),
             gender_known: players.iter().any(|p| p.female.is_some()),
@@ -971,6 +1020,7 @@ pub fn load_save(
                 // whose wages all failed to decode reports none at all.
                 wage_bill: totals.filter(|t| t.waged > 0).map(|t| t.wages),
                 wages_known: totals.map_or(0, |t| t.waged),
+                reputation: c.reputation,
             }
         })
         .collect();
@@ -992,6 +1042,37 @@ pub fn load_save(
         frames: save.frame_sizes.len(),
         decompressed_bytes: save.frame_sizes.iter().sum(),
         parse_millis,
+        my_club: resolve_my_club(&save),
+        tactic: resolve_tactic(&save),
+    })
+}
+
+/// Resolves the human's club from `Save::human_eid` through their record.
+/// `None` when the save has no human, the human's record did not resolve, or
+/// they are unemployed — a missing club here is not a parser gap to paper
+/// over, it is the honest "between jobs" state.
+fn resolve_my_club(save: &fm_save::Save) -> Option<MyClub> {
+    let human_eid = save.human_eid?;
+    let manager = save.people.iter().find(|p| p.eid == Some(human_eid))?;
+    let club_eid = manager.club_eid?;
+    let club = save.clubs.iter().find(|c| c.eid == Some(club_eid))?;
+    Some(MyClub {
+        eid: club_eid,
+        name: club.name.clone(),
+        short_name: club.short_name.clone(),
+        manager_eid: human_eid,
+        manager_name: manager.full_name.clone(),
+    })
+}
+
+/// Maps the parsed tactic to its IPC shape.
+fn resolve_tactic(save: &fm_save::Save) -> Option<TacticRow> {
+    let t = save.tactic.as_ref()?;
+    Some(TacticRow {
+        name: t.name.clone(),
+        style: t.style.clone(),
+        positions: t.positions.clone(),
+        starter_eids: t.starters.clone(),
     })
 }
 

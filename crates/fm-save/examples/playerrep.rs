@@ -1,3 +1,4 @@
+#![allow(clippy::cast_precision_loss)]
 //! Reports player-reputation coverage after the tag-02 line binding, plus
 //! named spot checks. The line's CA/PA must repeat the person's parsed
 //! ability exactly, so every bound reading is self-verified.

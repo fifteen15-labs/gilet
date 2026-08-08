@@ -1067,3 +1067,36 @@ fn the_active_tactic_reads_name_shape_and_eleven() {
         assert!(fresh.tactic.is_none(), "a career with no tactic set must read none");
     }
 }
+
+/// Club reputation reads from the roster table on the editor's 0-10000 scale,
+/// matching published FM26 values: Manchester City tops the English ladder,
+/// well clear of a mid-table side, which is clear of a lower-league one. The
+/// exact figure is asserted for City (9150 on this day-one save, round(v/100)
+/// against fminside), the ordering for the rest — a scale that inverts or
+/// collapses is what a wrong field would show.
+#[test]
+fn club_reputation_orders_the_ladder() {
+    let Some(save) = load_named("Day One.fm") else {
+        eprintln!("skipped: no Day One.fm on this machine");
+        return;
+    };
+
+    let rep = |name: &str| -> Option<u16> {
+        save.clubs
+            .iter()
+            .filter(|c| c.name == name)
+            .filter_map(|c| c.reputation)
+            .max()
+    };
+
+    let city = rep("Manchester City").expect("Man City should carry a reputation");
+    assert_eq!(city, 9150, "Man City reputation off published FM26 value");
+
+    let liverpool = rep("Liverpool").expect("Liverpool should carry a reputation");
+    assert!(liverpool > 8000 && liverpool < city, "Liverpool below City, well above mid-table");
+
+    // Coverage is partial by nature — only clubs in a loaded competition carry
+    // a roster row — but the elite must all decode.
+    let with_rep = save.clubs.iter().filter(|c| c.reputation.is_some()).count();
+    assert!(with_rep > 3000, "club reputation coverage collapsed: {with_rep}");
+}

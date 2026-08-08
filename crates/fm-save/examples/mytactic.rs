@@ -1,5 +1,5 @@
 //! Prints the human manager, their club and their active tactic — the
-//! humans.dat and tactics_man.dat reads together.
+//! `humans.dat` and `tactics_man.dat` reads together.
 //!
 //! ```text
 //! cargo run --release --example mytactic -- <save.fm>

@@ -23,6 +23,16 @@ export type StaffSheet = {
 	potentialAbility: number;
 };
 
+/** A person's three game reputations, 0-200 as the editor stores them. */
+export type Reputation = {
+	/** Standing in their home nation. */
+	home: number;
+	/** Standing where they currently play. */
+	current: number;
+	/** Worldwide standing — the reputation that decides who takes your call. */
+	world: number;
+};
+
 export type Player = {
 	id: number;
 	/** Person entity id — the save's own identifier, used for in-save
@@ -82,6 +92,10 @@ export type Player = {
 	 * object one id below this person's own. Null for anyone with no such
 	 * object, which is most players. */
 	staff: StaffSheet | null;
+	/** Game reputation, 0-200 on the editor's scale, bound only where the
+	 * save's player line repeats this person's own CA/PA. Null is undecoded,
+	 * never a nobody. */
+	reputation: Reputation | null;
 	/** True for a stub — a non-contract squad filler the save stores without a
 	 * person record. Name, age and attributes are undecoded, not absent. */
 	stub: boolean;
@@ -112,6 +126,34 @@ export type Club = {
 	/** How many of the squad had a decoded wage, so the bill can say what it
 	 * is missing rather than reading as a complete total. */
 	wages_known: number;
+	/** The club's reputation, 0-10000 on the editor's scale, from the roster
+	 * table. Null when the club has no roster row — undecoded, not zero. */
+	reputation: number | null;
+};
+
+/** The club the human manager runs, resolved from `humans.dat` through their
+ * own record. Null when the human is unemployed or the save has no human. */
+export type MyClub = {
+	/** The club's entity id — what squad and roster records key on. */
+	eid: number;
+	name: string;
+	shortName: string;
+	/** The manager's own person eid. */
+	managerEid: number;
+	managerName: string;
+};
+
+/** The human's active tactic from `tactics_man.dat`. Positions are the eleven
+ * slot names in team-sheet order; `starterEids` is index-aligned when a
+ * selection is stored. Roles/duties are undecoded, so a fit is by position. */
+export type Tactic = {
+	name: string;
+	/** The style name ("Custom Gegenpress"), when one is set. */
+	style: string | null;
+	positions: string[];
+	/** The starting XI's entity ids, aligned with `positions`; empty when no
+	 * selection is stored. */
+	starterEids: number[];
 };
 
 /** A shortlist as FM stores it inside the save, members already resolved to
@@ -161,6 +203,10 @@ export type SaveSummary = {
 	flags_known: boolean;
 	/** Distinct nations, named ones alphabetical, unnamed tail by id. */
 	nations: NationOption[];
+	/** The club the human runs, when the save records one. */
+	my_club: MyClub | null;
+	/** The human's active tactic, when one is set. */
+	tactic: Tactic | null;
 };
 
 /** One page of search results from the backend. `scores` is aligned with

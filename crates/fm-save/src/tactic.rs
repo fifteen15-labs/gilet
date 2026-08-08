@@ -121,7 +121,7 @@ pub fn scan_tactic(frame: &[u8]) -> Option<Tactic> {
         }
         // The even-indexed block of each pair is the formation as named;
         // the odd one is the other phase of play.
-        if block % 2 == 0 {
+        if block.is_multiple_of(2) {
             positions.push(position_name(mask)?.to_owned());
         }
         block += 1;

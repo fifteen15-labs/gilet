@@ -110,7 +110,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Top 20 by reputation.
     let mut all: Vec<(&usize, &Row)> = rows.iter().collect();
-    all.sort_by(|x, y| y.1.rep.cmp(&x.1.rep));
+    all.sort_by_key(|(_, r)| std::cmp::Reverse(r.rep));
     println!("\ntop 20 by reputation:");
     for (idx, row) in all.iter().take(20) {
         let c = &save.clubs[**idx];

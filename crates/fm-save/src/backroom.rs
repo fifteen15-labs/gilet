@@ -95,6 +95,69 @@ fn read_entry(
     })
 }
 
+/// The club's reputation, 0-10000, sits three bytes past the `0a 00` marker
+/// in a roster entry — one position byte, then the u16. Verified against
+/// published FM26 values (Man City 9150, Liverpool 8900, Barcelona/Real
+/// Madrid 9100, Millwall 5650, Grimsby 4400, all `round(v/100)` exact on a
+/// day-one save).
+const REPUTATION_OFFSET: usize = 15;
+
+/// Highest plausible club reputation; a read above it is not the field.
+const MAX_CLUB_REPUTATION: u16 = 10_000;
+
+/// Reads each club's reputation from the roster table, keyed by club entity id.
+///
+/// A club fields one roster entry per competition it plays in, each carrying
+/// its standing there; the highest is its senior-league reputation, which is
+/// the headline figure FM shows, so the max per club is kept. A club with no
+/// roster entry is absent from the map — an undecoded reputation, which the
+/// caller must render as unread rather than zero.
+#[must_use]
+pub fn scan_club_reputations(frame: &[u8], club_ids: &[(u32, u32)]) -> std::collections::HashMap<u32, u16> {
+    let by_uid: std::collections::HashMap<u32, u32> =
+        club_ids.iter().map(|&(eid, uid)| (uid, eid)).collect();
+
+    let mut out: std::collections::HashMap<u32, u16> = std::collections::HashMap::new();
+    let mut at = 4usize;
+    while at + 37 <= frame.len() {
+        let Some((entry, club_eid)) = read_reputation_entry(frame, at, &by_uid) else {
+            at += 1;
+            continue;
+        };
+        if let Some(rep) = read_u16(frame, entry + REPUTATION_OFFSET) {
+            if rep != 0 && rep <= MAX_CLUB_REPUTATION {
+                out.entry(club_eid).and_modify(|r| *r = (*r).max(rep)).or_insert(rep);
+            }
+        }
+        at = entry.saturating_add(37);
+    }
+    out
+}
+
+/// Validates a roster entry the same way [`read_entry`] does — doubled club
+/// uid, `0a 00` marker, the `FF FF FF FF` run — and returns its start offset
+/// and the club's entity id, without requiring a filled manager slot (a
+/// manager-less club still has a reputation).
+fn read_reputation_entry(
+    frame: &[u8],
+    at: usize,
+    by_uid: &std::collections::HashMap<u32, u32>,
+) -> Option<(usize, u32)> {
+    let uid = read_u32(frame, at)?;
+    if read_u32(frame, at + 4)? != uid || uid == 0 || uid == u32::MAX {
+        return None;
+    }
+    let club_eid = *by_uid.get(&uid)?;
+    let entry = at.checked_sub(4)?;
+    if frame.get(entry + 12..entry + 14)? != [0x0A, 0x00] {
+        return None;
+    }
+    if frame.get(entry + 25..entry + 29)? != [0xFF; 4] {
+        return None;
+    }
+    Some((entry, club_eid))
+}
+
 /// Smallest list worth trusting: short ascending runs occur by chance,
 /// five strictly-ascending in-range u32s behind an exact count byte do not.
 const MIN_LIST: usize = 5;
@@ -260,6 +323,11 @@ fn read_list(frame: &[u8], at: usize, end: usize) -> Option<Vec<u32>> {
 fn read_u32(b: &[u8], at: usize) -> Option<u32> {
     let s = b.get(at..at.checked_add(4)?)?;
     Some(u32::from_le_bytes(<[u8; 4]>::try_from(s).ok()?))
+}
+
+fn read_u16(b: &[u8], at: usize) -> Option<u16> {
+    let s = b.get(at..at.checked_add(2)?)?;
+    Some(u16::from_le_bytes(<[u8; 2]>::try_from(s).ok()?))
 }
 
 #[cfg(test)]
