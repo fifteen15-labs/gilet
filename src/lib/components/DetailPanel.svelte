@@ -267,6 +267,14 @@
 						<dt class="eyebrow">Nation ID</dt>
 						<dd class="tabular text-sm text-[var(--color-bright)]">{club.nation_id}</dd>
 					</div>
+					{#if club.reputation !== null}
+						<div>
+							<dt class="eyebrow" title="The club's reputation on FM's 0-10000 scale, from the save's own roster table">
+								Reputation
+							</dt>
+							<dd class="tabular text-sm text-[var(--color-signal)]">{club.reputation.toLocaleString()}</dd>
+						</div>
+					{/if}
 					{#if club.squad_size > 0}
 						<div>
 							<dt class="eyebrow">Squad</dt>
@@ -308,6 +316,22 @@
 				>
 					Show squad
 				</button>
+				{#if club.eid !== null}
+					{@const isMine = scout.activeMyClub?.eid === club.eid}
+					<button
+						type="button"
+						class="mt-2 w-full rounded-[2px] border py-1.5 text-xs transition-colors
+							{isMine
+							? 'border-[var(--color-hivis)] text-[var(--color-hivis)]'
+							: 'border-[var(--color-line)] text-[var(--color-mist)] hover:border-[var(--color-hivis)] hover:text-[var(--color-hivis)]'}"
+						title={isMine
+							? 'This is set as your club. Click to clear the choice.'
+							: 'Scout as if you manage this club — unlocks the squad and weakness tools in the sidebar'}
+						onclick={() => scout.setMyClub(isMine ? null : club.eid)}
+					>
+						{isMine ? 'Your club ✓' : 'Set as my club'}
+					</button>
+				{/if}
 				<SquadAudit {club} />
 				<BackroomAudit {club} />
 			{/if}

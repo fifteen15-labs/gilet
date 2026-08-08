@@ -213,6 +213,10 @@ pub fn staff_attribute_names() -> Vec<String> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClubRow {
     pub id: usize,
+    /// The club's entity id — what squad and roster records reference, and what
+    /// the "my club" shortcuts match a row on. `None` for a record whose head
+    /// did not validate.
+    pub eid: Option<u32>,
     pub name: String,
     pub short_name: String,
     pub club_id: u32,
@@ -1008,6 +1012,7 @@ pub fn load_save(
             let totals = c.eid.and_then(|eid| strength.get(&eid)).copied();
             ClubRow {
                 id: c.offset,
+                eid: c.eid,
                 name: c.name.clone(),
                 short_name: c.short_name.clone(),
                 club_id: c.club_id,

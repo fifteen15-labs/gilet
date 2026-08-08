@@ -107,6 +107,9 @@ export type Player = {
 
 export type Club = {
 	id: number;
+	/** The club's entity id — what squad and roster records reference. Null for
+	 * a record whose head did not validate. */
+	eid: number | null;
 	name: string;
 	short_name: string;
 	club_id: number;

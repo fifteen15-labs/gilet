@@ -20,6 +20,10 @@
 	let confirmingClear = $state<string | null>(null);
 
 	const inSave = $derived(scout.summary?.game_shortlists ?? []);
+	/** The club the "my club" tools act on — the save's human club, or a
+	 * manual pick. Null on an unemployed career with nothing chosen yet. */
+	const mine = $derived(scout.activeMyClub);
+	const tactic = $derived(scout.tactic);
 
 	/** Selecting a member in the sidebar opens them in the detail panel. The
 	 * rows live in the backend, so the lookup is a query. */
@@ -45,13 +49,71 @@
 {:else}
 	<aside class="flex w-56 shrink-0 flex-col border-r border-[var(--color-line)] bg-[var(--color-panel)]">
 		<div class="flex items-center justify-between px-4 pt-4 pb-2">
-			<h2 class="eyebrow" title="The shortlists FM stores inside the loaded save">Shortlists in save</h2>
+			<h2 class="eyebrow" title="The club you manage in this save">My club</h2>
 			<button
 				type="button"
 				class="text-[var(--color-faint)] hover:text-[var(--color-bright)]"
-				aria-label="Collapse shortlists"
+				aria-label="Collapse sidebar"
 				onclick={() => (collapsed = true)}>«</button
 			>
+		</div>
+
+		{#if scout.loaded}
+			<div class="mx-2 mb-2 rounded-[2px] border border-[var(--color-line)] p-2.5">
+				{#if mine}
+					<div class="flex items-start justify-between gap-1">
+						<div class="min-w-0">
+							<p class="truncate text-sm text-[var(--color-bright)]" title={mine.name}>{mine.name}</p>
+							<p class="truncate text-xs text-[var(--color-faint)]">
+								{mine.managerName ?? 'chosen here'}
+							</p>
+						</div>
+						{#if scout.myClubOverride !== null}
+							<button
+								type="button"
+								class="shrink-0 px-1 text-xs text-[var(--color-faint)] hover:text-[var(--color-hivis)]"
+								aria-label="Clear chosen club"
+								title="Clear this choice and fall back to the save's own club"
+								onclick={() => scout.setMyClub(null)}>×</button
+							>
+						{/if}
+					</div>
+					<div class="mt-2 flex flex-wrap gap-1">
+						<button
+							type="button"
+							class="rounded-[2px] border border-[var(--color-line)] px-2 py-1 text-xs text-[var(--color-mist)]
+								transition-colors hover:border-[var(--color-hivis)] hover:text-[var(--color-hivis)]"
+							title="Open this club's squad audit — age bands, cover by position, contracts running down"
+							onclick={() => scout.openClubByEid(mine.eid)}
+						>
+							Squad
+						</button>
+						<button
+							type="button"
+							class="rounded-[2px] border border-[var(--color-line)] px-2 py-1 text-xs text-[var(--color-mist)]
+								transition-colors hover:border-[var(--color-hivis)] hover:text-[var(--color-hivis)]"
+							title="List this club's players in the table, sorted by ability"
+							onclick={() => scout.showMySquad()}
+						>
+							In table
+						</button>
+					</div>
+					{#if tactic}
+						<p class="mt-2 truncate border-t border-[var(--color-line)] pt-2 text-xs text-[var(--color-faint)]" title="Your active tactic">
+							{tactic.name}
+						</p>
+					{/if}
+				{:else}
+					<p class="text-xs leading-relaxed text-[var(--color-faint)]">
+						This save records no club for you. Find a club in the Clubs tab and set it as
+						yours to unlock squad and weakness tools.
+					</p>
+				{/if}
+			</div>
+		{/if}
+
+		<div class="flex items-center px-4 pt-1 pb-2">
+			<h2 class="eyebrow" title="The shortlists FM stores inside the loaded save">Shortlists in save</h2>
 		</div>
 
 		<nav class="flex-1 overflow-y-auto px-2">

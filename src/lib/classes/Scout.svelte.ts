@@ -9,8 +9,10 @@ import {
 	searchPlayers,
 	type Club,
 	type GameShortlist,
+	type MyClub,
 	type Player,
-	type SaveSummary
+	type SaveSummary,
+	type Tactic
 } from '$lib/tauri/commands';
 import {
 	emptyFilters,
@@ -105,6 +107,91 @@ class Scout {
 
 	get clubs(): Club[] {
 		return this.summary?.clubs ?? [];
+	}
+
+	/** The club the human manages, when the save records one and the human is
+	 * employed. Null is the honest "between jobs" or unread state. */
+	get myClub(): MyClub | null {
+		return this.summary?.my_club ?? null;
+	}
+
+	/** The human's active tactic, when one is set. */
+	get tactic(): Tactic | null {
+		return this.summary?.tactic ?? null;
+	}
+
+	/** A manually chosen club, kept when the save records no human (an
+	 * unemployed career) or the user is scouting as if for another side. Held
+	 * as an entity id, persisted per save path. */
+	myClubOverride = $state<number | null>(null);
+
+	/** The club the "my club" tools act on: the manual choice when it resolves,
+	 * otherwise the save's own human club. `managerName` is null for a manual
+	 * pick — it is a club chosen here, not a job the save records. */
+	get activeMyClub(): { eid: number; name: string; shortName: string; managerName: string | null } | null {
+		if (this.myClubOverride !== null) {
+			const picked = this.clubs.find((c) => c.eid === this.myClubOverride);
+			if (picked && picked.eid !== null) {
+				const auto = this.myClub;
+				return {
+					eid: picked.eid,
+					name: picked.name,
+					shortName: picked.short_name,
+					managerName: auto && auto.eid === picked.eid ? auto.managerName : null
+				};
+			}
+		}
+		const auto = this.myClub;
+		return auto
+			? { eid: auto.eid, name: auto.name, shortName: auto.shortName, managerName: auto.managerName }
+			: null;
+	}
+
+	/** Sets or clears the manual club choice and persists it for this save. */
+	setMyClub(eid: number | null): void {
+		this.myClubOverride = eid;
+		this.persistMyClub();
+	}
+
+	private myClubKey(): string | null {
+		return this.summary?.path ? `gilet:myclub:${this.summary.path}` : null;
+	}
+
+	private persistMyClub(): void {
+		const key = this.myClubKey();
+		if (key === null || typeof localStorage === 'undefined') return;
+		if (this.myClubOverride === null) localStorage.removeItem(key);
+		else localStorage.setItem(key, String(this.myClubOverride));
+	}
+
+	private loadMyClub(): void {
+		const key = this.myClubKey();
+		if (key === null || typeof localStorage === 'undefined') {
+			this.myClubOverride = null;
+			return;
+		}
+		const stored = localStorage.getItem(key);
+		this.myClubOverride = stored === null ? null : Number(stored);
+	}
+
+	/** Opens a club in the detail panel by its entity id — the audits render
+	 * there. Used by the "my club" shortcuts, which know the eid, not the row
+	 * key. Does nothing when the eid names no decoded club. */
+	openClubByEid(eid: number): void {
+		const club = this.clubs.find((c) => c.eid === eid);
+		if (club) {
+			this.tab = 'clubs';
+			this.comparing = false;
+			this.selectedId = club.id;
+		}
+	}
+
+	/** Lists my club's players in the table, sorted by ability — the "show my
+	 * squad" shortcut. Keys on the club's short name, which the search matches
+	 * against each row's club. */
+	showMySquad(): void {
+		const mine = this.activeMyClub;
+		if (mine) this.screen({ kind: 'players', query: mine.shortName }, 'ability');
 	}
 
 	get peopleCount(): number {
@@ -347,6 +434,7 @@ class Scout {
 		});
 		try {
 			this.summary = await openSave(path);
+			this.loadMyClub();
 		} catch (e) {
 			this.error = e instanceof Error ? e.message : String(e);
 			this.summary = null;
