@@ -382,7 +382,7 @@ pub fn matches(
         }
     }
     if let Some(min) = filters.min_reputation {
-        match row.staff.as_ref().map(|s| s.world_reputation) {
+        match world_reputation(row) {
             Some(rep) if rep >= min => {}
             _ => return false,
         }
@@ -435,10 +435,20 @@ fn sort_value(row: &PlayerRow, key: &str, row_score: Option<f64>) -> Option<f64>
         "headroom" => headroom(row).map(f64::from),
         "ability" => ability_of(row).map(f64::from),
         "potential" => potential_of(row).map(f64::from),
-        "reputation" => row.staff.as_ref().map(|s| f64::from(s.world_reputation)),
+        "reputation" => world_reputation(row).map(f64::from),
         "age" => row.age.map(f64::from),
         _ => None,
     }
+}
+
+/// Worldwide reputation, 0-200, for whichever kind of row this is: the
+/// non-player sheet for staff, or the player line — the two never both carry
+/// one, so there is no kind to prefer over the other.
+fn world_reputation(row: &PlayerRow) -> Option<u16> {
+    row.staff
+        .as_ref()
+        .map(|s| s.world_reputation)
+        .or_else(|| row.reputation.as_ref().map(|r| r.world))
 }
 
 /// One matching row with its precomputed sort keys, so the comparator does

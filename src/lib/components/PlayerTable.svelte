@@ -16,11 +16,13 @@
 				? 'Position'
 				: 'Position / Role'
 	);
-	/** Reputation is a non-player figure, so the column only earns its width
-	 * under the Staff kind — or while the table is sorted by it, since a sort
-	 * on a column nobody can see reads as no sort at all. */
+	/** Worldwide reputation now reads for players as well as staff, so the
+	 * column earns its width for either kind. It hides only under "All", where
+	 * it would sit against undecoded stubs and compact entries with nothing to
+	 * show — unless the table is sorted by it, since a sort on a column nobody
+	 * can see reads as no sort at all. */
 	const showReputation = $derived(
-		scout.filters.kind === 'staff' || scout.sortKey === 'reputation'
+		scout.filters.kind === 'staff' || scout.filters.kind === 'players' || scout.sortKey === 'reputation'
 	);
 </script>
 
@@ -74,7 +76,7 @@
 						<th class="w-16 pr-4 pb-2 text-left">
 							<button
 								class="eyebrow hover:text-[var(--color-mist)]"
-								title="Worldwide reputation, 0-200, straight from the non-player sheet — the one that decides who will take your call. Home and current reputation are in the detail panel."
+								title="Worldwide reputation, 0-200 — the one that decides who will take your call. For staff it's the non-player sheet; for a player it's bound only where it repeats their own CA/PA, so coverage runs high but is not total. Home and current reputation are in the detail panel."
 								onclick={() => scout.sortBy('reputation')}
 							>
 								Rep{scout.sortKey === 'reputation'

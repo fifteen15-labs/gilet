@@ -77,9 +77,11 @@
 			class="tabular pr-4 text-sm text-[var(--color-mist)]"
 			title={player.staff
 				? `Home ${player.staff.homeReputation} · current ${player.staff.currentReputation} · world ${player.staff.worldReputation}`
-				: ''}
+				: player.reputation
+					? `Home ${player.reputation.home} · current ${player.reputation.current} · world ${player.reputation.world}`
+					: ''}
 		>
-			{player.staff?.worldReputation ?? ''}
+			{player.staff?.worldReputation ?? player.reputation?.world ?? ''}
 		</td>
 	{/if}
 	{#if score !== undefined}

@@ -7,6 +7,7 @@
 	import SquadAudit from './SquadAudit.svelte';
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { flagsFor, hasFlagData, headroom } from '$lib/utils/flags';
+	import { estimateInterest } from '$lib/utils/interest';
 	import { formatBill } from '$lib/utils/money';
 
 	const player = $derived(scout.selectedPlayer);
@@ -18,6 +19,29 @@
 	const club = $derived(scout.selectedClub);
 	/** Shortlists stored in the save file itself, editable in place. */
 	const gameLists = $derived(scout.summary?.game_shortlists ?? []);
+
+	/** A year past the save's own date — what "expiring" means for the interest
+	 * estimate below. Null when the save could not say what day it is. */
+	const expiryCutoff = $derived.by(() => {
+		const base = scout.summary?.game_date;
+		if (!base) return null;
+		return `${Number(base.slice(0, 4)) + 1}${base.slice(4)}`;
+	});
+	const myClub = $derived(scout.activeMyClub);
+	const myClubReputation = $derived(
+		myClub ? (scout.clubs.find((c) => c.eid === myClub.eid)?.reputation ?? null) : null
+	);
+	const expiring = $derived(
+		player !== null &&
+			expiryCutoff !== null &&
+			player.contract_until !== '' &&
+			player.contract_until <= expiryCutoff
+	);
+	/** Gilet's estimate of this player's openness to joining "my club" — only
+	 * offered once one is set, since it has nothing to compare against otherwise. */
+	const interest = $derived(
+		player && myClub ? estimateInterest(player, myClubReputation, expiring) : null
+	);
 </script>
 
 {#if player || club}
@@ -106,6 +130,41 @@
 								>
 							{/each}
 						</div>
+					</div>
+				{/if}
+
+				{#if myClub && !player.stub && player.is_player}
+					<div class="mb-4">
+						<h4
+							class="eyebrow mb-1.5"
+							title="Gilet's estimate, not FM's own figure — built from the reputation gap with {myClub.name}, plus ambition, loyalty, adaptability and contract status. Never dressed up as the save's own number."
+						>
+							Interest in {myClub.shortName}
+						</h4>
+						{#if interest === null}
+							<p class="text-xs leading-relaxed text-[var(--color-faint)]">
+								{myClubReputation === null
+									? `${myClub.name}'s reputation is undecoded, so there is nothing to weigh this against.`
+									: "This player's reputation is undecoded, so there is nothing to estimate from."}
+							</p>
+						{:else}
+							<div class="flex items-center gap-2">
+								<span
+									class="rounded-[2px] border px-1.5 py-0.5 text-xs
+										{interest.score >= 20
+										? 'border-[var(--color-signal-dim)] text-[var(--color-signal)]'
+										: interest.score <= -20
+											? 'border-[var(--color-hivis-dim)] text-[var(--color-hivis)]'
+											: 'border-[var(--color-line)] text-[var(--color-mist)]'}"
+								>
+									{interest.band}
+								</span>
+								<span class="tabular text-xs text-[var(--color-faint)]">{interest.score}</span>
+							</div>
+							<p class="mt-1 text-xs leading-relaxed text-[var(--color-faint)]">
+								{interest.reasons.join(' · ')}
+							</p>
+						{/if}
 					</div>
 				{/if}
 
