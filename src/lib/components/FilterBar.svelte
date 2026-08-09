@@ -23,16 +23,25 @@
 	});
 </script>
 
-<div class="border-b border-[var(--color-line)] px-4 py-2">
+<div class="border-b border-[var(--color-line)] bg-[var(--color-panel)] px-4 py-3">
 	<FilterWho {expiryCutoff} />
 
-	<div class="mt-2 flex flex-wrap items-center gap-3">
-		<!-- The numeric bounds only mean anything against people, so the clubs
-			tab gets the actions alone. -->
-		{#if scout.tab === 'people'}
+	<!-- The numeric bounds only mean anything against people, so the clubs
+		tab gets the actions alone. Each band gets its own hairline and
+		breathing room, so "who" / "how good" / "do something with it" read
+		as three instruments rather than one undifferentiated ribbon. -->
+	{#if scout.tab === 'people'}
+		<div
+			class="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-[var(--color-line-soft)] pt-2.5"
+		>
 			<FilterBounds {abilityKnown} />
 			<FilterTraits />
-		{/if}
+		</div>
+	{/if}
+
+	<div
+		class="mt-2.5 flex flex-wrap items-center gap-2 border-t border-[var(--color-line-soft)] pt-2.5"
+	>
 		<FilterActions {filtered} />
 	</div>
 </div>

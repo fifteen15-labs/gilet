@@ -12,6 +12,11 @@
 	import { SET_PIECES } from '$lib/utils/attributes';
 </script>
 
+{#snippet divider()}
+	<div class="h-5 w-px shrink-0 bg-[var(--color-line)]" aria-hidden="true"></div>
+{/snippet}
+
+{@render divider()}
 <div class="flex items-center gap-1">
 	<span
 		class="eyebrow mr-1"
@@ -26,7 +31,7 @@
 		placeholder="min"
 		bind:value={scout.filters.minPositions}
 		aria-label="Minimum positions covered"
-		class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+		class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 			placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none"
 	/>
 	<span
@@ -42,11 +47,12 @@
 		placeholder="min"
 		bind:value={scout.filters.minVersatility}
 		aria-label="Minimum versatility"
-		class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+		class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 			placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none"
 	/>
 </div>
 
+{@render divider()}
 <div class="flex items-center gap-1">
 	<span
 		class="eyebrow mr-1"
@@ -61,7 +67,7 @@
 		placeholder="min"
 		bind:value={scout.filters.minProfessionalism}
 		aria-label="Minimum professionalism"
-		class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+		class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 			placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none"
 	/>
 	<span
@@ -77,17 +83,18 @@
 		placeholder="min"
 		bind:value={scout.filters.minAmbition}
 		aria-label="Minimum ambition"
-		class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+		class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 			placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none"
 	/>
 </div>
 
+{@render divider()}
 <div class="flex items-center gap-1">
 	<select
 		value={scout.filters.setPiece}
 		aria-label="Filter by a set-piece skill"
 		title="Filter on one dead-ball skill — corners, free kicks, penalties, long throws. Picking one arms the minimum at 14, a specialist's level; the box stays editable"
-		class="rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+		class="rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 			text-[var(--color-mist)] focus:border-[var(--color-hivis)] focus:outline-none"
 		onchange={(event) => {
 			const key = event.currentTarget.value;
@@ -111,13 +118,14 @@
 			placeholder="min"
 			bind:value={scout.filters.minSetPiece}
 			aria-label="Minimum set-piece rating"
-			class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+			class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 				placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none"
 		/>
 	{/if}
 </div>
 
 {#if profiles.active}
+	{@render divider()}
 	<div class="flex items-center gap-1">
 		<span
 			class="eyebrow mr-1"
@@ -133,7 +141,7 @@
 			placeholder="min"
 			bind:value={scout.filters.minScore}
 			aria-label="Minimum score"
-			class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+			class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 				placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none"
 		/>
 	</div>

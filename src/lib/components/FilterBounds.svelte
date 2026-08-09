@@ -25,6 +25,10 @@
 	);
 </script>
 
+{#snippet divider()}
+	<div class="h-5 w-px shrink-0 bg-[var(--color-line)]" aria-hidden="true"></div>
+{/snippet}
+
 <div class="flex items-center gap-1">
 	<span
 		class="eyebrow mr-1"
@@ -38,7 +42,7 @@
 		step="500"
 		bind:value={scout.filters.maxWage}
 		aria-label="Maximum weekly wage"
-		class="tabular w-20 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+		class="tabular w-20 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 			focus:border-[var(--color-hivis)] focus:outline-none"
 	/>
 </div>
@@ -54,11 +58,12 @@
 		max="60"
 		bind:value={scout.filters.maxAge}
 		aria-label="Maximum age"
-		class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+		class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 			focus:border-[var(--color-hivis)] focus:outline-none"
 	/>
 </div>
 
+{@render divider()}
 <div class="flex items-center gap-1" title={abilityKnown ? '' : 'This save has no ability data'}>
 	<span
 		class="eyebrow mr-1"
@@ -74,7 +79,7 @@
 		disabled={!abilityKnown}
 		bind:value={scout.filters.minAbility}
 		aria-label="Minimum current ability"
-		class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+		class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 			placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none
 			disabled:cursor-not-allowed disabled:opacity-40"
 	/>
@@ -87,7 +92,7 @@
 		disabled={!abilityKnown}
 		bind:value={scout.filters.maxAbility}
 		aria-label="Maximum current ability"
-		class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+		class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 			placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none
 			disabled:cursor-not-allowed disabled:opacity-40"
 	/>
@@ -105,7 +110,7 @@
 		disabled={!abilityKnown}
 		bind:value={scout.filters.minPotential}
 		aria-label="Minimum potential ability"
-		class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+		class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 			placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none
 			disabled:cursor-not-allowed disabled:opacity-40"
 	/>
@@ -118,7 +123,7 @@
 		disabled={!abilityKnown}
 		bind:value={scout.filters.maxPotential}
 		aria-label="Maximum potential ability"
-		class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+		class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 			placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none
 			disabled:cursor-not-allowed disabled:opacity-40"
 	/>
@@ -136,13 +141,14 @@
 		disabled={!abilityKnown}
 		bind:value={scout.filters.minHeadroom}
 		aria-label="Minimum headroom, max ability minus current"
-		class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+		class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 			placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none
 			disabled:cursor-not-allowed disabled:opacity-40"
 	/>
 </div>
 
 {#if showReputation}
+	{@render divider()}
 	<div class="flex items-center gap-1">
 		<span
 			class="eyebrow mr-1"
@@ -157,7 +163,7 @@
 			placeholder="min"
 			bind:value={scout.filters.minReputation}
 			aria-label="Minimum world reputation"
-			class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+			class="tabular w-14 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 				placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none"
 		/>
 	</div>

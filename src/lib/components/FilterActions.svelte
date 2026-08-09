@@ -66,7 +66,7 @@
 			<select
 				aria-label="Which in-save shortlist to add to"
 				title="Which of FM's own in-save shortlists the button writes into"
-				class="max-w-32 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+				class="max-w-32 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 					text-[var(--color-mist)] focus:border-[var(--color-hivis)] focus:outline-none"
 				onchange={(event) => (targetList = event.currentTarget.value)}
 			>
@@ -87,7 +87,7 @@
 		<select
 			aria-label="Load a saved filter"
 			title="Reapply a filter you saved earlier — the whole bar at once"
-			class="max-w-40 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+			class="max-w-40 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 				text-[var(--color-mist)] focus:border-[var(--color-hivis)] focus:outline-none"
 			onchange={(event) => {
 				const name = event.currentTarget.value;
@@ -110,7 +110,7 @@
 				autofocus
 				bind:value={presetName}
 				placeholder="Name this filter"
-				class="w-36 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+				class="w-36 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 					placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none"
 				onblur={() => !presetName && (savingPreset = false)}
 			/>

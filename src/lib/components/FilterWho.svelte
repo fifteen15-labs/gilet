@@ -30,18 +30,26 @@
 	}
 </script>
 
-<div class="flex flex-wrap items-center gap-3">
+<!-- A hairline between clusters: each marks a genuine change of subject
+	(who they are → where they play → who's watching them → their status),
+	not decoration. -->
+{#snippet divider()}
+	<div class="h-5 w-px shrink-0 bg-[var(--color-line)]" aria-hidden="true"></div>
+{/snippet}
+
+<div class="flex flex-wrap items-center gap-2">
 	<input
 		type="search"
 		bind:value={scout.filters.query}
 		placeholder={scout.tab === 'clubs' ? 'Search clubs' : 'Search players'}
 		aria-label="Search by name"
 		title="Search by name or club — accents don't matter, so 'mbappe' finds Mbappé and 'man city' lists City's squad"
-		class="w-56 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2.5 py-1.5 text-sm
+		class="w-56 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2.5 py-1.5 text-sm
 			placeholder:text-[var(--color-faint)] focus:border-[var(--color-hivis)] focus:outline-none"
 	/>
 
 	{#if scout.tab === 'people'}
+		{@render divider()}
 		<div class="flex items-center gap-1">
 			{#each [
 				{ k: 'all', label: 'All', tip: 'Everyone in the save — players, staff, and undecoded squad fillers' },
@@ -68,7 +76,7 @@
 				value={scout.filters.staffRole ?? 'any'}
 				aria-label="Backroom role"
 				title="The save's own backroom groups: the manager seat, or the coaching, medical and recruitment department lists. Staff the save gives no department for only show under Any role."
-				class="rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+				class="rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 					text-[var(--color-mist)] focus:border-[var(--color-hivis)] focus:outline-none"
 				onchange={(event) => setStaffRole(event.currentTarget.value)}
 			>
@@ -81,6 +89,7 @@
 		{/if}
 
 		{#if genderKnown}
+			{@render divider()}
 			<div
 				class="flex items-center gap-1"
 				title="Gender derives from the save's own squads. Anyone the save can't settle only shows under Everyone — showing a woman under Men would be a guess"
@@ -102,12 +111,13 @@
 			</div>
 		{/if}
 
+		{@render divider()}
 		<div class="flex items-center gap-1">
 			<select
 				bind:value={scout.filters.position}
 				aria-label="Filter by position"
 				title="Only players who play this position. The tier beside it decides what counts: their own position, or one they can be asked to fill. Staff have no positions, so any position filter hides them"
-				class="rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+				class="rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 					text-[var(--color-mist)] focus:border-[var(--color-hivis)] focus:outline-none"
 			>
 				<option value={null}>Any position</option>
@@ -119,7 +129,7 @@
 				value={scout.filters.positionTier ?? 'natural'}
 				aria-label="Position rating tier"
 				title="FM's own two readings of a position rating. Natural (15+) is a player's own position; can cover (10+) is one they can be asked to fill. Governs the Covers count on the row below too."
-				class="rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+				class="rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 					text-[var(--color-mist)] focus:border-[var(--color-hivis)] focus:outline-none"
 				onchange={(event) =>
 					(scout.filters.positionTier =
@@ -130,11 +140,12 @@
 			</select>
 		</div>
 
+		{@render divider()}
 		<select
 			bind:value={scout.filters.nationId}
 			aria-label="Filter by nationality"
 			title="By nationality, using the save's own numbering. Nations the parser hasn't named yet appear as raw identifiers at the bottom — they still filter correctly"
-			class="max-w-36 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+			class="max-w-36 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 				text-[var(--color-mist)] focus:border-[var(--color-hivis)] focus:outline-none"
 		>
 			<option value={null}>Any nation</option>
@@ -144,13 +155,14 @@
 		</select>
 
 		{#if gameLists.length > 0}
+			{@render divider()}
 			<select
 				value={scout.filters.shortlist === null || scout.filters.shortlist === undefined
 					? 'any'
 					: `list:${scout.filters.shortlist}`}
 				aria-label="Filter to one in-save shortlist"
 				title="Show only the members of one of FM's own shortlists in this save, so a list built in the game can be sorted, scored and compared here. Members whose person record didn't decode are not in it to show."
-				class="max-w-36 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-panel)] px-2 py-1 text-xs
+				class="max-w-36 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 					text-[var(--color-mist)] focus:border-[var(--color-hivis)] focus:outline-none"
 				onchange={(event) => {
 					const value = event.currentTarget.value;
@@ -168,6 +180,7 @@
 			</select>
 		{/if}
 
+		{@render divider()}
 		<div class="flex items-center gap-1">
 			<button
 				type="button"
@@ -204,6 +217,7 @@
 		</div>
 
 		{#if flagsKnown}
+			{@render divider()}
 			<div class="flex items-center gap-1">
 				<button
 					type="button"
