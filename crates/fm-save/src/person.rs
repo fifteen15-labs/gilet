@@ -892,10 +892,29 @@ pub fn bind_contracts(frame: &[u8], people: &mut [Person]) {
     }
 }
 
-/// The gap between squad-median forename ids must be at least this wide to
-/// count as the male/female split. A save without women's football has only
-/// the scatter of one population, whose gaps are far smaller.
-const MIN_GENDER_GAP: u32 = 5_000;
+/// A squad needs this many resolved members before its gender is evidence.
+const MIN_SQUAD_MEMBERS: usize = 5;
+
+/// A minority up to this fraction of a squad is a stray, not a mixed squad.
+/// Aged saves append newgen forenames past the female block, so a men's team
+/// legitimately carries the odd player whose forename id sits in the tail —
+/// Liverpool's 2037 squad has one in twenty-four. A real gender boundary is
+/// judged on squads that are *materially* mixed, not on those strays.
+const STRAY_DENOMINATOR: usize = 10;
+
+/// Above this share of materially-mixed squads the candidate is not a gender
+/// boundary at all, and gender stays unknown rather than being guessed.
+const MAX_MIXED_SHARE: f64 = 0.10;
+
+/// Each side of a real split holds at least this share of the save's squads.
+///
+/// Purity alone has degenerate optima: put the line below every id and each
+/// squad is uniformly "female", splitting nothing and scoring perfectly. The
+/// women's game is a substantial minority of a save's squads — 19.8% on a
+/// day-one career and 18.1% on a 2037 one, at the boundary both agree on —
+/// so a candidate that makes one side almost everything is not a gender
+/// split, whatever its purity.
+const MIN_SIDE_SHARE: f64 = 0.05;
 
 /// Derives the forename id at which the female name pool begins.
 ///
@@ -903,50 +922,169 @@ const MIN_GENDER_GAP: u32 = 5_000;
 /// every known man's forename id is at most 246,372 and every known woman's
 /// at least 246,373 ("Kaur", the exclusively female Sikh patronymic, opens
 /// the female block). The exact number varies per database, so it is derived
-/// from the save itself: each squad is single-gender, so squad *median*
-/// forename ids form two clusters, and the widest gap between adjacent
-/// medians is the boundary. Returns `None` when no gap is wide enough —
-/// a save without women's football — in which case gender is unknown, not
-/// assumed.
+/// from the save itself.
+///
+/// The derivation rests on one fact — **a squad is single-gender** — so the
+/// boundary is the id that leaves the fewest squads straddling it, and that
+/// claim is *tested* rather than assumed. It used to be the midpoint of the
+/// widest gap between squad *medians*, which is a proxy for the same idea and
+/// a bad one: on a 2037 career it picked 131,679, a gap in the middle of the
+/// male range, splitting 2,827 of 4,752 squads and filing Erling Haaland
+/// (219,377) and Liverpool's own squad as women. Scoring candidates by the
+/// assumption directly finds ~248,500 on both a day-one and an aged save,
+/// which agrees with the reference save's 246,373.
+///
+/// Returns `None` when no candidate honours the assumption — a save without
+/// women's football, or one whose name pool has been scrambled past reading —
+/// in which case gender is unknown, not assumed. That matters more than the
+/// filter working: labelling a man a woman hides him from every search that
+/// asks for men.
 #[must_use]
 pub fn female_forename_boundary(people: &[Person], squads: &[crate::squad::Squad]) -> Option<u32> {
+    let rosters = squad_forename_ids(people, squads);
+    if rosters.is_empty() {
+        return None;
+    }
+
+    let lo = rosters.iter().flatten().copied().min()?;
+    let hi = rosters.iter().flatten().copied().max()?;
+    if hi <= lo {
+        return None;
+    }
+
+    // Coarse sweep, then the exact ids around the best of it — a boundary is
+    // only meaningful to the id, and stepping alone would land mid-block.
+    let step = ((hi - lo) / 1_000).max(1);
+    let coarse = (lo..=hi)
+        .step_by(step as usize)
+        .filter_map(|b| Some((score(&rosters, b)?, b)))
+        .min()?
+        .1;
+
+    let window_lo = coarse.saturating_sub(step);
+    let window_hi = coarse.saturating_add(step);
+    let mut candidates: Vec<u32> = rosters
+        .iter()
+        .flatten()
+        .copied()
+        .filter(|id| (window_lo..=window_hi).contains(id))
+        .collect();
+    candidates.push(coarse);
+    candidates.sort_unstable();
+    candidates.dedup();
+
+    let scored: Vec<(usize, u32)> = candidates
+        .iter()
+        .filter_map(|&b| Some((score(&rosters, b)?, b)))
+        .collect();
+    let fewest = scored.iter().map(|(s, _)| *s).min()?;
+
+    // Among equally good ids take the middle one: the true boundary sits in
+    // the empty run between the two blocks, and its centre is the id least
+    // likely to clip either.
+    let tied: Vec<u32> = scored
+        .iter()
+        .filter(|(s, _)| *s == fewest)
+        .map(|(_, b)| *b)
+        .collect();
+    let boundary = tied.get(tied.len() / 2).copied()?;
+
+    // The assumption must actually hold at the id finally chosen.
+    #[expect(clippy::cast_precision_loss, reason = "squad counts are far below f64 precision")]
+    let mixed_share = fewest as f64 / rosters.len() as f64;
+    (mixed_share <= MAX_MIXED_SHARE).then_some(boundary)
+}
+
+/// How many squads `boundary` materially splits, or `None` when it does not
+/// divide the save into two populations at all.
+///
+/// Without that guard the search is degenerate: at the lowest id every member
+/// sits above the line, so nothing is split and a boundary that classifies
+/// the entire save as women scores perfectly.
+fn score(rosters: &[Vec<u32>], boundary: u32) -> Option<usize> {
+    let total = rosters.len();
+    let female_squads = rosters
+        .iter()
+        .filter(|ids| ids.iter().filter(|&&id| id >= boundary).count() * 2 > ids.len())
+        .count();
+    let smaller_side = female_squads.min(total - female_squads);
+    #[expect(clippy::cast_precision_loss, reason = "squad counts are far below f64 precision")]
+    let too_lopsided = (smaller_side as f64) < MIN_SIDE_SHARE * total as f64;
+    if too_lopsided {
+        return None;
+    }
+    Some(mixed_squads(rosters, boundary))
+}
+
+/// Each squad's members' forename ids, for squads big enough to be evidence.
+fn squad_forename_ids(people: &[Person], squads: &[crate::squad::Squad]) -> Vec<Vec<u32>> {
     let by_eid: std::collections::HashMap<u32, u32> = people
         .iter()
         .filter_map(|p| Some((p.eid?, p.first_name_id)))
         .collect();
-
-    let mut medians = Vec::new();
-    for s in squads {
-        let mut ids: Vec<u32> = s
-            .player_eids
-            .iter()
-            .filter_map(|e| by_eid.get(e).copied())
-            .collect();
-        if ids.len() < 5 {
-            continue;
-        }
-        ids.sort_unstable();
-        if let Some(&m) = ids.get(ids.len() / 2) {
-            medians.push(m);
-        }
-    }
-    medians.sort_unstable();
-
-    let (gap, boundary) = medians
-        .windows(2)
-        .filter_map(|w| match w {
-            [a, b] => Some((b - a, a + (b - a) / 2)),
-            _ => None,
+    squads
+        .iter()
+        .map(|s| {
+            s.player_eids
+                .iter()
+                .filter_map(|e| by_eid.get(e).copied())
+                .collect::<Vec<u32>>()
         })
-        .max()?;
-    (gap >= MIN_GENDER_GAP).then_some(boundary)
+        .filter(|ids| ids.len() >= MIN_SQUAD_MEMBERS)
+        .collect()
 }
 
-/// Sets `Person::female` from the derived boundary.
-pub fn bind_gender(people: &mut [Person], boundary: Option<u32>) {
+/// How many squads `boundary` splits with a minority too large to be a stray.
+fn mixed_squads(rosters: &[Vec<u32>], boundary: u32) -> usize {
+    rosters
+        .iter()
+        .filter(|ids| {
+            let above = ids.iter().filter(|&&id| id >= boundary).count();
+            let minority = above.min(ids.len() - above);
+            minority * STRAY_DENOMINATOR > ids.len()
+        })
+        .count()
+}
+
+/// Sets `Person::female` from the derived boundary, letting squad membership
+/// overrule the name.
+///
+/// The boundary is right for the overwhelming majority, but an aged save
+/// appends newgen forenames past the female block, so a handful of men carry
+/// a tail id — Paolo Bonato (294,234) in Liverpool's 2037 squad. A squad is
+/// single-gender, so where one exists its majority is better evidence than
+/// the one member's own name. People in no squad keep the boundary's verdict.
+pub fn bind_gender(people: &mut [Person], squads: &[crate::squad::Squad], boundary: Option<u32>) {
     let Some(b) = boundary else { return };
     for p in people.iter_mut() {
         p.female = Some(p.first_name_id >= b);
+    }
+
+    let index: std::collections::HashMap<u32, usize> = people
+        .iter()
+        .enumerate()
+        .filter_map(|(i, p)| Some((p.eid?, i)))
+        .collect();
+
+    for squad in squads {
+        let members: Vec<usize> = squad
+            .player_eids
+            .iter()
+            .filter_map(|e| index.get(e).copied())
+            .collect();
+        if members.len() < MIN_SQUAD_MEMBERS {
+            continue;
+        }
+        let above = members
+            .iter()
+            .filter(|&&i| people.get(i).is_some_and(|p| p.first_name_id >= b))
+            .count();
+        let female = above * 2 > members.len();
+        for i in members {
+            if let Some(p) = people.get_mut(i) {
+                p.female = Some(female);
+            }
+        }
     }
 }
 

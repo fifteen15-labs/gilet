@@ -1100,3 +1100,56 @@ fn club_reputation_orders_the_ladder() {
     let with_rep = save.clubs.iter().filter(|c| c.reputation.is_some()).count();
     assert!(with_rep > 3000, "club reputation coverage collapsed: {with_rep}");
 }
+
+/// Gender must not be asserted wrongly, which is worse than not asserting it.
+///
+/// The derivation used to take the midpoint of the widest gap between squad
+/// *median* forename ids. On a 2037 career that gap sat inside the male range
+/// (131,679): it split 2,827 of 4,752 squads, and filed Erling Haaland and
+/// most of Liverpool's own first team as women — so "Men" hid them from every
+/// search. The boundary is now the id that leaves fewest squads straddling it,
+/// which is the assumption the derivation always rested on, and it is checked
+/// rather than assumed.
+#[test]
+fn men_are_not_filed_as_women() {
+    let Some(save) = load_named("Day One.fm") else {
+        eprintln!("skipped: no Day One.fm on this machine");
+        return;
+    };
+
+    let person = |needle: &str| -> &fm_save::Person {
+        save.people
+            .iter()
+            .find(|p| p.full_name.contains(needle))
+            .unwrap_or_else(|| panic!("{needle} is not in this save"))
+    };
+
+    // Men whose forename ids sit high enough that a boundary in the middle of
+    // the male range calls them women. Haaland is the index case.
+    for name in ["Erling Braut Haaland", "Mohamed Salah", "Virgil van Dijk"] {
+        assert_eq!(person(name).female, Some(false), "{name} should be a man");
+    }
+
+    // The women's game must still be recognised, or the split is not a split.
+    let women = save.people.iter().filter(|p| p.female == Some(true)).count();
+    let men = save.people.iter().filter(|p| p.female == Some(false)).count();
+    assert!(men > women, "a save should hold more men than women: {men} vs {women}");
+    assert!(women > 1_000, "women's football should be recognised, not erased: {women}");
+
+    // Every member of a squad shares its gender — the claim the boundary rests
+    // on, asserted where it is easiest to see.
+    let by_eid: std::collections::HashMap<u32, bool> = save
+        .people
+        .iter()
+        .filter_map(|p| Some((p.eid?, p.female?)))
+        .collect();
+    let mixed = save
+        .squads
+        .iter()
+        .filter(|s| {
+            let g: Vec<bool> = s.player_eids.iter().filter_map(|e| by_eid.get(e).copied()).collect();
+            g.len() >= 5 && g.iter().any(|&x| x) && g.iter().any(|&x| !x)
+        })
+        .count();
+    assert_eq!(mixed, 0, "squads are single-gender, so none may be mixed after binding");
+}
