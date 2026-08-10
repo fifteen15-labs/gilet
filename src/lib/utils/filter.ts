@@ -51,7 +51,7 @@ export type Filters = {
 	 * senior list standing in for a first team the game never materialised.
 	 * Anyone the squad table never placed (staff, the unattached) fails any
 	 * level bound rather than passing it as "none". */
-	squadLevel: 'any' | 'First Team' | 'B Team' | 'Youth' | 'Out of League';
+	squadLevel: 'any' | 'First Team' | 'B Team' | 'U21' | 'Youth' | 'Out of League';
 	/** Restrict by gender. 'all' keeps people whose gender is unknown too. */
 	gender: 'all' | 'men' | 'women';
 	/** Contract status: free agents (no contract), or contracts expiring soon. */

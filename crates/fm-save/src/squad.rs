@@ -45,6 +45,13 @@ pub enum SquadKind {
     FirstTeam,
     /// A B or reserve side (separator type 0x13).
     BTeam,
+    /// A U21 / development squad (separator type 0x12) — the list England's
+    /// academies run between the first team and the U18s. Its members are
+    /// the academy players themselves plus the ones out on loan, who are
+    /// already bound to their loan club and stay there, exactly as FM shows
+    /// them. Arsenal's day-one list is the index case: Setford, Rojas and
+    /// the rest of the U21 intake bind to Arsenal through it.
+    Under21,
     /// A youth squad (separator type 0x15).
     Youth,
     /// The senior squad of a club outside the loaded leagues — a 0x64 row
@@ -61,6 +68,7 @@ impl SquadKind {
         match self {
             Self::FirstTeam => "First Team",
             Self::BTeam => "B Team",
+            Self::Under21 => "U21",
             Self::Youth => "Youth",
             Self::OutOfLeague => "Out of League",
         }
@@ -79,9 +87,10 @@ impl SquadKind {
     #[must_use]
     pub(crate) fn seniority(self) -> u8 {
         match self {
-            Self::FirstTeam => 3,
-            Self::OutOfLeague => 2,
-            Self::BTeam => 1,
+            Self::FirstTeam => 4,
+            Self::OutOfLeague => 3,
+            Self::BTeam => 2,
+            Self::Under21 => 1,
             Self::Youth => 0,
         }
     }
@@ -99,10 +108,20 @@ const MAX_RECORD: usize = 6_000;
 
 /// Separator type bytes for the squad kinds that carry a club's extra
 /// squads. The byte sits three before the record's entity id, at the tail of
-/// the `01 [type] FF [flag]` separator: 0x13 is the B team, 0x15 the youth
-/// squad. Senior rows read 0x64 — including *nation* teams, whose entity
-/// ids collide with small club eids, which is why 0x64 never binds here.
+/// the `01 [type] FF [flag]` separator: 0x13 is the B team, 0x12 the U21 /
+/// development squad, 0x15 the youth squad. Senior rows read 0x64 —
+/// including *nation* teams, whose entity ids collide with small club eids,
+/// which is why 0x64 never binds here.
+///
+/// Two further types carry populated lists and are ignored on purpose
+/// (`teamtypes` example): 0x14 and 0x17 sit behind a *different* separator
+/// (`00 [type] FF`, no leading `01`) and duplicate membership the first-team
+/// list already states — every checked member was already bound to the same
+/// club — so reading them would add nothing and misreading them could
+/// overwrite a real link. Rows whose key is not a club eid (cross-club youth
+/// registration pools) are excluded by the club-eid check either way.
 const TEAM_TYPE_B: u8 = 0x13;
+const TEAM_TYPE_U21: u8 = 0x12;
 const TEAM_TYPE_YOUTH: u8 = 0x15;
 const TEAM_TYPE_SENIOR: u8 = 0x64;
 
@@ -166,9 +185,9 @@ pub fn scan_squads(frame: &[u8], club_ids: &[(u32, u32)]) -> Vec<Squad> {
 /// The squad table holds several records per club, each behind a separator
 /// ending `[type] FF [flag]`, then `[eid][00 x10][ordinal][uid]`. The senior
 /// record's uid is the club-table uid — that is what [`scan_squads`] claims.
-/// The B (type 0x13) and youth (0x15) records are keyed by the *club's* eid
-/// but carry their own team entity's uid, so the uid check can never accept
-/// them; what proves them real instead is the **ordinal**: the u32 after the
+/// The B (type 0x13), U21 (0x12) and youth (0x15) records are keyed by the
+/// *club's* eid but carry their own team entity's uid, so the uid check can
+/// never accept them; what proves them real instead is the **ordinal**: the u32 after the
 /// zero run ascends across the whole table, one per record, and the longest
 /// ascending run through it is the table's own spine — the same trick that
 /// separates the club table walk from shadows, on a different key.
@@ -221,6 +240,7 @@ pub fn scan_team_squads(frame: &[u8], club_ids: &[(u32, u32)]) -> Vec<Squad> {
         let flag = frame.get(at.wrapping_sub(1)).copied().unwrap_or(0);
         let kind = match ty {
             TEAM_TYPE_B => Some(SquadKind::BTeam),
+            TEAM_TYPE_U21 => Some(SquadKind::Under21),
             TEAM_TYPE_YOUTH => Some(SquadKind::Youth),
             TEAM_TYPE_SENIOR if flag & REPRESENTATIVE_FLAG == 0 => Some(SquadKind::OutOfLeague),
             _ => None,
@@ -641,6 +661,22 @@ mod tests {
         assert_eq!(b.club_eid, 979);
         assert_eq!(b.player_eids, vec![31581, 152_165, 118_478]);
         assert_eq!(b.captain_eid, None);
+    }
+
+    #[test]
+    fn reads_a_u21_squad_keyed_by_club_eid() {
+        // Arsenal's day-one shape: a 0x12-typed row keyed by the club's eid,
+        // holding the U21 development intake — the list that binds academy
+        // players FM shows at the parent club.
+        let clubs = [(293u32, 5555u32)];
+        let buf = team_record_flagged(0x12, 0x00, 293, 24586, 0x7741_7B74, Some(&[25544, 33611]));
+
+        let squads = scan_team_squads(&buf, &clubs);
+        assert_eq!(squads.len(), 1);
+        let u21 = squads.first().unwrap();
+        assert_eq!(u21.kind, SquadKind::Under21);
+        assert_eq!(u21.club_eid, 293);
+        assert_eq!(u21.player_eids, vec![25544, 33611]);
     }
 
     #[test]

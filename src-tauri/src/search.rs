@@ -63,7 +63,8 @@ pub struct Filters {
     /// them apart. Covers B and youth players too, same as the `club` column.
     pub club_eid: Option<u32>,
     /// Only people this squad level bound: `"First Team"`, `"B Team"`,
-    /// `"Youth"` or `"Out of League"`, as [`fm_save::squad::SquadKind::name`]
+    /// `"U21"`, `"Youth"` or `"Out of League"`, as
+    /// [`fm_save::squad::SquadKind::name`]
     /// names them. `None` or `"any"` for no restriction; anyone the squad
     /// table never placed — staff, the unattached — fails any level bound
     /// rather than passing it at "none".
