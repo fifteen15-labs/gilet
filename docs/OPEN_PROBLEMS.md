@@ -101,13 +101,24 @@ squad-referenced, so the residuals below are untouched by the fix.
    same census added **0x12 U21/development rows** to the squad kinds that
    bind (+1,620 players on Day One — Arsenal's academy intake).
 
+   **The club-record gaps behind the first residue — SOLVED 10 August
+   2026** (`SAVE_FORMAT.md` §6d-quinquies): digit-opening names ("1. FSV
+   Mainz 05") failed the capital-letter test, Vancouver's nation triple
+   agrees on a different pair than The New Saints', KF Tirana's eid-0
+   misparse poisoned the employer map's duplicate drop, and Atlético
+   Mineiro's 0xFF-typed row was outside the map's type list and behind a
+   one-byte shadow. Contracted-but-clubless is down to 204 on Day One.
+
    **Still open in this residual:**
 
-   - **Clubs whose record carries no eid.** The employer lookup's residue
-     (389 on Day One) is mostly rows keying eids the club table never
-     resolved — Atlético Mineiro at 125 ("CAM" never parses where COR 128
-     and FLA 131 do), an entity at 514 claiming two Mainz players. A
-     club-scan recovery pass would convert those rows' players directly.
+   - **Contracts naming team ids with no squad-table row.** Almirón's
+     Atlanta United contract reads team 14481; Atlanta's only row is
+     ordinal 14476, and the ids between belong to roster/reserve teams
+     the table never wrote (MLS-heavy population: US, Canada, Japan,
+     Austria). Interval attribution — nearest mapped row below — measured
+     ~94% on known players and was rejected; a wrong club is worse than
+     none. Finding where FM stores the team→club relation for rowless
+     teams is the remaining route (204 players on Day One, 168 on 2035).
    - "Rangers B" and its kin parse as **headless clubs** (the entity head
      has `FFFFFFFF` where the standard shape has the first nation copy —
      eid 15913 uid 2000093024 at 0xe4941e). Accepting that variant would
