@@ -208,12 +208,6 @@ impl Save {
                 // a link.
                 team_squads = squad::scan_team_squads(&frame.data, &club_ids);
                 link_team_members(&mut people, &team_squads, &chain);
-
-                // Gender falls out of the squad structure: squads are
-                // single-gender and the female forename pool is the tail of
-                // the name table, so the split derives from the save itself.
-                let boundary = person::female_forename_boundary(&people, &squads);
-                person::bind_gender(&mut people, &squads, boundary);
             }
 
             // Non-player sheets sit on the entity object one eid below the

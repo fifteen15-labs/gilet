@@ -1103,13 +1103,15 @@ fn club_reputation_orders_the_ladder() {
 
 /// Gender must not be asserted wrongly, which is worse than not asserting it.
 ///
-/// The derivation used to take the midpoint of the widest gap between squad
-/// *median* forename ids. On a 2037 career that gap sat inside the male range
-/// (131,679): it split 2,827 of 4,752 squads, and filed Erling Haaland and
-/// most of Liverpool's own first team as women — so "Men" hid them from every
-/// search. The boundary is now the id that leaves fewest squads straddling it,
-/// which is the assumption the derivation always rested on, and it is checked
-/// rather than assumed.
+/// Two inference schemes died before the save's own field was found. The
+/// widest-median-gap boundary filed Haaland and most of Liverpool's first
+/// team as women on a 2037 career; its fewest-straddled-squads successor
+/// fixed them but still misfiled ~700 men on a fresh save — whole foreign
+/// squads (US Monastir, Kolos, Urawa) whose forenames sit past the "female"
+/// block, because the pool's tail is not purely female — and returned
+/// nothing at all on a 2035 career once newgen names blurred the split.
+/// Gender now reads from the identity-object header's type byte, bit 0x10 —
+/// FM's own record — verified by squad purity on three saves.
 #[test]
 fn men_are_not_filed_as_women() {
     let Some(save) = load_named("Day One.fm") else {
@@ -1125,9 +1127,22 @@ fn men_are_not_filed_as_women() {
     };
 
     // Men whose forename ids sit high enough that a boundary in the middle of
-    // the male range calls them women. Haaland is the index case.
-    for name in ["Erling Braut Haaland", "Mohamed Salah", "Virgil van Dijk"] {
+    // the male range calls them women — Haaland was the index case — plus the
+    // men the squad-purity inference itself misfiled: members of foreign
+    // squads whose forename ids sit past the female block's start.
+    for name in [
+        "Erling Braut Haaland",
+        "Mohamed Salah",
+        "Virgil van Dijk",
+        "Rifet Kapić",
+        "Stepanenko Taras Mykolayovych",
+    ] {
         assert_eq!(person(name).female, Some(false), "{name} should be a man");
+    }
+
+    // And the women's game reads as itself.
+    for name in ["Sam Kerr", "Millie Bright", "Aitana Bonmatí"] {
+        assert_eq!(person(name).female, Some(true), "{name} should be a woman");
     }
 
     // The women's game must still be recognised, or the split is not a split.

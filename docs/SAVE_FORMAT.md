@@ -213,6 +213,30 @@ blocks are the longest strictly-ascending chain (patience LIS), which noise
 does not survive. The flag byte six bytes before the eid varies (0x40 for most
 people, 0x30/0x00/0x58 for newgens), so it cannot serve as the anchor.
 
+### The type byte carries gender — bit 0x10, seven bytes before the eid
+
+The identity block sits behind a seven-byte object header — `[type] [0x40]
+[flags] 04 00 00 00` — and headerless identities (0x00 in place of 0x40) still
+carry the type byte at the same offset. The type value is 0-2, but the byte
+also holds informational bits on top: **0x10 is the person's gender — set for
+women** — and 0x20 appears on aged saves (newgens among others). `Person::
+female` reads this bit at identity-bind time; `10 40` opens Sam Kerr's header
+where Haaland's reads `00 40`.
+
+Verified by squad purity: across a day-one, a 2030 and a 2035 save, not one
+of 4,955 resolvable squads mixes the bit (1,584 + 1,559 + 1,812, every squad
+with five or more resolved members single-gender). This retired the
+forename-pool boundary inference, which was wrong twice over: the pool's tail
+is not purely female, so whole foreign men's squads (US Monastir, Kolos,
+Urawa) filed as women even on a fresh save — and on a 2035 career newgen
+forenames blur the split so far that no boundary passes its own gates, which
+silently left every person's gender unknown.
+
+The same bit hid every compact woman: `scan_compact`'s acceptance required
+the raw type byte to be 0-2, so any compact entry with 0x10 or 0x20 set was
+rejected outright — 7,901 compact entries parse on the 2035 save against 976
+before the mask, 1,714 of them women.
+
 ### Fields after the name — verified
 
 Offsets are relative to the **end of the full name**.

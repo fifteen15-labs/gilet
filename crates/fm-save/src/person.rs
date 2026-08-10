@@ -44,9 +44,12 @@ pub struct Person {
     /// named among the B squad); this holds whichever list is most senior,
     /// see [`crate::squad::SquadKind::seniority`].
     pub squad_level: Option<crate::squad::SquadKind>,
-    /// Whether this person is a woman, inferred from the forename pool.
-    /// `None` when the save gives no basis for the split — see
-    /// [`female_forename_boundary`].
+    /// Whether this person is a woman, read from the save's own record: bit
+    /// 0x10 of the type byte that opens their identity object's header, seven
+    /// bytes before the entity id. Verified by squad purity — across a
+    /// day-one, a 2030 and a 2035 save not one squad mixes the bit — where
+    /// the retired forename-pool inference misfiled whole foreign squads.
+    /// `None` only when the person's identity block was never found.
     pub female: Option<bool>,
     /// The eight hidden personality attributes, 1-20, in storage order:
     /// Adaptability, Ambition, Loyalty, Pressure, Professionalism,
@@ -623,8 +626,9 @@ const COMPACT_LEN: usize = 30;
 /// entity object, sitting in the person table in eid order between full
 /// records but carrying no record prefix of their own. Kylian Mbappé is
 /// stored this way in a 2035 save (976 entries, every name resolving); a
-/// day-one save has none. The type byte is 0-2 and the flags byte varies,
-/// exactly as on the other entity object headers (`SAVE_FORMAT.md` §3).
+/// day-one save has none. The type byte is 0-2 plus the informational bits —
+/// the gender flag among them — and the flags byte varies, exactly as on the
+/// other entity object headers (`SAVE_FORMAT.md` §3).
 ///
 /// Acceptance is the doubled uid plus **both name ids resolving in their
 /// pools** — the same test a full record must pass — so a chance `10 00` in
@@ -654,7 +658,10 @@ fn compact_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<Person> 
     if frame.get(at + 10)? != &0x01 {
         return None;
     }
-    if *frame.get(at + 11)? > 0x02 || frame.get(at + 12)? != &0x40 {
+    // The type byte carries the gender flag and the aged-save 0x20 bit on
+    // top of its 0-2 value; testing it raw rejected every compact woman.
+    let type_byte = *frame.get(at + 11)?;
+    if type_byte & !TYPE_INFO_BITS > 0x02 || frame.get(at + 12)? != &0x40 {
         return None;
     }
     if frame.get(at + 14..at + 18)? != [0x04, 0x00, 0x00, 0x00] {
@@ -685,7 +692,7 @@ fn compact_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<Person> 
         uid: Some(uid),
         club_eid: None,
         squad_level: None,
-        female: None,
+        female: Some(type_byte & FEMALE_BIT != 0),
         personality: None,
         wage: None,
         contract_until: None,
@@ -708,6 +715,25 @@ pub struct Identity {
     pub offset: usize,
     pub eid: u32,
     pub uid: u32,
+    /// Bit 0x10 of the header's type byte, seven bytes before the eid —
+    /// FM's own gender flag. `None` when the frame ends too early to read it.
+    pub female: Option<bool>,
+}
+
+/// The gender bit inside the identity-object header's type byte.
+const FEMALE_BIT: u8 = 0x10;
+
+/// Informational bits the type byte carries on top of the 0-2 type value:
+/// [`FEMALE_BIT`], and 0x20, which appears on aged saves (newgens among
+/// others). Masked off before the type test, so a woman's header is still a
+/// header — requiring the raw byte to be 0-2 silently rejected every female
+/// identity object.
+const TYPE_INFO_BITS: u8 = 0x30;
+
+/// Reads the gender flag from the type byte seven bytes before a triple.
+fn read_female_flag(frame: &[u8], triple_at: usize) -> Option<bool> {
+    let byte = triple_at.checked_sub(7).and_then(|i| frame.get(i))?;
+    Some(byte & FEMALE_BIT != 0)
 }
 
 /// How far past the record prefix a person's own identity block sits.
@@ -750,6 +776,7 @@ pub fn bind_identities(frame: &[u8], people: &mut [Person], start: usize) -> Vec
         if person.eid.is_none() {
             person.eid = Some(id.eid);
             person.uid = Some(id.uid);
+            person.female = id.female;
         }
     }
 
@@ -808,18 +835,21 @@ fn bind_out_of_order(
         }
         person.eid = Some(cand.eid);
         person.uid = Some(cand.uid);
+        person.female = cand.female;
         bound.push(*cand);
     }
     bound
 }
 
 /// Whether an `[eid][uid][uid]` triple is preceded by an entity object header:
-/// a type byte of 0-2 and then `0x40`, seven bytes back.
+/// a type byte of 0-2 — ignoring the informational bits it also carries, the
+/// gender flag among them — and then `0x40`, seven bytes back.
 fn has_object_header(frame: &[u8], at: usize) -> bool {
     let Some(head) = at.checked_sub(7) else {
         return false;
     };
-    frame.get(head).is_some_and(|&b| b <= 0x02) && frame.get(head + 1) == Some(&0x40)
+    frame.get(head).is_some_and(|&b| b & !TYPE_INFO_BITS <= 0x02)
+        && frame.get(head + 1) == Some(&0x40)
 }
 
 /// How far before the record prefix the contract block can sit. It is not the
@@ -903,202 +933,6 @@ pub fn bind_contracts(frame: &[u8], people: &mut [Person]) {
     }
 }
 
-/// A squad needs this many resolved members before its gender is evidence.
-const MIN_SQUAD_MEMBERS: usize = 5;
-
-/// A minority up to this fraction of a squad is a stray, not a mixed squad.
-/// Aged saves append newgen forenames past the female block, so a men's team
-/// legitimately carries the odd player whose forename id sits in the tail —
-/// Liverpool's 2037 squad has one in twenty-four. A real gender boundary is
-/// judged on squads that are *materially* mixed, not on those strays.
-const STRAY_DENOMINATOR: usize = 10;
-
-/// Above this share of materially-mixed squads the candidate is not a gender
-/// boundary at all, and gender stays unknown rather than being guessed.
-const MAX_MIXED_SHARE: f64 = 0.10;
-
-/// Each side of a real split holds at least this share of the save's squads.
-///
-/// Purity alone has degenerate optima: put the line below every id and each
-/// squad is uniformly "female", splitting nothing and scoring perfectly. The
-/// women's game is a substantial minority of a save's squads — 19.8% on a
-/// day-one career and 18.1% on a 2037 one, at the boundary both agree on —
-/// so a candidate that makes one side almost everything is not a gender
-/// split, whatever its purity.
-const MIN_SIDE_SHARE: f64 = 0.05;
-
-/// Derives the forename id at which the female name pool begins.
-///
-/// FM's forename pool stores female names as its tail: in the reference save
-/// every known man's forename id is at most 246,372 and every known woman's
-/// at least 246,373 ("Kaur", the exclusively female Sikh patronymic, opens
-/// the female block). The exact number varies per database, so it is derived
-/// from the save itself.
-///
-/// The derivation rests on one fact — **a squad is single-gender** — so the
-/// boundary is the id that leaves the fewest squads straddling it, and that
-/// claim is *tested* rather than assumed. It used to be the midpoint of the
-/// widest gap between squad *medians*, which is a proxy for the same idea and
-/// a bad one: on a 2037 career it picked 131,679, a gap in the middle of the
-/// male range, splitting 2,827 of 4,752 squads and filing Erling Haaland
-/// (219,377) and Liverpool's own squad as women. Scoring candidates by the
-/// assumption directly finds ~248,500 on both a day-one and an aged save,
-/// which agrees with the reference save's 246,373.
-///
-/// Returns `None` when no candidate honours the assumption — a save without
-/// women's football, or one whose name pool has been scrambled past reading —
-/// in which case gender is unknown, not assumed. That matters more than the
-/// filter working: labelling a man a woman hides him from every search that
-/// asks for men.
-#[must_use]
-pub fn female_forename_boundary(people: &[Person], squads: &[crate::squad::Squad]) -> Option<u32> {
-    let rosters = squad_forename_ids(people, squads);
-    if rosters.is_empty() {
-        return None;
-    }
-
-    let lo = rosters.iter().flatten().copied().min()?;
-    let hi = rosters.iter().flatten().copied().max()?;
-    if hi <= lo {
-        return None;
-    }
-
-    // Coarse sweep, then the exact ids around the best of it — a boundary is
-    // only meaningful to the id, and stepping alone would land mid-block.
-    let step = ((hi - lo) / 1_000).max(1);
-    let coarse = (lo..=hi)
-        .step_by(step as usize)
-        .filter_map(|b| Some((score(&rosters, b)?, b)))
-        .min()?
-        .1;
-
-    let window_lo = coarse.saturating_sub(step);
-    let window_hi = coarse.saturating_add(step);
-    let mut candidates: Vec<u32> = rosters
-        .iter()
-        .flatten()
-        .copied()
-        .filter(|id| (window_lo..=window_hi).contains(id))
-        .collect();
-    candidates.push(coarse);
-    candidates.sort_unstable();
-    candidates.dedup();
-
-    let scored: Vec<(usize, u32)> = candidates
-        .iter()
-        .filter_map(|&b| Some((score(&rosters, b)?, b)))
-        .collect();
-    let fewest = scored.iter().map(|(s, _)| *s).min()?;
-
-    // Among equally good ids take the middle one: the true boundary sits in
-    // the empty run between the two blocks, and its centre is the id least
-    // likely to clip either.
-    let tied: Vec<u32> = scored
-        .iter()
-        .filter(|(s, _)| *s == fewest)
-        .map(|(_, b)| *b)
-        .collect();
-    let boundary = tied.get(tied.len() / 2).copied()?;
-
-    // The assumption must actually hold at the id finally chosen.
-    #[expect(clippy::cast_precision_loss, reason = "squad counts are far below f64 precision")]
-    let mixed_share = fewest as f64 / rosters.len() as f64;
-    (mixed_share <= MAX_MIXED_SHARE).then_some(boundary)
-}
-
-/// How many squads `boundary` materially splits, or `None` when it does not
-/// divide the save into two populations at all.
-///
-/// Without that guard the search is degenerate: at the lowest id every member
-/// sits above the line, so nothing is split and a boundary that classifies
-/// the entire save as women scores perfectly.
-fn score(rosters: &[Vec<u32>], boundary: u32) -> Option<usize> {
-    let total = rosters.len();
-    let female_squads = rosters
-        .iter()
-        .filter(|ids| ids.iter().filter(|&&id| id >= boundary).count() * 2 > ids.len())
-        .count();
-    let smaller_side = female_squads.min(total - female_squads);
-    #[expect(clippy::cast_precision_loss, reason = "squad counts are far below f64 precision")]
-    let too_lopsided = (smaller_side as f64) < MIN_SIDE_SHARE * total as f64;
-    if too_lopsided {
-        return None;
-    }
-    Some(mixed_squads(rosters, boundary))
-}
-
-/// Each squad's members' forename ids, for squads big enough to be evidence.
-fn squad_forename_ids(people: &[Person], squads: &[crate::squad::Squad]) -> Vec<Vec<u32>> {
-    let by_eid: std::collections::HashMap<u32, u32> = people
-        .iter()
-        .filter_map(|p| Some((p.eid?, p.first_name_id)))
-        .collect();
-    squads
-        .iter()
-        .map(|s| {
-            s.player_eids
-                .iter()
-                .filter_map(|e| by_eid.get(e).copied())
-                .collect::<Vec<u32>>()
-        })
-        .filter(|ids| ids.len() >= MIN_SQUAD_MEMBERS)
-        .collect()
-}
-
-/// How many squads `boundary` splits with a minority too large to be a stray.
-fn mixed_squads(rosters: &[Vec<u32>], boundary: u32) -> usize {
-    rosters
-        .iter()
-        .filter(|ids| {
-            let above = ids.iter().filter(|&&id| id >= boundary).count();
-            let minority = above.min(ids.len() - above);
-            minority * STRAY_DENOMINATOR > ids.len()
-        })
-        .count()
-}
-
-/// Sets `Person::female` from the derived boundary, letting squad membership
-/// overrule the name.
-///
-/// The boundary is right for the overwhelming majority, but an aged save
-/// appends newgen forenames past the female block, so a handful of men carry
-/// a tail id — Paolo Bonato (294,234) in Liverpool's 2037 squad. A squad is
-/// single-gender, so where one exists its majority is better evidence than
-/// the one member's own name. People in no squad keep the boundary's verdict.
-pub fn bind_gender(people: &mut [Person], squads: &[crate::squad::Squad], boundary: Option<u32>) {
-    let Some(b) = boundary else { return };
-    for p in people.iter_mut() {
-        p.female = Some(p.first_name_id >= b);
-    }
-
-    let index: std::collections::HashMap<u32, usize> = people
-        .iter()
-        .enumerate()
-        .filter_map(|(i, p)| Some((p.eid?, i)))
-        .collect();
-
-    for squad in squads {
-        let members: Vec<usize> = squad
-            .player_eids
-            .iter()
-            .filter_map(|e| index.get(e).copied())
-            .collect();
-        if members.len() < MIN_SQUAD_MEMBERS {
-            continue;
-        }
-        let above = members
-            .iter()
-            .filter(|&&i| people.get(i).is_some_and(|p| p.first_name_id >= b))
-            .count();
-        let female = above * 2 > members.len();
-        for i in members {
-            if let Some(p) = people.get_mut(i) {
-                p.female = Some(female);
-            }
-        }
-    }
-}
-
 /// Last occurrence of `eid` in `frame[lo..hi]` that anchors a contract-shaped
 /// row — `[eid][u32][00 00 00 00][wage u32] 01 xx 00 [FF FF FF FF]`. Earlier
 /// occurrences are tried when a later one fails the shape, because the same
@@ -1176,6 +1010,7 @@ fn scan_triples(frame: &[u8], start: usize) -> Vec<Identity> {
             offset: at,
             eid,
             uid,
+            female: read_female_flag(frame, at),
         });
         at += 12;
     }
@@ -1424,10 +1259,23 @@ mod tests {
     /// A compact entry as it sits on disk: `10 00`, the two name ids, `01`,
     /// then the entity object header and the doubled-uid triple.
     fn compact_entry(first: u32, surname: u32, eid: u32, uid: u32, uid2: u32) -> Vec<u8> {
+        compact_entry_typed(0x02, first, surname, eid, uid, uid2)
+    }
+
+    /// A compact entry with a chosen type byte — the byte that carries the
+    /// gender flag on top of its 0-2 value.
+    fn compact_entry_typed(
+        type_byte: u8,
+        first: u32,
+        surname: u32,
+        eid: u32,
+        uid: u32,
+        uid2: u32,
+    ) -> Vec<u8> {
         let mut v = vec![0x10, 0x00];
         v.extend_from_slice(&first.to_le_bytes());
         v.extend_from_slice(&surname.to_le_bytes());
-        v.extend_from_slice(&[0x01, 0x02, 0x40, 0x18, 0x04, 0x00, 0x00, 0x00]);
+        v.extend_from_slice(&[0x01, type_byte, 0x40, 0x18, 0x04, 0x00, 0x00, 0x00]);
         v.extend_from_slice(&eid.to_le_bytes());
         v.extend_from_slice(&uid.to_le_bytes());
         v.extend_from_slice(&uid2.to_le_bytes());
@@ -1453,6 +1301,25 @@ mod tests {
     }
 
     #[test]
+    fn a_compact_woman_parses_and_carries_her_gender() {
+        // The type byte carries the gender flag: 0x12 is a type-2 object for
+        // a woman. Requiring the raw byte to be 0-2 rejected every one of
+        // these entries, which is why compact women were missing entirely.
+        let mut buf = compact_entry_typed(0x12, 100, 200, 22279, 85_139_014, 85_139_014);
+        buf.extend(compact_entry(101, 201, 22280, 85_139_015, 85_139_015));
+        let found = scan_compact(&buf, &table(), 0);
+        assert_eq!(found.len(), 2);
+        assert_eq!(found.first().unwrap().female, Some(true));
+        assert_eq!(found.get(1).unwrap().female, Some(false));
+    }
+
+    #[test]
+    fn a_compact_type_byte_past_the_flag_bits_is_still_a_decoy() {
+        let buf = compact_entry_typed(0x43, 100, 200, 22279, 85_139_014, 85_139_014);
+        assert!(scan_compact(&buf, &table(), 0).is_empty());
+    }
+
+    #[test]
     fn rejects_compact_decoys() {
         let mut buf = Vec::new();
         // Name ids that resolve in no pool.
@@ -1470,11 +1337,35 @@ mod tests {
     /// An identity as it sits on disk: the seven-byte entity object header —
     /// type byte, `0x40`, flags, then four zeros — and the triple after it.
     fn identity_block(eid: u32, uid: u32) -> Vec<u8> {
-        let mut v = vec![0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00];
+        identity_block_typed(0x00, eid, uid)
+    }
+
+    /// An identity block with a chosen type byte, for the gender flag it
+    /// carries in bit 0x10.
+    fn identity_block_typed(type_byte: u8, eid: u32, uid: u32) -> Vec<u8> {
+        let mut v = vec![type_byte, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00];
         v.extend_from_slice(&eid.to_le_bytes());
         v.extend_from_slice(&uid.to_le_bytes());
         v.extend_from_slice(&uid.to_le_bytes());
         v
+    }
+
+    #[test]
+    fn gender_reads_from_the_identity_header_type_byte() {
+        // Sam Kerr's shape: type byte 0x10 — the female bit over type 0 —
+        // against van Dijk's plain 0x00. The bit is FM's own record of
+        // gender; squads never mix it on any save tested.
+        let mut buf = record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000);
+        buf.extend(identity_block(50, 9_000_001));
+        buf.extend(nation_field(170));
+        buf.extend(record(101, 201, NO_COMMON_NAME, None, 189, 1991));
+        buf.extend(identity_block_typed(0x10, 51, 9_000_002));
+
+        let mut people = scan_people(&buf, &table());
+        bind_identities(&buf, &mut people, 0);
+
+        assert_eq!(people.first().unwrap().female, Some(false));
+        assert_eq!(people.get(1).unwrap().female, Some(true));
     }
 
     #[test]
