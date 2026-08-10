@@ -117,6 +117,21 @@ squad-referenced, so the residuals below are untouched by the fix.
      10 August 2026): the payload is appearance history — ascending
      day-number tuples — and the employer's ids appear nowhere in the
      member.
+1b. **The clubless-and-contractless players are genuine free agents** —
+   audited 10 August 2026 (`freewho` example). Day One's 7,990 are retired
+   greats still in the database (Sergio Ramos, Alderweireld), the women's
+   free-agent pool (Press, Martens, Zornoza — all really unattached in the
+   FM26 DB) and 2,558 unsigned under-18s. No parser gap is visible in the
+   population. The residual *parser* gaps for players are: 389
+   contracted-clubless on Day One whose employer row keys a club record
+   that never parsed (see above); 474 players on the 2030 Benchmark whose
+   records bind no identity at all (so no eid, no contract, no gender); and
+   one duplicated eid on the same save. **Clubless staff are a different
+   story**: 11,553 staff with sheets are clubless on Day One and none carry
+   a player-shaped contract anchor (`staffgap` example) — staff contracts
+   are stored elsewhere (§3c), so out-of-league staff stay unbound until
+   staff contracts decode.
+
 2. **38 of 15,558 squad-referenced eids do not resolve** (0.24%). They are
    scattered among low eids (1007–1363) plus eid 1 (Maldini — his identity
    block `[1][45][45]` loses the LIS race because his uid, 45, is unusually
