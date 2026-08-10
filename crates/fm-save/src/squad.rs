@@ -35,6 +35,13 @@ pub struct Squad {
     /// Which of the club's squads this record is — where in the table it was
     /// found, not an inference.
     pub kind: SquadKind,
+    /// The row's table-wide ordinal — the u32 between the head's zero run
+    /// and the uid. It is the team's id: a contract block's second u32 is
+    /// this value plus one, which is both how employers resolve
+    /// ([`employer_ordinals`]) and the cross-check that unmasks a national
+    /// side wearing a club's entity pair ([`crate::Save`]'s representative
+    /// veto).
+    pub ordinal: u32,
 }
 
 /// The squad kinds the table stores, from each record's separator type byte.
@@ -174,6 +181,7 @@ pub fn scan_squads(frame: &[u8], club_ids: &[(u32, u32)]) -> Vec<Squad> {
             captain_eid,
             vice_captain_eid,
             kind: SquadKind::FirstTeam,
+            ordinal: read_u32(frame, offset + 14).unwrap_or(0),
         });
     }
     out
@@ -261,7 +269,7 @@ pub fn scan_team_squads(frame: &[u8], club_ids: &[(u32, u32)]) -> Vec<Squad> {
 
     let mut out = Vec::new();
     for &(row, _) in &spine {
-        let Some(&(offset, club_eid, _, kind)) = rows.get(row) else {
+        let Some(&(offset, club_eid, ordinal, kind)) = rows.get(row) else {
             continue;
         };
         let next = bounds.partition_point(|&o| o <= offset);
@@ -281,9 +289,106 @@ pub fn scan_team_squads(frame: &[u8], club_ids: &[(u32, u32)]) -> Vec<Squad> {
             captain_eid,
             vice_captain_eid,
             kind,
+            ordinal,
         });
     }
     out
+}
+
+/// Squad-table row types an employer reference can name. 0x14 and 0x17 do
+/// not bind squads (their lists duplicate first-team membership), but a row
+/// of either type still keys its club's eid, so its ordinal still names the
+/// club.
+const EMPLOYER_ROW_TYPES: [u8; 6] = [
+    TEAM_TYPE_SENIOR,
+    TEAM_TYPE_B,
+    TEAM_TYPE_U21,
+    TEAM_TYPE_YOUTH,
+    0x14,
+    0x17,
+];
+
+/// Maps each squad-table row's **ordinal** to the club eid that keys the row.
+///
+/// The point is the *empty* rows. A contract block's second u32 is the
+/// employing team's id, and that id is the row's table-wide ordinal plus one
+/// — verified on a day-one save where every one of 1,462 clubs with five or
+/// more anchored first-team players agrees exactly. A club outside the
+/// loaded leagues has a squad row on day one even though the game has not
+/// materialised its player list yet, so the row's ordinal still names the
+/// club — which is how Depay's contract resolves to COR (eid 128) while
+/// Corinthians' squad list is empty. [`crate::person::link_employers`] does
+/// the lookup.
+///
+/// Two sources, first-team rows authoritative: the uid-validated first-team
+/// records from [`scan_squads`] override separator-walked rows on an ordinal
+/// collision (a stray byte pattern can fake a separator row, but not a
+/// doubled club uid), and an ordinal two *different* clubs still claim after
+/// that is dropped — an ambiguous read is not a link. Representative rows
+/// (flag bit 0x20 on a 0x64 separator) are excluded: national sides are
+/// nobody's employer, and their entity ids collide with small club eids.
+#[must_use]
+pub fn employer_ordinals(
+    frame: &[u8],
+    club_ids: &[(u32, u32)],
+    first_team: &[Squad],
+) -> HashMap<u32, u32> {
+    let known: std::collections::HashSet<u32> = club_ids.iter().map(|&(e, _)| e).collect();
+
+    let mut map: HashMap<u32, u32> = HashMap::new();
+    let mut dropped: std::collections::HashSet<u32> = std::collections::HashSet::new();
+    let mut at = 3usize;
+    while at + 26 <= frame.len() {
+        if frame.get(at + 4..at + 14) != Some(&[0u8; 10][..]) {
+            at += 1;
+            continue;
+        }
+        if frame.get(at.wrapping_sub(2)) != Some(&0xFF) {
+            at += 1;
+            continue;
+        }
+        let (Some(eid), Some(ordinal), Some(uid)) = (
+            read_u32(frame, at),
+            read_u32(frame, at + 14),
+            read_u32(frame, at + 18),
+        ) else {
+            at += 1;
+            continue;
+        };
+        let ty = frame.get(at.wrapping_sub(3)).copied().unwrap_or(0);
+        let flag = frame.get(at.wrapping_sub(1)).copied().unwrap_or(0);
+        at += 26;
+        if !EMPLOYER_ROW_TYPES.contains(&ty) {
+            continue;
+        }
+        if ty == TEAM_TYPE_SENIOR && flag & REPRESENTATIVE_FLAG != 0 {
+            continue;
+        }
+        if uid == 0 || uid == u32::MAX || !known.contains(&eid) {
+            continue;
+        }
+        match map.entry(ordinal) {
+            std::collections::hash_map::Entry::Vacant(v) => {
+                v.insert(eid);
+            }
+            std::collections::hash_map::Entry::Occupied(o) => {
+                if *o.get() != eid {
+                    dropped.insert(ordinal);
+                }
+            }
+        }
+    }
+    for ordinal in &dropped {
+        map.remove(ordinal);
+    }
+
+    // The uid-validated first-team rows win their ordinal outright.
+    for s in first_team {
+        if let Some(ordinal) = read_u32(frame, s.offset + 14) {
+            map.insert(ordinal, s.club_eid);
+        }
+    }
+    map
 }
 
 /// `[eid][00 x10][u32][uid][uid]` where `(eid, uid)` matches the club table.
@@ -661,6 +766,24 @@ mod tests {
         assert_eq!(b.club_eid, 979);
         assert_eq!(b.player_eids, vec![31581, 152_165, 118_478]);
         assert_eq!(b.captain_eid, None);
+    }
+
+    #[test]
+    fn employer_ordinals_keep_empty_rows_and_drop_ambiguous_ones() {
+        let clubs = [(979u32, 1569u32), (4321u32, 8765u32), (500u32, 900u32)];
+        // An empty out-of-league senior row still maps its ordinal: that is
+        // the whole point — the unmaterialised club is still an employer.
+        let mut buf = team_record_flagged(0x64, 0x00, 979, 100, 0x7741_0001, None);
+        // Two rows claiming one ordinal with different clubs map to nothing.
+        buf.extend(team_record_flagged(0x13, 0x00, 4321, 200, 0x7741_0002, None));
+        buf.extend(team_record_flagged(0x15, 0x00, 500, 200, 0x7741_0003, None));
+        // A representative-flagged senior row never maps.
+        buf.extend(team_record_flagged(0x64, 0x24, 4321, 300, 0x7741_0004, None));
+
+        let map = employer_ordinals(&buf, &clubs, &[]);
+        assert_eq!(map.get(&100), Some(&979));
+        assert_eq!(map.get(&200), None, "an ambiguous ordinal is not a link");
+        assert_eq!(map.get(&300), None, "a national side is nobody's employer");
     }
 
     #[test]

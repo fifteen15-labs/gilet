@@ -3,7 +3,7 @@
 //! ordinal-ascending run (the table itself), and tallies types with member
 //! counts and sample clubs — the map of what the parser handles and what it
 //! still ignores.
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::cast_precision_loss, clippy::missing_docs_in_private_items)]
 use std::collections::HashMap;
 
 fn read_u32(b: &[u8], at: usize) -> Option<u32> {

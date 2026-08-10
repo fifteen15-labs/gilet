@@ -91,22 +91,32 @@ squad-referenced, so the residuals below are untouched by the fix.
    bit, the one that did not is killed by the link-time majority veto).
    +6,700 players on the 2035 save, zero cross-club conflicts.
 
+   **Out-of-league players on day-one saves — SOLVED 10 August 2026**
+   (`SAVE_FORMAT.md` §6d-quinquies): the contract anchor's second u32 is the
+   employing team's squad-table row ordinal plus one, and the row exists —
+   empty — even for clubs the game never materialises. Depay → COR,
+   Jorginho → FLA on a fresh save; contracted-but-clubless fell 3,030 → 389
+   on Day One. The same id unmasked ~67 national-team rows wearing club
+   entity pairs (Messi read as A.E.C. Manlleu's player until then). The
+   same census added **0x12 U21/development rows** to the squad kinds that
+   bind (+1,620 players on Day One — Arsenal's academy intake).
+
    **Still open in this residual:**
 
-   - **Out-of-league senior squads on day-one saves.** The rows exist but
-     are *empty* until the game materialises the squad — Willian and
-     Calleri still show no club on a fresh save (their contracts decode
-     now: Grêmio and São Paulo to 31/12/2026). No list in `game_db`
-     carries them, so the `used_player_data.dat` lead below stands as the
-     only known route.
+   - **Clubs whose record carries no eid.** The employer lookup's residue
+     (389 on Day One) is mostly rows keying eids the club table never
+     resolved — Atlético Mineiro at 125 ("CAM" never parses where COR 128
+     and FLA 131 do), an entity at 514 claiming two Mainz players. A
+     club-scan recovery pass would convert those rows' players directly.
    - "Rangers B" and its kin parse as **headless clubs** (the entity head
      has `FFFFFFFF` where the standard shape has the first nation copy —
      eid 15913 uid 2000093024 at 0xe4941e). Accepting that variant would
      name B clubs as clubs; binding does not need it, since B squads key
      the parent club's eid.
-   - The old `used_player_data.dat` lead: one entry per player
-     (`[eid u32][tag u8][year 0x07E9][packed bytes]`), packed payload may
-     carry the registration club.
+   - The `used_player_data.dat` lead is **dead for club binding** (checked
+     10 August 2026): the payload is appearance history — ascending
+     day-number tuples — and the employer's ids appear nowhere in the
+     member.
 2. **38 of 15,558 squad-referenced eids do not resolve** (0.24%). They are
    scattered among low eids (1007–1363) plus eid 1 (Maldini — his identity
    block `[1][45][45]` loses the LIS race because his uid, 45, is unusually

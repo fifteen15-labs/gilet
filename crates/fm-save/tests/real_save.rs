@@ -517,6 +517,61 @@ fn team_squads_bind_players_outside_first_team_lists() {
     assert!(!in_first_team, "the anchor only means something off the first-team lists");
 }
 
+/// The contract block names the employer: its second u32 is the employing
+/// team's squad-table row ordinal plus one, and the row exists — empty —
+/// even for a club the loaded leagues never materialise. Depay therefore
+/// resolves to COR (eid 128, the unlicensed Corinthians) on a day-one save
+/// where his squad row holds nobody, and Jorginho to FLA — the case the
+/// out-of-league work left open (`OPEN_PROBLEMS.md` §1).
+///
+/// The same team id is the cross-check that unmasks a national side wearing
+/// a club's entity pair. Argentina's roster carried A.E.C. Manlleu's eid
+/// *and* uid, so the uid-validated first-team walk accepted it and put
+/// Messi at a Catalan sixth-tier club; every member's contract pointing
+/// elsewhere is what refuses the row, after which Messi's real Inter Miami
+/// row is the only claim left.
+#[test]
+fn contracts_name_the_employer_and_unmask_represented_squads() {
+    let Some(save) = load_named("Day One.fm") else {
+        eprintln!("skipped: no Day One.fm on this machine");
+        return;
+    };
+
+    let person = |needle: &str| -> &fm_save::Person {
+        save.people
+            .iter()
+            .find(|p| p.full_name.contains(needle))
+            .unwrap_or_else(|| panic!("{needle} is not in this save"))
+    };
+    let club_of = |p: &fm_save::Person| -> Option<&str> {
+        p.club_eid
+            .and_then(|e| save.clubs.iter().find(|c| c.eid == Some(e)))
+            .map(|c| c.short_name.as_str())
+    };
+
+    // Employer through the contract alone — the squad rows are empty.
+    assert_eq!(club_of(person("Memphis Depay")), Some("COR"));
+    assert_eq!(club_of(person("Jorge Luiz Frello")), Some("FLA"));
+
+    // The represented-squad veto: Messi at his club, not at Manlleu, and
+    // his international team-mates likewise.
+    assert_eq!(club_of(person("Lionel Andrés Messi")), Some("Inter Miami"));
+    assert_eq!(
+        club_of(person("Emiliano Damián Martínez")),
+        Some("Aston Villa")
+    );
+    let manlleu = save
+        .clubs
+        .iter()
+        .find(|c| c.short_name == "Manlleu")
+        .and_then(|c| c.eid)
+        .expect("Manlleu parses");
+    assert!(
+        !save.squads.iter().any(|s| s.club_eid == manlleu),
+        "the Argentina roster wearing Manlleu's entity pair must be refused"
+    );
+}
+
 /// The index case for the team-squad work: an aged career whose newly
 /// promoted B-team players FM's own search shows at their club while every
 /// list Gilet read left them clubless — and, through the free-agent filter's

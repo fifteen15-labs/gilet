@@ -194,6 +194,15 @@ impl Save {
                     .filter_map(|c| Some((c.eid?, c.uid?)))
                     .collect();
                 squads = squad::scan_squads(&frame.data, &club_ids);
+                // A national side can wear a small club's entity pair — both
+                // numbers — and pass the uid validation: Argentina's roster
+                // bound as A.E.C. Manlleu's first team, putting Messi at a
+                // Catalan sixth-tier club. The contract cross-check unmasks
+                // it: a real first-team row's members carry the row's own
+                // ordinal (plus one) as their contract's team id, and a
+                // represented squad's members all point at their actual
+                // employers instead.
+                drop_representative_rows(&frame.data, &mut squads, &people, &chain);
                 link_members(&mut people, &squads, &chain);
 
                 bind_club_reputations(&frame.data, &mut clubs, &club_ids);
@@ -208,6 +217,14 @@ impl Save {
                 // a link.
                 team_squads = squad::scan_team_squads(&frame.data, &club_ids);
                 link_team_members(&mut people, &team_squads, &chain);
+
+                // Whoever is still unplaced but holds a contract binds
+                // through the contract itself: its second u32 is the
+                // employing team's squad-table ordinal plus one, and the
+                // row exists — empty — even for clubs the loaded leagues
+                // never materialise.
+                let ordinals = squad::employer_ordinals(&frame.data, &club_ids, &squads);
+                person::link_employers(&frame.data, &mut people, &ordinals);
             }
 
             // Non-player sheets sit on the entity object one eid below the
@@ -307,6 +324,55 @@ impl Save {
             frame_sizes,
         })
     }
+}
+
+/// A first-team row needs this many members pointing elsewhere, with none
+/// pointing home, before it is refused as a represented squad in disguise.
+const REPRESENTATIVE_VETO_MIN: usize = 3;
+
+/// Drops first-team rows that are national sides wearing a club's entity
+/// pair.
+///
+/// The tell is the contract cross-check: each member's contract block names
+/// their employer as a team id — the employing row's ordinal plus one
+/// (`SAVE_FORMAT.md` §2b). On a real first-team row the members
+/// overwhelmingly carry the row's own ordinal; on a represented squad every
+/// member carries their actual club's. A row is refused only on the
+/// unambiguous shape — at least [`REPRESENTATIVE_VETO_MIN`] members resolving
+/// elsewhere and not one resolving home — so a loan-heavy club, where the
+/// core still points home, is never touched. Argentina-as-Manlleu reads 23
+/// elsewhere, 0 home.
+fn drop_representative_rows(
+    frame: &[u8],
+    squads: &mut Vec<squad::Squad>,
+    people: &[Person],
+    chain: &[person::Identity],
+) {
+    let offsets: Vec<usize> = people.iter().map(|p| p.offset).collect();
+    let mut person_of: std::collections::HashMap<u32, usize> = std::collections::HashMap::new();
+    for id in chain {
+        let idx = offsets.partition_point(|&o| o <= id.offset);
+        if let Some(i) = idx.checked_sub(1) {
+            person_of.entry(id.eid).or_insert(i);
+        }
+    }
+
+    squads.retain(|s| {
+        let mut home = 0usize;
+        let mut elsewhere = 0usize;
+        for member in &s.player_eids {
+            let team = person_of
+                .get(member)
+                .and_then(|&i| people.get(i))
+                .and_then(|p| person::contract_team_id(frame, p));
+            match team {
+                Some(t) if t == s.ordinal.saturating_add(1) => home += 1,
+                Some(_) => elsewhere += 1,
+                None => {}
+            }
+        }
+        !(home == 0 && elsewhere >= REPRESENTATIVE_VETO_MIN)
+    });
 }
 
 /// Sets `Person::club_eid` from the squad table.

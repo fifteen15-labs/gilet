@@ -1,6 +1,6 @@
 //! Prints the club and squad level of named people — the quick check that a
 //! binding change did what FM's own search shows.
-#![allow(clippy::unwrap_used, clippy::expect_used)]
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::cast_precision_loss, clippy::missing_docs_in_private_items)]
 fn main() {
     let mut args = std::env::args().skip(1);
     let path = args.next().expect("save");

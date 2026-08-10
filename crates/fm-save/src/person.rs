@@ -933,6 +933,58 @@ pub fn bind_contracts(frame: &[u8], people: &mut [Person]) {
     }
 }
 
+/// Names the employer of contracted people no squad list claimed.
+///
+/// The contract anchor's second u32 — `[eid][team u32][00 x4][wage]` — is
+/// the employing team's id: the squad-table row ordinal plus one, verified
+/// exactly for every one of 1,462 clubs with five or more anchored
+/// first-team players on a day-one save. For a club outside the loaded
+/// leagues that row sits *empty* until the game materialises it, which is
+/// why its players bound to nothing — but the row exists, so the ordinal
+/// still resolves ([`crate::squad::employer_ordinals`]). Depay → COR and
+/// Jorginho → FLA on day one, matching FM's own search.
+///
+/// Runs last and only fills gaps: a person a squad list, backroom list or
+/// team list already placed keeps that link — for a loanee the contract
+/// names the *owning* club while the lists name where they play, and the
+/// lists are what FM displays. Only people whose contract actually read
+/// (wage or expiry) are touched, which keeps the free-agent sentinel rows
+/// out. `squad_level` stays `None`: no squad list claims these people, and
+/// saying which list bound them would be an invention.
+#[expect(clippy::implicit_hasher, reason = "internal map, always the default hasher")]
+pub fn link_employers(
+    frame: &[u8],
+    people: &mut [Person],
+    ordinals: &std::collections::HashMap<u32, u32>,
+) {
+    for person in people.iter_mut() {
+        if person.club_eid.is_some() || person.compact {
+            continue;
+        }
+        if person.wage.is_none() && person.contract_until.is_none() {
+            continue;
+        }
+        let Some(team) = contract_team_id(frame, person) else {
+            continue;
+        };
+        let Some(&club) = team.checked_sub(1).and_then(|o| ordinals.get(&o)) else {
+            continue;
+        };
+        person.club_eid = Some(club);
+    }
+}
+
+/// The employing team's id from a person's contract block — the second u32
+/// of the contract anchor, which is the employer's squad-table row ordinal
+/// plus one. `None` when no contract-shaped row anchors on the person's eid.
+#[must_use]
+pub fn contract_team_id(frame: &[u8], person: &Person) -> Option<u32> {
+    let eid = person.eid?;
+    let lo = person.offset.saturating_sub(CONTRACT_WINDOW);
+    let anchor = rfind_contract_anchor(frame, eid, lo, person.offset)?;
+    read_u32(frame, anchor + 4)
+}
+
 /// Last occurrence of `eid` in `frame[lo..hi]` that anchors a contract-shaped
 /// row — `[eid][u32][00 00 00 00][wage u32] 01 xx 00 [FF FF FF FF]`. Earlier
 /// occurrences are tried when a later one fails the shape, because the same

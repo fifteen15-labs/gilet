@@ -1,7 +1,7 @@
 //! Prints the member names of squad-table rows of a given separator type —
 //! the tool for naming what an unhandled type actually is.
 //! usage: teampeek <save.fm> <type-hex> [max-rows]
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::cast_precision_loss, clippy::missing_docs_in_private_items)]
 use std::collections::HashMap;
 
 fn read_u32(b: &[u8], at: usize) -> Option<u32> {

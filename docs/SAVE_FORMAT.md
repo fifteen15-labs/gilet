@@ -899,14 +899,26 @@ the walk above claims only the senior one. Each record sits behind a
 separator ending `01 [type] FF [flag]`, then the familiar head:
 
 ```
-01 [type] FF [flag]           separator; type 0x64 senior, 0x13 B, 0x15 youth
+01 [type] FF [flag]           separator; type 0x64 senior, 0x13 B,
+                              0x12 U21/development, 0x15 youth
 u32   owner_eid               the CLUB's eid for club teams — see below
 10x   00
 u32   ordinal                 ascends across the whole table, one per record
+                              — and is the team's id: contract blocks name
+                              their employer as ordinal + 1 (§6d-quinquies)
 u32   team_uid                the team entity's own uid
 ...   variable body
                               (optional FF-marked list as in 6d)
 ```
+
+Type 0x12 is the **U21 / development squad** — the list England's academies
+run between the first team and the U18s (found 10 August 2026 by a
+type-byte census, `teamtypes` example). It binds exactly as B and youth
+rows do; its unbound members are the academy intake FM shows at the parent
+club, and its loanees are already bound to their loan club and stay there.
+Two further types carry populated lists and are ignored on purpose: 0x14
+and 0x17 sit behind a different separator (`00 [type] FF`, no leading `01`)
+and duplicate membership the first-team list already states.
 
 Three things stop the obvious parse:
 
@@ -953,11 +965,49 @@ Liverpool's youth setup and Adam Rooney at Barton Town, both true in the
 FM26 database; the senior pass reads Khorfakkan, Cruz Azul and the Scottish
 B-loan army correctly on the 2035 save. **Day-one saves gain little from
 the senior pass** (+245): an out-of-league club's senior row exists but is
-*empty* until the game materialises the squad, which is why Willian and
-Calleri still show no club on day one — their contracts now decode
-(Grêmio and São Paulo deals to 31/12/2026, the Brazilian season's end), but
-no list in `game_db` carries them. Secondary lists bind only players no
+*empty* until the game materialises the squad — which is no longer the end
+of the road, because the empty row still names its club and the contract
+names the row (§6d-quinquies). Secondary lists bind only players no
 first-team list claims, and stay out of squad-size and wage-bill sums.
+
+### 6d-quinquies. The contract names the employer — SOLVED 10 August 2026
+
+The contract anchor's second u32 (§6e's `[eid][u32][00 x4][wage]...`) is
+**the employing team's id: the squad-table row ordinal plus one.** Learned
+from the data, then verified exactly: on Day One every one of 1,462 clubs
+with five or more anchored first-team players agrees, ordinal = second − 1,
+no exceptions. The unmaterialised out-of-league rows *exist* — empty — so
+their ordinals resolve too: Depay's contract reads team 221, ordinal 220 is
+the row keyed by eid 128, and eid 128 is COR, the unlicensed Corinthians,
+nation 189. Depay → COR and Jorginho → FLA on a fresh save, matching FM's
+search; Correa → BOT, Danilo → BOT and Alex Sandro → FLA all match their
+real 2025 transfers. `squad::employer_ordinals` builds ordinal → club from
+every row that keys a club-table eid (empty ones included, representative
+rows excluded, uid-validated first-team rows authoritative on a collision,
+ambiguous ordinals dropped), and `person::link_employers` runs last,
+filling only people no list claimed whose contract actually read. For a
+loanee the contract names the *owning* club while the lists name where
+they play — the lists win, which is what FM displays. Day One's
+contracted-but-clubless fell 3,030 → 389; the residue is mostly clubs
+whose *club record* has no eid at all (Atlético Mineiro at 125, an entity
+at 514), which is a club-scan gap, not a contract one.
+
+**The same id unmasks national sides wearing club entity pairs.** Argentina's
+roster row carries A.E.C. Manlleu's eid *and* uid — both numbers — so the
+uid-validated first-team walk accepted it and put Messi, de Paul and the
+whole Albiceleste at a Catalan sixth-tier club (Albania read as B68,
+and ~65 more). A real first-team row's members carry the row's own
+ordinal + 1 in their contracts; a represented squad's members all point at
+their actual employers. `drop_representative_rows` refuses a row with
+three or more members resolving elsewhere and none resolving home — 67
+rows on Day One, 120 on the 2035 save — after which Messi's real Inter
+Miami row is the only claim left. Loan-heavy clubs are safe: their core
+still points home.
+
+The `used_player_data.dat` lead is dead for club binding, checked 10 August
+2026: one entry per player eid, but the payload is appearance history
+(ascending day-number tuples), and neither Corinthians' eid nor its uid
+appears anywhere in the member.
 
 The known-member "majority" of a B list routinely points at *other* clubs —
 Hearts' list reads 4 known members, all at Cumnock and the like. Those are
@@ -974,12 +1024,14 @@ bound, set alongside `club_eid` in `link_members` (first team) and
 than one of a club's own lists — a youth player also named in the B squad is
 normal, not a conflict the way two *different* clubs claiming someone is — so
 where more than one kind matches, `SquadKind::seniority` keeps the most senior
-one (B over youth; out-of-league, standing in for a first team the game never
-materialised, over both) rather than picking arbitrarily. The UI sends it as
-`squad_level` on `PlayerRow` (`"First Team"` / `"B Team"` / `"Youth"` /
-`"Out of League"`), a filterable column and the club/team screener's second
-axis alongside the new `club_eid`-keyed club filter (`search.rs`,
-`FilterWho.svelte`).
+one (B over U21 over youth; out-of-league, standing in for a first team the
+game never materialised, over all three) rather than picking arbitrarily. The
+UI sends it as `squad_level` on `PlayerRow` (`"First Team"` / `"B Team"` /
+`"U21"` / `"Youth"` / `"Out of League"`), a filterable column and the
+club/team screener's second axis alongside the new `club_eid`-keyed club
+filter (`search.rs`, `FilterWho.svelte`). People bound by `link_employers`
+carry no `squad_level`: no list claims them, and naming one would be an
+invention.
 
 ## 6d-bis. Stub people — squad fillers without person records
 
