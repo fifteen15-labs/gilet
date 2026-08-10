@@ -988,9 +988,35 @@ ambiguous ordinals dropped), and `person::link_employers` runs last,
 filling only people no list claimed whose contract actually read. For a
 loanee the contract names the *owning* club while the lists name where
 they play — the lists win, which is what FM displays. Day One's
-contracted-but-clubless fell 3,030 → 389; the residue is mostly clubs
-whose *club record* has no eid at all (Atlético Mineiro at 125, an entity
-at 514), which is a club-scan gap, not a contract one.
+contracted-but-clubless fell 3,030 → 232, in four steps past the map
+itself:
+
+- **Names starting with a digit parse** — "1. FSV Mainz 05" failed the
+  capital-letter test that rejects lowercase commentary words, and took
+  every "1. FC" club (Union Berlin, Heidenheim, Köln) and their whole
+  squads with it. A digit opens a club name as legitimately as a capital.
+- **The head's nation triple needs any two agreeing, not a fixed pair** —
+  The New Saints read pyramid == own nation with an English location, but
+  Vancouver Whitecaps read location == own nation under a United States
+  pyramid, and requiring the first pair dropped all three Canadian MLS
+  clubs.
+- **The map accepts any separator type on a doubled-uid row keyed by a
+  known club** — Atlético Mineiro's row reads type 0xFF, which no type
+  list anticipated; the doubled uid is what rejects the stray patterns
+  that fake the head shape, and slot ownership is the club's whatever
+  list got written into the row (the Argentina roster occupies
+  A.E.C. Manlleu's slot, so a contract naming that slot is Manlleu's).
+- **The map's walk steps one byte, not one row** — the head shape also
+  passes one byte early whenever the preceding byte is 0xFF, which an
+  0xFF-typed separator guarantees, and jumping 26 bytes on that shadow
+  skipped the real row behind it.
+
+The residue (232 on Day One, 180 on the 2035 career) is contracts naming
+team ids with **no squad-table row at all** — Almirón's Atlanta United
+reads team 14481 where Atlanta's only row is ordinal 14476, the four ids
+between belonging to roster/reserve teams the table never wrote. Interval
+attribution (nearest mapped row below) was measured and rejected: ~94% on
+known players, and a wrong club is worse than none.
 
 **The same id unmasks national sides wearing club entity pairs.** Argentina's
 roster row carries A.E.C. Manlleu's eid *and* uid — both numbers — so the

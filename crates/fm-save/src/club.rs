@@ -135,8 +135,12 @@ fn parse_at(frame: &[u8], len_at: usize, head: Option<(u32, u32)>) -> Option<Clu
     }
     let short_name = read_text(frame, short_at + 4, short_len)?;
 
-    // A club name starts with a capital; the commentary lists are lowercase.
-    if !starts_upper(&name) || !starts_upper(&short_name) {
+    // A club name starts with a capital or a digit — "1. FSV Mainz 05",
+    // "1º de Agosto" and every other numbered club is as real as Arsenal,
+    // and requiring a capital silently dropped three Bundesliga clubs with
+    // their whole squads. The commentary lists this test exists to reject
+    // are lowercase words.
+    if !starts_upper_or_digit(&name) || !starts_upper_or_digit(&short_name) {
         return None;
     }
 
@@ -170,26 +174,41 @@ fn parse_head(frame: &[u8], len_at: usize) -> Option<(u32, u32)> {
     let location = read_u32(frame, len_at.checked_sub(NATION_LOCATION_BACK)?)?;
     let nation3 = read_u32(frame, len_at.checked_sub(NATION3_BACK)?)?;
     let zero = *frame.get(len_at.checked_sub(HEAD_ZERO_BACK)?)?;
-    // The two copies of the club's own nation must still agree; the location
-    // field only has to be a nation id at all. The New Saints play in Wales
-    // (175) from a ground in England (139), and every cross-border club in a
-    // real save reads the same way round — Cardiff, Swansea and Wrexham in the
-    // English pyramid from Wales, Derry City in the Irish one from Northern
-    // Ireland, Berwick Rangers in the Scottish one from England.
-    if nation1 != nation3 || zero != 0 {
+    // Two of the three nation fields must agree — which two varies with how
+    // the club crosses a border. The New Saints read pyramid == own nation
+    // (both Wales) with an English location, and so does every UK
+    // cross-border club; Vancouver Whitecaps read location == own nation
+    // (both Canada) under a United States pyramid, and requiring the first
+    // pair dropped all three Canadian MLS clubs with their squads. Any two
+    // agreeing is still a strong shape over three independent u32s, and the
+    // doubled uid, the zero byte and the FFFFFFFF carry the rest.
+    if zero != 0 {
         return None;
     }
-    if location == 0 || location > MAX_NATION_ID {
+    let pairs_agree =
+        nation1 == nation3 || nation1 == location || nation3 == location;
+    if !pairs_agree {
         return None;
+    }
+    for field in [nation1, nation3, location] {
+        if field == 0 || field > MAX_NATION_ID {
+            return None;
+        }
     }
     let uid = read_u32(frame, len_at.checked_sub(UID_BACK)?)?;
     let uid2 = read_u32(frame, len_at.checked_sub(UID2_BACK)?)?;
     let eid = read_u32(frame, len_at.checked_sub(EID_BACK)?)?;
-    (uid == uid2 && uid != 0 && uid != u32::MAX).then_some((eid, uid))
+    // Entity id zero is the null id, not a club: accepting it once gave
+    // KF Tirana eid 0, which made every stray eid-0 row "a known club" and
+    // cost Corinthians its employer ordinal to a duplicate drop.
+    (uid == uid2 && uid != 0 && uid != u32::MAX && eid != 0 && eid != u32::MAX)
+        .then_some((eid, uid))
 }
 
-fn starts_upper(s: &str) -> bool {
-    s.chars().next().is_some_and(char::is_uppercase)
+fn starts_upper_or_digit(s: &str) -> bool {
+    s.chars()
+        .next()
+        .is_some_and(|c| c.is_uppercase() || c.is_ascii_digit())
 }
 
 fn read_text(frame: &[u8], at: usize, len: usize) -> Option<String> {

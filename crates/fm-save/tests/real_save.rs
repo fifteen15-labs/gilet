@@ -552,6 +552,16 @@ fn contracts_name_the_employer_and_unmask_represented_squads() {
     // Employer through the contract alone — the squad rows are empty.
     assert_eq!(club_of(person("Memphis Depay")), Some("COR"));
     assert_eq!(club_of(person("Jorge Luiz Frello")), Some("FLA"));
+    // Atlético Mineiro's row hides behind an 0xFF-typed separator and a
+    // one-byte shadow hit; both must stay defeated for Hulk to resolve.
+    assert_eq!(club_of(person("Givanildo Vieira de Sousa")), Some("ATM"));
+
+    // Whole clubs that used to vanish: a name starting with a digit failed
+    // the capital-letter test and took all of Mainz with it, and Vancouver's
+    // head reads location == own nation under a foreign pyramid, which the
+    // two-copies rule rejected along with every Canadian MLS club.
+    assert_eq!(club_of(person("Nadiem Amiri")), Some("1. FSV Mainz 05"));
+    assert_eq!(club_of(person("Thomas Müller")), Some("Vancouver"));
 
     // The represented-squad veto: Messi at his club, not at Manlleu, and
     // his international team-mates likewise.
