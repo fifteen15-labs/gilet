@@ -113,10 +113,21 @@ pub struct PlayerRow {
     /// free agents, national staff, unresolved records. Since the team-squad
     /// pass this covers B and youth players too, not only the first team.
     pub club: String,
+    /// The club's entity id, alongside `club`. Two clubs can share a short
+    /// name (a men's and women's side, most often), so a club *filter* keys
+    /// on this rather than on the label — `None` alongside an empty `club`
+    /// for the unattached, and also for the rare person whose club is a
+    /// record with no validated entity head.
+    pub club_eid: Option<u32>,
     /// Whether a first-team squad list carries this person. False for B and
     /// youth players, staff and the unattached — the flag that keeps a squad
     /// audit meaning the team that plays, not everyone wearing the badge.
     pub first_team: bool,
+    /// Which of `club`'s own squad lists placed this person there — "First
+    /// Team", "B Team", "Youth", or "Out of League" for a club outside the
+    /// loaded leagues. `None` for staff, the unattached, and anyone whose club
+    /// came from the backroom lists rather than a squad one.
+    pub squad_level: Option<String>,
     /// Whether this person is a woman, inferred from the forename pool.
     /// `None` when the save has no women's football to derive the split from.
     pub female: Option<bool>,
@@ -572,9 +583,15 @@ pub fn player_by_name(
     Ok(summary.players.iter().find(|p| p.name == name).cloned())
 }
 
-/// Everyone whose club label matches a short name — squad, backroom, B and
-/// youth players together; the audits split them by `first_team` and
-/// `is_player` on their side. Tens of rows, not thousands.
+/// Everyone at one club — squad, backroom, B and youth players together; the
+/// audits split them by `first_team`, `squad_level` and `is_player` on their
+/// side. Tens of rows, not thousands.
+///
+/// Matched by entity id when the club record's head validated one, not by the
+/// short name shown: two club entities can share a short name — most often a
+/// men's and women's side — and a name match would pool them into one squad.
+/// `eid` is `None` only for the rare club whose record head did not resolve,
+/// where the name is the only link there ever was.
 ///
 /// # Errors
 /// Fails when no save is loaded.
@@ -583,12 +600,16 @@ pub fn player_by_name(
 pub fn club_people(
     state: tauri::State<'_, LoadedSave>,
     short_name: String,
+    eid: Option<u32>,
 ) -> Result<Vec<PlayerRow>, CommandError> {
     let summary = loaded(&state)?;
     Ok(summary
         .players
         .iter()
-        .filter(|p| p.club == short_name)
+        .filter(|p| match eid {
+            Some(eid) => p.club_eid == Some(eid),
+            None => p.club == short_name,
+        })
         .cloned()
         .collect())
 }
@@ -790,6 +811,8 @@ fn person_row(
             .and_then(|eid| club_names.get(&eid).copied())
             .unwrap_or_default()
             .to_owned(),
+        club_eid: p.club_eid,
+        squad_level: p.squad_level.map(|k| k.name().to_owned()),
         staff: p.staff.as_ref().map(|s| StaffSheet {
             attributes: s.attributes.to_vec(),
             home_reputation: s.home_reputation,
@@ -820,19 +843,31 @@ fn person_row(
 /// Rows for stub members: squad entries whose entity id has no person
 /// record — generated non-contract signings. They appear as undecoded rows
 /// under their club rather than silently missing from its squad.
+///
+/// A stub is just as often a B, youth or out-of-league filler as a first-team
+/// one — a squad with no budget for real signings leans on them harder, if
+/// anything — so both squad tables are read, first team taking priority on
+/// the rare eid a stub-shaped id turns up in more than one list.
 fn stub_rows(
     save: &fm_save::Save,
     club_names: &std::collections::HashMap<u32, &str>,
 ) -> Vec<PlayerRow> {
-    let club_by_member: std::collections::HashMap<u32, u32> = save
-        .squads
-        .iter()
-        .flat_map(|s| s.player_eids.iter().map(|&e| (e, s.club_eid)))
-        .collect();
+    let mut club_of: std::collections::HashMap<u32, (u32, fm_save::squad::SquadKind)> =
+        std::collections::HashMap::new();
+    for s in &save.squads {
+        for &eid in &s.player_eids {
+            club_of.entry(eid).or_insert((s.club_eid, fm_save::squad::SquadKind::FirstTeam));
+        }
+    }
+    for s in &save.team_squads {
+        for &eid in &s.player_eids {
+            club_of.entry(eid).or_insert((s.club_eid, s.kind));
+        }
+    }
     save.stubs
         .iter()
         .filter_map(|s| {
-            let club_eid = club_by_member.get(&s.eid)?;
+            let &(club_eid, kind) = club_of.get(&s.eid)?;
             Some(PlayerRow {
                 id: s.offset,
                 eid: Some(s.eid),
@@ -847,7 +882,9 @@ fn stub_rows(
                 nation: String::new(),
                 positions: Vec::new(),
                 position_ratings: Vec::new(),
-                club: club_names.get(club_eid).copied().unwrap_or_default().to_owned(),
+                club: club_names.get(&club_eid).copied().unwrap_or_default().to_owned(),
+                club_eid: Some(club_eid),
+                squad_level: Some(kind.name().to_owned()),
                 female: None,
                 wage: None,
                 contract_until: String::new(),
@@ -864,8 +901,7 @@ fn stub_rows(
                 reputation: None,
                 stub: true,
                 staff_role: None,
-                // Stubs only surface through first-team squad references.
-                first_team: true,
+                first_team: kind == fm_save::squad::SquadKind::FirstTeam,
             })
         })
         .collect()
@@ -1164,18 +1200,19 @@ fn split_csv_row(line: &str) -> Vec<String> {
 pub fn export_csv(path: String, rows: Vec<PlayerRow>) -> Result<(), CommandError> {
     use std::fmt::Write as _;
 
-    let mut out = String::from("name,born,age,ability,potential,club,wage,contract_until\n");
+    let mut out = String::from("name,born,age,ability,potential,club,squad_level,wage,contract_until\n");
     for r in &rows {
         // Writing into a String cannot fail, so the result is discarded.
         let _ = writeln!(
             out,
-            "{},{},{},{},{},{},{},{}",
+            "{},{},{},{},{},{},{},{},{}",
             csv_field(&r.name),
             r.born,
             r.age.map_or(String::new(), |v| v.to_string()),
             r.ability.map_or(String::new(), |v| v.to_string()),
             r.potential.map_or(String::new(), |v| v.to_string()),
             csv_field(&r.club),
+            csv_field(r.squad_level.as_deref().unwrap_or_default()),
             r.wage.map_or(String::new(), |v| v.to_string()),
             r.contract_until,
         );

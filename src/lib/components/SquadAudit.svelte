@@ -21,7 +21,7 @@
 	let people = $state.raw<Player[]>([]);
 	$effect(() => {
 		const wanted = club.short_name;
-		void clubPeople(wanted).then((rows) => {
+		void clubPeople(wanted, club.eid).then((rows) => {
 			if (wanted === club.short_name) people = rows;
 		});
 	});
@@ -33,7 +33,10 @@
 
 	/** Jumps to the people table showing this squad, with a filter applied. */
 	function drill(patch: Parameters<typeof scout.screen>[0]) {
-		scout.screen({ query: club.short_name, ...patch }, 'age');
+		scout.screen(
+			club.eid !== null ? { clubEid: club.eid, ...patch } : { query: club.short_name, ...patch },
+			'age'
+		);
 	}
 
 	/** Scouts the whole database for a player who plays this position and beats

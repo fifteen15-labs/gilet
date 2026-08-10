@@ -35,6 +35,15 @@ pub struct Person {
     /// Entity id of the club whose first-team squad lists this person.
     /// Filled from the squad table by `Save::parse`, `None` for the unattached.
     pub club_eid: Option<u32>,
+    /// Which of the club's squad lists bound `club_eid` — first team, B team,
+    /// youth, or a senior list outside the loaded leagues standing in for a
+    /// first team the game never materialised. `None` for anyone the squad
+    /// table did not place: staff, the unattached, and B/youth-registered
+    /// people whose club came from the backroom lists instead. A person can
+    /// genuinely sit in more than one of a club's lists (a youth player also
+    /// named among the B squad); this holds whichever list is most senior,
+    /// see [`crate::squad::SquadKind::seniority`].
+    pub squad_level: Option<crate::squad::SquadKind>,
     /// Whether this person is a woman, inferred from the forename pool.
     /// `None` when the save gives no basis for the split — see
     /// [`female_forename_boundary`].
@@ -554,6 +563,7 @@ fn parse_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<(Person, u
             eid: None,
             uid: None,
             club_eid: None,
+            squad_level: None,
             female: None,
             personality,
             wage: None,
@@ -674,6 +684,7 @@ fn compact_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<Person> 
         eid: Some(eid),
         uid: Some(uid),
         club_eid: None,
+        squad_level: None,
         female: None,
         personality: None,
         wage: None,

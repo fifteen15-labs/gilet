@@ -58,6 +58,16 @@ pub struct Filters {
     pub position_tier: Option<String>,
     pub shortlist: Option<String>,
     pub nation_id: Option<u16>,
+    /// Only this club's people, by entity id rather than the label shown —
+    /// two clubs can share a short name, so filtering on the id is what tells
+    /// them apart. Covers B and youth players too, same as the `club` column.
+    pub club_eid: Option<u32>,
+    /// Only people this squad level bound: `"First Team"`, `"B Team"`,
+    /// `"Youth"` or `"Out of League"`, as [`fm_save::squad::SquadKind::name`]
+    /// names them. `None` or `"any"` for no restriction; anyone the squad
+    /// table never placed — staff, the unattached — fails any level bound
+    /// rather than passing it at "none".
+    pub squad_level: Option<String>,
     pub gender: Option<String>,
     pub contract: Option<String>,
     pub min_score: Option<f64>,
@@ -305,6 +315,16 @@ pub fn matches(
     }
     if let Some(nation) = filters.nation_id {
         if row.nation_id != Some(nation) {
+            return false;
+        }
+    }
+    if let Some(eid) = filters.club_eid {
+        if row.club_eid != Some(eid) {
+            return false;
+        }
+    }
+    if let Some(level) = filters.squad_level.as_deref() {
+        if level != "any" && row.squad_level.as_deref() != Some(level) {
             return false;
         }
     }

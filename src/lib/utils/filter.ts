@@ -42,6 +42,16 @@ export type Filters = {
 	shortlist: string | null;
 	/** Only people of this nation, by identifier. Null for any. */
 	nationId: number | null;
+	/** Only this club's people, by entity id — B and youth players included,
+	 * since they carry the club too. Two clubs can share a short name, which
+	 * is why this keys on the id rather than the label. Null for any. */
+	clubEid: number | null;
+	/** Only people this squad level bound: the first team, a B/reserve side,
+	 * the youth squad, or — for a club outside the loaded leagues — its own
+	 * senior list standing in for a first team the game never materialised.
+	 * Anyone the squad table never placed (staff, the unattached) fails any
+	 * level bound rather than passing it as "none". */
+	squadLevel: 'any' | 'First Team' | 'B Team' | 'Youth' | 'Out of League';
 	/** Restrict by gender. 'all' keeps people whose gender is unknown too. */
 	gender: 'all' | 'men' | 'women';
 	/** Contract status: free agents (no contract), or contracts expiring soon. */
@@ -101,6 +111,8 @@ export const emptyFilters: Filters = {
 	positionTier: 'natural',
 	shortlist: null,
 	nationId: null,
+	clubEid: null,
+	squadLevel: 'any',
 	gender: 'all',
 	contract: 'any',
 	minScore: null,
@@ -140,7 +152,7 @@ function describeRange(label: string, min: number | null, max: number | null): s
 
 /** Names a shortlist after the search that produced it, so a saved list says
  * what it was rather than "Shortlist 3". */
-export function describeFilters(filters: Filters, nationName?: string): string {
+export function describeFilters(filters: Filters, nationName?: string, clubName?: string): string {
 	const parts: string[] = [];
 	if (filters.kind === 'players') parts.push('Players');
 	if (filters.kind === 'staff') parts.push('Staff');
@@ -161,6 +173,8 @@ export function describeFilters(filters: Filters, nationName?: string): string {
 				: filters.position
 		);
 	if (filters.nationId !== null) parts.push(nationName ?? `nation ${filters.nationId}`);
+	if (filters.clubEid !== null) parts.push(clubName ?? `club ${filters.clubEid}`);
+	if (filters.squadLevel !== 'any') parts.push(filters.squadLevel);
 	if (filters.minScore !== null) parts.push(`score ${filters.minScore}+`);
 	if (filters.maxAge !== null) parts.push(`Under ${filters.maxAge}`);
 	const ca = describeRange('CA', filters.minAbility, filters.maxAbility);

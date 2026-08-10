@@ -24,9 +24,21 @@
 	const genderKnown = $derived(scout.summary?.gender_known ?? false);
 	const nations = $derived(scout.summary?.nations ?? []);
 	const gameLists = $derived(scout.summary?.game_shortlists ?? []);
+	/** Clubs with a validated entity id, alphabetical — what a `clubEid`
+	 * filter can actually key on. The handful without one have no id to
+	 * filter by and would only clutter the list. */
+	const clubs = $derived(
+		[...scout.clubs]
+			.filter((c) => c.eid !== null)
+			.sort((a, b) => a.short_name.localeCompare(b.short_name))
+	);
 
 	function setStaffRole(value: string) {
 		scout.filters.staffRole = value as Filters['staffRole'];
+	}
+
+	function setSquadLevel(value: string) {
+		scout.filters.squadLevel = value as Filters['squadLevel'];
 	}
 </script>
 
@@ -153,6 +165,36 @@
 				<option value={n.id}>{n.name}</option>
 			{/each}
 		</select>
+
+		{@render divider()}
+		<div class="flex items-center gap-1">
+			<select
+				bind:value={scout.filters.clubEid}
+				aria-label="Filter by club"
+				title="Only people at this club, by the save's own club identifier rather than the name shown — two clubs can share a short name. B and youth squads bind to the same club as the first team, so this is the whole academy, not just who plays on Saturday"
+				class="max-w-40 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
+					text-[var(--color-mist)] focus:border-[var(--color-hivis)] focus:outline-none"
+			>
+				<option value={null}>Any club</option>
+				{#each clubs as c (c.eid)}
+					<option value={c.eid}>{c.short_name}</option>
+				{/each}
+			</select>
+			<select
+				value={scout.filters.squadLevel}
+				aria-label="Squad level"
+				title="Which of a club's own squad lists placed this person there: the first team, a B/reserve side, the youth squad, or — for a club outside the loaded leagues — its own senior list. A person the squad table couldn't place shows under Any level only"
+				class="rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
+					text-[var(--color-mist)] focus:border-[var(--color-hivis)] focus:outline-none"
+				onchange={(event) => setSquadLevel(event.currentTarget.value)}
+			>
+				<option value="any">Any level</option>
+				<option value="First Team">First team</option>
+				<option value="B Team">B / reserve</option>
+				<option value="Youth">Youth</option>
+				<option value="Out of League">Unloaded league</option>
+			</select>
+		</div>
 
 		{#if gameLists.length > 0}
 			{@render divider()}

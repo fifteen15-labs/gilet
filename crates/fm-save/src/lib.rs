@@ -283,8 +283,14 @@ impl Save {
         if let Some(frame) = main {
             let bound: std::collections::HashSet<u32> =
                 people.iter().filter_map(|p| p.eid).collect();
+            // B, youth and out-of-league lists are just as often filled with
+            // non-contract stubs as the first team — a lower-league or youth
+            // squad with no budget leans on them harder, if anything. Reading
+            // only `squads` here dropped every stub in those lists entirely,
+            // not merely unlinked: nothing downstream ever saw their eid.
             let referenced: std::collections::HashSet<u32> = squads
                 .iter()
+                .chain(&team_squads)
                 .flat_map(|s| s.player_eids.iter().copied())
                 .collect();
             stubs = stub::scan_stubs(&frame.data)
@@ -472,6 +478,7 @@ fn link_members(people: &mut [Person], squads: &[squad::Squad], chain: &[person:
             if let Some(person) = eid_to_person.get(member).and_then(|&i| people.get_mut(i)) {
                 if person.club_eid.is_none() {
                     person.club_eid = Some(s.club_eid);
+                    person.squad_level = Some(squad::SquadKind::FirstTeam);
                 }
             }
         }
@@ -505,6 +512,12 @@ fn link_team_members(people: &mut [Person], team_squads: &[squad::Squad], chain:
     }
 
     let mut club_of: std::collections::HashMap<u32, Option<u32>> = std::collections::HashMap::new();
+    // Which list's kind is shown, when a person sits in more than one of a
+    // club's lists: the more senior one wins (B over youth, and either over
+    // an out-of-league club's own senior list stand-in). Only touched for a
+    // member whose club is not in dispute — an ambiguous club is dropped
+    // below before this map is ever read for them.
+    let mut level_of: std::collections::HashMap<u32, squad::SquadKind> = std::collections::HashMap::new();
     for s in team_squads {
         if s.kind == squad::SquadKind::OutOfLeague {
             let mut counts: std::collections::HashMap<u32, usize> = std::collections::HashMap::new();
@@ -533,6 +546,14 @@ fn link_team_members(people: &mut [Person], team_squads: &[squad::Squad], chain:
                     }
                 })
                 .or_insert(Some(s.club_eid));
+            level_of
+                .entry(*member)
+                .and_modify(|k| {
+                    if s.kind.seniority() > k.seniority() {
+                        *k = s.kind;
+                    }
+                })
+                .or_insert(s.kind);
         }
     }
 
@@ -541,6 +562,7 @@ fn link_team_members(people: &mut [Person], team_squads: &[squad::Squad], chain:
         if let Some(person) = eid_to_person.get(&member).and_then(|&i| people.get_mut(i)) {
             if person.club_eid.is_none() {
                 person.club_eid = Some(club);
+                person.squad_level = level_of.get(&member).copied();
             }
         }
     }

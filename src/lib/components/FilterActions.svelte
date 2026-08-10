@@ -30,6 +30,7 @@
 	);
 	const nations = $derived(scout.summary?.nations ?? []);
 	const nationName = $derived(nations.find((n) => n.id === scout.filters.nationId)?.name);
+	const clubName = $derived(scout.clubs.find((c) => c.eid === scout.filters.clubEid)?.short_name);
 	const resultCount = $derived(scout.total);
 
 	async function submitPreset(event: SubmitEvent) {
@@ -121,9 +122,9 @@
 			class="text-xs text-[var(--color-faint)] hover:text-[var(--color-mist)]
 				disabled:cursor-not-allowed disabled:opacity-40"
 			disabled={!filtered}
-			title={filtered ? `Save "${describeFilters(scout.filters, nationName)}"` : 'Set a filter first'}
+			title={filtered ? `Save "${describeFilters(scout.filters, nationName, clubName)}"` : 'Set a filter first'}
 			onclick={() => {
-				presetName = describeFilters(scout.filters, nationName);
+				presetName = describeFilters(scout.filters, nationName, clubName);
 				savingPreset = true;
 			}}
 		>

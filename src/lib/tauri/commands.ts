@@ -63,9 +63,19 @@ export type Player = {
 	/** Short name of the club whose squad lists this person; empty when
 	 * unattached. Covers B and youth players, not only the first team. */
 	club: string;
+	/** The club's entity id, alongside `club`. Two clubs can share a short
+	 * name, so a club filter keys on this rather than the label. Null
+	 * alongside an unattached `club`, and for the rare club with no
+	 * validated entity head. */
+	club_eid: number | null;
 	/** Whether a first-team squad list carries this person. False for B and
 	 * youth players, staff and the unattached. */
 	first_team: boolean;
+	/** Which of the club's own squad lists placed this person there:
+	 * 'First Team', 'B Team', 'Youth', or 'Out of League' for a club outside
+	 * the loaded leagues. Null for staff, the unattached, and anyone whose
+	 * club came from the backroom lists rather than a squad one. */
+	squad_level: string | null;
 	/** Whether this person is a woman; null when the save can't say. */
 	female: boolean | null;
 	/** Weekly wage in the save's display currency. Null when out of contract. */
@@ -320,10 +330,12 @@ export function playerByName(name: string): Promise<Player | null> {
 	return invoke<Player | null>('player_by_name', { name });
 }
 
-/** Everyone whose club label matches a short name, for the squad and
- * backroom audits. Tens of rows, not thousands. */
-export function clubPeople(shortName: string): Promise<Player[]> {
-	return invoke<Player[]>('club_people', { shortName });
+/** Everyone at one club, for the squad and backroom audits. Tens of rows, not
+ * thousands. Matched by entity id when the club has one — two clubs can share
+ * a short name, most often a men's and women's side — falling back to the
+ * name only for the rare club whose record head never resolved one. */
+export function clubPeople(shortName: string, eid: number | null): Promise<Player[]> {
+	return invoke<Player[]>('club_people', { shortName, eid });
 }
 
 export function exportCsv(path: string, rows: Player[]): Promise<void> {

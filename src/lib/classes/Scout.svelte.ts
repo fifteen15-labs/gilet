@@ -192,11 +192,11 @@ class Scout {
 	}
 
 	/** Lists my club's players in the table, sorted by ability — the "show my
-	 * squad" shortcut. Keys on the club's short name, which the search matches
-	 * against each row's club. */
+	 * squad" shortcut. Keys on the club's entity id, so it cannot pool with
+	 * another club sharing the same short name. */
 	showMySquad(): void {
 		const mine = this.activeMyClub;
-		if (mine) this.screen({ kind: 'players', query: mine.shortName }, 'ability');
+		if (mine) this.screen({ kind: 'players', clubEid: mine.eid }, 'ability');
 	}
 
 	/** Opens my club's squad audit, where cover-by-position shows where the
@@ -388,10 +388,15 @@ class Scout {
 		this.comparing = false;
 	}
 
-	/** Jumps to the people table filtered to one club's squad. The query
-	 * matches club names, so the club's short name is the whole filter. */
-	showSquad(shortName: string): void {
-		this.filters = { ...emptyFilters, query: shortName };
+	/** Jumps to the people table filtered to one club's squad, by entity id —
+	 * a name filter would also catch another club sharing the short name.
+	 * Falls back to a name filter only for the rare club with no validated
+	 * entity id, which is the one case a name filter cannot get wrong twice. */
+	showSquad(club: { eid: number | null; shortName: string }): void {
+		this.filters =
+			club.eid !== null
+				? { ...emptyFilters, clubEid: club.eid }
+				: { ...emptyFilters, query: club.shortName };
 		this.tab = 'people';
 		this.select(null);
 	}

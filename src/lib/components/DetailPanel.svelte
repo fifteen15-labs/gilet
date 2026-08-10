@@ -81,7 +81,17 @@
 					</div>
 					<div>
 						<dt class="eyebrow">Club</dt>
-						<dd class="text-sm text-[var(--color-bright)]">{player.club || '—'}</dd>
+						<dd class="text-sm text-[var(--color-bright)]">
+							{player.club || '—'}
+							{#if player.squad_level && player.squad_level !== 'First Team'}
+								<span
+									class="text-[var(--color-faint)]"
+									title="Bound through the club's {player.squad_level} list, not the first team"
+								>
+									· {player.squad_level}
+								</span>
+							{/if}
+						</dd>
 					</div>
 					{#if player.wage !== null}
 						<div>
@@ -371,7 +381,7 @@
 					type="button"
 					class="mt-5 w-full rounded-[2px] border border-[var(--color-line)] py-1.5 text-xs text-[var(--color-mist)]
 						transition-colors hover:border-[var(--color-hivis)] hover:text-[var(--color-hivis)]"
-					onclick={() => scout.showSquad(club.short_name)}
+					onclick={() => scout.showSquad({ eid: club.eid, shortName: club.short_name })}
 				>
 					Show squad
 				</button>

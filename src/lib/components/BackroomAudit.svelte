@@ -22,7 +22,7 @@
 	let people = $state.raw<Player[]>([]);
 	$effect(() => {
 		const wanted = club.short_name;
-		void clubPeople(wanted).then((rows) => {
+		void clubPeople(wanted, club.eid).then((rows) => {
 			if (wanted === club.short_name) people = rows;
 		});
 	});
@@ -31,7 +31,12 @@
 
 	/** Jumps to the people table showing this club's staff, by department. */
 	function drill(role: Filters['staffRole']) {
-		scout.screen({ query: club.short_name, kind: 'staff', staffRole: role }, 'ability');
+		scout.screen(
+			club.eid !== null
+				? { clubEid: club.eid, kind: 'staff', staffRole: role }
+				: { query: club.short_name, kind: 'staff', staffRole: role },
+			'ability'
+		);
 	}
 </script>
 

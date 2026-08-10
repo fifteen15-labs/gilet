@@ -942,6 +942,21 @@ club by its first-team list, and the players actually at the club are
 exactly the ones no other list knows. `regscan.rs` reproduces the whole
 diagnosis; `teambound.rs` prints what the pass binds on any save.
 
+**Which list bound a person is now kept, not just the club it named**
+(10 August 2026). `Squad::kind` was already parsed but stopped at the squad
+struct; `Person::squad_level` carries the same `SquadKind` onto the person it
+bound, set alongside `club_eid` in `link_members` (first team) and
+`link_team_members` (B/youth/out-of-league). Someone can genuinely sit in more
+than one of a club's own lists — a youth player also named in the B squad is
+normal, not a conflict the way two *different* clubs claiming someone is — so
+where more than one kind matches, `SquadKind::seniority` keeps the most senior
+one (B over youth; out-of-league, standing in for a first team the game never
+materialised, over both) rather than picking arbitrarily. The UI sends it as
+`squad_level` on `PlayerRow` (`"First Team"` / `"B Team"` / `"Youth"` /
+`"Out of League"`), a filterable column and the club/team screener's second
+axis alongside the new `club_eid`-keyed club filter (`search.rs`,
+`FilterWho.svelte`).
+
 ## 6d-bis. Stub people — squad fillers without person records
 
 Squad lists can reference entity ids that no person record answers to. Those
@@ -966,6 +981,14 @@ at +28 is age-shaped (20-22 for known senior fillers) and the u32 at +29
 resolves in all three name pools at once — overlapping id spaces make that
 ambiguous, so no name is shown. FM displays real generated names for these
 players, so the ids exist somewhere; finding the name link is open.
+
+**The referenced-eid check only looked at `Save::squads` until 10 August
+2026** — first-team lists only, not `Save::team_squads`. A B or youth squad
+leans on non-contract fillers at least as hard as the first team, so every
+stub in one of those lists was invisible twice over: not merely unlinked, but
+never entered into `Save::stubs` at all, since nothing in the whole parse ever
+read its eid as "referenced". `Save::parse`'s stub pass now unions both
+tables before filtering.
 
 ## 6d-ter. Compact people — folded out of the loaded world, SOLVED
 

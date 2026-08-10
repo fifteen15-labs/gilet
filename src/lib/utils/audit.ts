@@ -54,10 +54,17 @@ export type SquadAudit = {
 	gaps: string[];
 };
 
-/** The squad as the loaded people describe it. Clubs are matched on short name
- * because that is the link the person records carry; two clubs sharing one
- * short name would pool, which is why the count is shown against the club's
- * own squad size rather than presented as gospel.
+/** Whether a person belongs to this club. Matched on entity id when both sides
+ * have one — two club entities can share a short name (most often a men's and
+ * women's side), which would pool their squads under a name match — falling
+ * back to the short name only for the rare club whose record head never
+ * validated an id. */
+function atClub(club: Club, player: Player): boolean {
+	if (club.eid !== null && player.club_eid !== null) return player.club_eid === club.eid;
+	return player.club === club.short_name;
+}
+
+/** The squad as the loaded people describe it.
  *
  * Staff are bound to their club too (`backroom.rs`), so the squad is the
  * playing side only — a club's coaches are not part of its age profile. And
@@ -65,13 +72,13 @@ export type SquadAudit = {
  * the audit keys on the first-team flag: a first-team age profile diluted by
  * sixteen-year-old intakes reads younger than the team that plays. */
 export function squadOf(club: Club, players: readonly Player[]): Player[] {
-	return players.filter((p) => p.club === club.short_name && p.is_player && p.first_team);
+	return players.filter((p) => atClub(club, p) && p.is_player && p.first_team);
 }
 
 /** The people the save employs at this club who are not players: the manager
  * from the roster seat, and the three department lists. */
 export function backroomOf(club: Club, players: readonly Player[]): Player[] {
-	return players.filter((p) => p.club === club.short_name && !p.is_player);
+	return players.filter((p) => atClub(club, p) && !p.is_player);
 }
 
 /** Mean of the values that exist, rounded to one place. Null when there are

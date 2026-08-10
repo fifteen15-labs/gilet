@@ -54,6 +54,39 @@ pub enum SquadKind {
     OutOfLeague,
 }
 
+impl SquadKind {
+    /// The label the UI shows, and what a squad-level filter matches on.
+    #[must_use]
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::FirstTeam => "First Team",
+            Self::BTeam => "B Team",
+            Self::Youth => "Youth",
+            Self::OutOfLeague => "Out of League",
+        }
+    }
+
+    /// How senior this kind is among a club's *other* squads — [`BTeam`] and
+    /// [`Youth`], plus [`OutOfLeague`] standing in for a first team the loaded
+    /// leagues never materialise. Higher is more senior. Used only to pick one
+    /// label when a person sits in more than one of a club's lists (a B and a
+    /// youth registration both binding is normal); it never decides *whether*
+    /// a person binds, only which list's kind is shown for them.
+    ///
+    /// [`BTeam`]: Self::BTeam
+    /// [`Youth`]: Self::Youth
+    /// [`OutOfLeague`]: Self::OutOfLeague
+    #[must_use]
+    pub(crate) fn seniority(self) -> u8 {
+        match self {
+            Self::FirstTeam => 3,
+            Self::OutOfLeague => 2,
+            Self::BTeam => 1,
+            Self::Youth => 0,
+        }
+    }
+}
+
 /// Longest squad list a record may declare. Real first-team squads top out in
 /// the forties; anything larger is a misread count.
 const MAX_SQUAD: usize = 80;
