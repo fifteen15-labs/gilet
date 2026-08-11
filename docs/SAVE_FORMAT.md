@@ -968,6 +968,16 @@ squad's members are precisely the people no loaded list knows, and B/youth
 lists are exempt because their known members are loanees, who genuinely
 point elsewhere.
 
+**The refused rows are read on their own as the international signal**
+(11 August 2026, `squad.rs::scan_representative_squads`): the 0x64 rows
+with bit 0x20 set are the national selections themselves, validated by the
+same table-wide ordinal spine, and a person their list names gets
+`Person::in_national_squad`. Day One holds 785 such rows naming 11,525
+people — Saka, Haaland and van Dijk marked, the uncapped Ethan Mbappé not.
+No club binding comes from them; the mark is the entire effect. A men's
+row's key eid is the nation id itself; a women's row's eid (261+) is a
+team entity whose nation mapping is still open.
+
 The lists are where the missing players live: **22,495 players bind outside
 the first-team lists on the 2035 index save** (15,788 from B/youth, the
 rest senior out-of-league), 5,950 of the senior bindings with *zero*

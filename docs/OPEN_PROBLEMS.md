@@ -79,8 +79,17 @@ squad-referenced, so the residuals below are untouched by the fix.
    neighbour's list. The nation-team rows are real, though: national
    selections sit in the same table as 0x64 rows keyed by *nation-team
    entities* (South Korea at 79, uid 134), whose ids collide with small
-   club eids; they are excluded from binding and would be the road to an
-   "in the national setup" signal.
+   club eids; they are excluded from binding. **The "in the national
+   setup" signal shipped 11 August 2026**
+   (`squad.rs::scan_representative_squads`, `Person::in_national_squad`):
+   the representative rows read on their own, validated by the same
+   ordinal spine, mark 11,525 people on Day One across 785 selections —
+   Saka, Haaland and van Dijk in, the uncapped Ethan Mbappé out
+   (`real_save.rs::national_squad_lists_mark_their_members`, probe:
+   `examples/natwho.rs`). Shown beside the nation in the panel, filtered
+   by the International toggle. Still open here: naming *which* nation a
+   women's side's eid (261+) maps to — men's eids are the nation id
+   itself.
 
    **Senior out-of-league squads are bound too on aged saves** (same day,
    second pass): 0x64 rows whose uid the club table does not carry, accepted

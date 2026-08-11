@@ -37,11 +37,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             if p.club_eid != Some(club_eid) {
                 continue;
             }
-            match p.staff_role {
-                Some(r @ (fm_save::backroom::Role::DirectorOfFootball | fm_save::backroom::Role::Board)) => {
-                    println!("  {:22} {} (eid {:?})", r.name(), p.full_name, p.eid);
-                }
-                _ => {}
+            if let Some(
+                r @ (fm_save::backroom::Role::DirectorOfFootball | fm_save::backroom::Role::Board),
+            ) = p.staff_role
+            {
+                println!("  {:22} {} (eid {:?})", r.name(), p.full_name, p.eid);
             }
         }
     }

@@ -501,6 +501,36 @@ fn common_names_resolve_to_display_names() {
     );
 }
 
+/// The representative rows the club walk refuses are the international
+/// signal: a person a national side's list names is in that setup. Day One
+/// anchors: Saka, Haaland and van Dijk are all in their nations' selections;
+/// Ethan Mbappé — a real player, uncapped — is in none.
+#[test]
+fn national_squad_lists_mark_their_members() {
+    let Some(save) = load_named("Day One.fm") else {
+        eprintln!("skipped: no Day One.fm on this machine");
+        return;
+    };
+
+    let marked = |name: &str| {
+        save.people
+            .iter()
+            .find(|p| p.full_name == name)
+            .unwrap_or_else(|| panic!("{name} missing from the people table"))
+            .in_national_squad
+    };
+    assert!(marked("Bukayo Ayoyinka Saka"), "Saka is in England's squad");
+    assert!(marked("Erling Braut Haaland"), "Haaland is in Norway's");
+    assert!(marked("Virgil van Dijk"), "van Dijk is in the Netherlands'");
+    assert!(!marked("Ethan Mbappé Lottin"), "Ethan Mbappé is uncapped");
+
+    let total = save.people.iter().filter(|p| p.in_national_squad).count();
+    assert!(
+        (5_000..30_000).contains(&total),
+        "the mark should cover the international population, got {total}"
+    );
+}
+
 /// The boardroom run after the club's short name binds the director of
 /// football seat and the board (`SAVE_FORMAT.md` §4). Day One anchors are
 /// the real-world people: Richard Hughes as Liverpool's sporting director

@@ -76,6 +76,10 @@ export type Filters = {
 	/** Filter on the scout's red flags: 'clean' keeps only players the save can
 	 * vouch for, 'flagged' keeps only the ones carrying at least one risk. */
 	risk: 'any' | 'clean' | 'flagged';
+	/** International standing from the save's own national squad lists: 'in'
+	 * keeps people a selection names, 'out' those none does — which is no
+	 * decoded selection, not proof of being uncapped. */
+	international: 'any' | 'in' | 'out';
 	/** Highest weekly wage, in the save's display currency. The bargain
 	 * board's lever. Null for any. */
 	maxWage: number | null;
@@ -127,6 +131,7 @@ export const emptyFilters: Filters = {
 	expiryCutoff: null,
 	minHeadroom: null,
 	risk: 'any',
+	international: 'any',
 	maxWage: null,
 	minVersatility: null,
 	minPositions: null,
@@ -172,6 +177,8 @@ export function describeFilters(filters: Filters, nationName?: string, clubName?
 	if (filters.contract === 'expiring') parts.push('Expiring contracts');
 	if (filters.risk === 'clean') parts.push('No red flags');
 	if (filters.risk === 'flagged') parts.push('Red flags');
+	if (filters.international === 'in') parts.push('In a national squad');
+	if (filters.international === 'out') parts.push('No national squad');
 	if (filters.shortlist !== null)
 		parts.push(`on ${filters.shortlist === '' ? '(unnamed)' : filters.shortlist}`);
 	if (filters.position !== null)

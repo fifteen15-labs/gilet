@@ -1,4 +1,4 @@
-//! Counts the contract shapes OPEN_PROBLEMS §1.5 says read as junk — wage 0
+//! Counts the contract shapes `OPEN_PROBLEMS` §1.5 says read as junk — wage 0
 //! expiring 2 January 1900 — to see whether the year bound and the
 //! zero-wage sentinel skip already retired the problem.
 //!

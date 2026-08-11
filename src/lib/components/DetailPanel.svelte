@@ -77,6 +77,14 @@
 						<dt class="eyebrow">Nation</dt>
 						<dd class="text-sm text-[var(--color-bright)]" title="Identifier {player.nation_id}">
 							{player.nation || `#${player.nation_id}`}
+							{#if player.in_national_squad}
+								<span
+									class="text-[var(--color-signal)]"
+									title="A national side's squad list in the save names this person — the save's own selection, not Gilet's guess"
+								>
+									· International
+								</span>
+							{/if}
 						</dd>
 					</div>
 					<div>

@@ -110,9 +110,14 @@ export type Player = {
 	 * person record. Name, age and attributes are undecoded, not absent. */
 	stub: boolean;
 	/** The person's decoded place in a club's backroom: "Manager",
-	 * "Coaching", "Medical" or "Recruitment". Null for players, the
-	 * unemployed, and staff the save gives no department for. */
+	 * "Director of Football", "Board", "Coaching", "Medical" or
+	 * "Recruitment". Null for players, the unemployed, and staff the save
+	 * gives no department for. */
 	staff_role: string | null;
+	/** Whether a national side's squad list in the save names this person.
+	 * False is "no decoded selection names them", not proof of being
+	 * uncapped — the save only materialises selections it has needed. */
+	in_national_squad: boolean;
 };
 
 export type Club = {

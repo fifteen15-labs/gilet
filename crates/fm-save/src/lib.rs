@@ -225,6 +225,12 @@ impl Save {
                 // never materialise.
                 let ordinals = squad::employer_ordinals(&frame.data, &club_ids, &squads);
                 person::link_employers(&frame.data, &mut people, &ordinals);
+
+                // The representative rows every club pass refuses are the
+                // international signal, read on their own: a person a
+                // national side's list names is in that setup. No club
+                // binding — only the mark.
+                mark_national_squads(&frame.data, &mut people);
             }
 
             // Non-player sheets sit on the entity object one eid below the
@@ -415,6 +421,26 @@ fn bind_staff_sheets(people: &mut [Person], sheets: Vec<staff::Staff>) {
     for person in people.iter_mut() {
         if let Some(sheet) = person.eid.and_then(|e| by_eid.remove(&e)) {
             person.staff = Some(sheet);
+        }
+    }
+}
+
+/// Marks each person a representative row's squad list names — the
+/// national-side rows of the squad table, men's at nation eids 1..250 and
+/// women's from 261 up. `in_national_squad` is the only effect: these rows
+/// never bind a club, and a person no list names keeps `false`, which the
+/// UI must present as "no decoded selection", not "uncapped".
+fn mark_national_squads(frame: &[u8], people: &mut [Person]) {
+    let by_eid: std::collections::HashMap<u32, usize> = people
+        .iter()
+        .enumerate()
+        .filter_map(|(i, p)| Some((p.eid?, i)))
+        .collect();
+    for squad in squad::scan_representative_squads(frame) {
+        for member in &squad.player_eids {
+            if let Some(person) = by_eid.get(member).and_then(|&i| people.get_mut(i)) {
+                person.in_national_squad = true;
+            }
         }
     }
 }

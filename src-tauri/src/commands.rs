@@ -81,6 +81,10 @@ pub fn default_locations(app: tauri::AppHandle) -> Locations {
 ///
 /// `ability` and `potential` are `Option` because only players carry an
 /// attribute block; staff have none, which is what distinguishes the two.
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "a serialization row: each bool is an independent decoded fact, not a state machine"
+)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayerRow {
     /// Byte offset of the record, stable within one save and used as the row key.
@@ -165,10 +169,15 @@ pub struct PlayerRow {
     /// are not decoded, and the row says so rather than vanishing.
     pub stub: bool,
     /// The person's decoded place in a club's backroom — "Manager" from the
-    /// roster table's seat, or "Coaching" / "Medical" / "Recruitment" from
-    /// the department staff lists. `None` for players, the unemployed, and
+    /// roster table's seat, "Director of Football" or "Board" from the
+    /// boardroom run, or "Coaching" / "Medical" / "Recruitment" from the
+    /// department staff lists. `None` for players, the unemployed, and
     /// staff bound outside the department triple.
     pub staff_role: Option<String>,
+    /// Whether a national side's squad list names this person. False is
+    /// "no decoded selection names them", not proof of being uncapped —
+    /// the save only materialises the selections it has needed.
+    pub in_national_squad: bool,
 }
 
 /// A person's three game reputations, 0-200 as the editor stores them.
@@ -837,6 +846,7 @@ fn person_row(
         controversy: p.controversy(),
         stub: false,
         staff_role: p.staff_role.map(|r| r.name().to_owned()),
+        in_national_squad: p.in_national_squad,
     }
 }
 
@@ -901,6 +911,7 @@ fn stub_rows(
                 reputation: None,
                 stub: true,
                 staff_role: None,
+                in_national_squad: false,
                 first_team: kind == fm_save::squad::SquadKind::FirstTeam,
             })
         })

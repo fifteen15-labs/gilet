@@ -92,6 +92,12 @@ pub struct Person {
     /// the unemployed, and anyone bound through a list outside the
     /// department triple.
     pub staff_role: Option<crate::backroom::Role>,
+    /// Whether a national side's squad list names this person — the
+    /// representative rows of the squad table
+    /// ([`crate::squad::scan_representative_squads`]). `false` means no
+    /// decoded list names them, which is not proof they are uncapped: the
+    /// save only materialises the selections it has needed so far.
+    pub in_national_squad: bool,
 }
 
 /// A person's three game reputations, on the editor's raw 0-200 scale — the
@@ -594,6 +600,7 @@ fn parse_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<(Person, u
             reputation: None,
             compact: false,
             staff_role: None,
+            in_national_squad: false,
         },
         body + 4,
     ))
@@ -718,6 +725,7 @@ fn compact_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<Person> 
         reputation: None,
         compact: true,
         staff_role: None,
+        in_national_squad: false,
     })
 }
 

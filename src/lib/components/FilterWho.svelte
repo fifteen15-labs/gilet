@@ -288,6 +288,19 @@
 				>
 					Red flags
 				</button>
+				<button
+					type="button"
+					class="rounded-[2px] border px-2 py-1 text-xs transition-colors
+						{scout.filters.international === 'in'
+						? 'border-[var(--color-hivis)] text-[var(--color-hivis)]'
+						: 'border-[var(--color-line)] text-[var(--color-mist)] hover:border-[var(--color-faint)]'}"
+					aria-pressed={scout.filters.international === 'in'}
+					title="Only people a national side's squad list in the save names — the save's own selections, men's and women's. Nobody outside a decoded list matches, which is not the same as being uncapped."
+					onclick={() =>
+						(scout.filters.international = scout.filters.international === 'in' ? 'any' : 'in')}
+				>
+					International
+				</button>
 			</div>
 		{/if}
 	{/if}

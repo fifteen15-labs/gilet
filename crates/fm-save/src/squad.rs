@@ -221,10 +221,115 @@ pub fn scan_squads(frame: &[u8], club_ids: &[(u32, u32)]) -> Vec<Squad> {
 pub fn scan_team_squads(frame: &[u8], club_ids: &[(u32, u32)]) -> Vec<Squad> {
     let by_eid: HashMap<u32, u32> = club_ids.iter().copied().collect();
 
-    // One walk collects every head (as record bounds) and the rows worth
-    // reading.
+    let (bounds, raw) = walk_table(frame);
+    let rows: Vec<(usize, u32, u32, SquadKind)> = raw
+        .iter()
+        .filter_map(|r| {
+            let kind = match r.ty {
+                TEAM_TYPE_B => Some(SquadKind::BTeam),
+                TEAM_TYPE_U21 => Some(SquadKind::Under21),
+                TEAM_TYPE_YOUTH => Some(SquadKind::Youth),
+                TEAM_TYPE_SENIOR if r.flag & REPRESENTATIVE_FLAG == 0 => {
+                    Some(SquadKind::OutOfLeague)
+                }
+                _ => None,
+            }?;
+            (r.eid >= MIN_TEAM_CLUB_EID
+                && by_eid.get(&r.eid).is_some_and(|&club_uid| club_uid != r.uid))
+            .then_some((r.offset, r.eid, r.ordinal, kind))
+        })
+        .collect();
+
+    // The spine: longest ascending run of ordinals.
+    let indexed: Vec<(usize, u32)> = rows.iter().map(|&(_, _, ord, _)| ord).enumerate().collect();
+    let spine = longest_ascending_run(&indexed);
+
+    let mut out = Vec::new();
+    for &(row, _) in &spine {
+        let Some(&(offset, club_eid, ordinal, kind)) = rows.get(row) else {
+            continue;
+        };
+        let (player_eids, captain_eid, vice_captain_eid) =
+            read_bounded_list(frame, &bounds, offset);
+        if player_eids.is_empty() {
+            continue;
+        }
+        out.push(Squad {
+            offset,
+            club_eid,
+            player_eids,
+            captain_eid,
+            vice_captain_eid,
+            kind,
+            ordinal,
+        });
+    }
+    out
+}
+
+/// A national side's squad list: the players a representative row names.
+///
+/// Representative rows are the 0x64-typed rows whose separator flag carries
+/// bit 0x20 — the rows [`scan_team_squads`] must refuse so South Korea's
+/// selection does not become a small club's first team. Read on their own
+/// they are the *international* signal: men's sides sit at nation eids
+/// 1..250, women's from 261 up. Nothing here binds a club; the caller marks
+/// people as squad members and no more.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RepresentativeSquad {
+    /// The team entity keying the row — the nation id itself for men's
+    /// sides, an unmapped entity for women's.
+    pub team_eid: u32,
+    /// The members' person eids.
+    pub player_eids: Vec<u32>,
+}
+
+/// Scans the squad table for national-side rows, validated by the same
+/// table-wide ascending ordinal that proves club rows real.
+#[must_use]
+pub fn scan_representative_squads(frame: &[u8]) -> Vec<RepresentativeSquad> {
+    let (bounds, raw) = walk_table(frame);
+    let rows: Vec<(usize, u32, u32)> = raw
+        .iter()
+        .filter(|r| r.ty == TEAM_TYPE_SENIOR && r.flag & REPRESENTATIVE_FLAG != 0)
+        .map(|r| (r.offset, r.eid, r.ordinal))
+        .collect();
+
+    let indexed: Vec<(usize, u32)> = rows.iter().map(|&(_, _, ord)| ord).enumerate().collect();
+    let spine = longest_ascending_run(&indexed);
+
+    let mut out = Vec::new();
+    for &(row, _) in &spine {
+        let Some(&(offset, team_eid, _)) = rows.get(row) else {
+            continue;
+        };
+        let (player_eids, _, _) = read_bounded_list(frame, &bounds, offset);
+        if player_eids.is_empty() {
+            continue;
+        }
+        out.push(RepresentativeSquad { team_eid, player_eids });
+    }
+    out
+}
+
+/// One squad-table row as the walk reads it, before any kind or ownership
+/// decision.
+struct RawRow {
+    offset: usize,
+    eid: u32,
+    ordinal: u32,
+    uid: u32,
+    ty: u8,
+    flag: u8,
+}
+
+/// Walks the squad table once, collecting every separator-anchored head —
+/// the record bounds every reader needs, since an unbounded list hunt reads
+/// through empty records into a neighbour's list — and each row's raw
+/// fields.
+fn walk_table(frame: &[u8]) -> (Vec<usize>, Vec<RawRow>) {
     let mut bounds: Vec<usize> = Vec::new();
-    let mut rows: Vec<(usize, u32, u32, SquadKind)> = Vec::new();
+    let mut rows: Vec<RawRow> = Vec::new();
     let mut at = 3usize;
     while at + 26 <= frame.len() {
         if frame.get(at + 4..at + 14) != Some(&[0u8; 10][..]) {
@@ -244,55 +349,33 @@ pub fn scan_team_squads(frame: &[u8], club_ids: &[(u32, u32)]) -> Vec<Squad> {
             continue;
         };
         bounds.push(at);
-        let ty = frame.get(at.wrapping_sub(3)).copied().unwrap_or(0);
-        let flag = frame.get(at.wrapping_sub(1)).copied().unwrap_or(0);
-        let kind = match ty {
-            TEAM_TYPE_B => Some(SquadKind::BTeam),
-            TEAM_TYPE_U21 => Some(SquadKind::Under21),
-            TEAM_TYPE_YOUTH => Some(SquadKind::Youth),
-            TEAM_TYPE_SENIOR if flag & REPRESENTATIVE_FLAG == 0 => Some(SquadKind::OutOfLeague),
-            _ => None,
-        };
-        if let Some(kind) = kind {
-            if eid >= MIN_TEAM_CLUB_EID
-                && by_eid.get(&eid).is_some_and(|&club_uid| club_uid != uid)
-            {
-                rows.push((at, eid, ordinal, kind));
-            }
-        }
+        rows.push(RawRow {
+            offset: at,
+            eid,
+            ordinal,
+            uid,
+            ty: frame.get(at.wrapping_sub(3)).copied().unwrap_or(0),
+            flag: frame.get(at.wrapping_sub(1)).copied().unwrap_or(0),
+        });
         at += 26;
     }
+    (bounds, rows)
+}
 
-    // The spine: longest ascending run of ordinals.
-    let indexed: Vec<(usize, u32)> = rows.iter().map(|&(_, _, ord, _)| ord).enumerate().collect();
-    let spine = longest_ascending_run(&indexed);
-
-    let mut out = Vec::new();
-    for &(row, _) in &spine {
-        let Some(&(offset, club_eid, ordinal, kind)) = rows.get(row) else {
-            continue;
-        };
-        let next = bounds.partition_point(|&o| o <= offset);
-        let end = bounds
-            .get(next)
-            .copied()
-            .unwrap_or(frame.len())
-            .min(offset + MAX_RECORD);
-        let (player_eids, captain_eid, vice_captain_eid) = read_list(frame, offset + 26, end);
-        if player_eids.is_empty() {
-            continue;
-        }
-        out.push(Squad {
-            offset,
-            club_eid,
-            player_eids,
-            captain_eid,
-            vice_captain_eid,
-            kind,
-            ordinal,
-        });
-    }
-    out
+/// Reads the player list of the record at `offset`, bounded by the next
+/// head so an empty record cannot read into its neighbour's list.
+fn read_bounded_list(
+    frame: &[u8],
+    bounds: &[usize],
+    offset: usize,
+) -> (Vec<u32>, Option<u32>, Option<u32>) {
+    let next = bounds.partition_point(|&o| o <= offset);
+    let end = bounds
+        .get(next)
+        .copied()
+        .unwrap_or(frame.len())
+        .min(offset + MAX_RECORD);
+    read_list(frame, offset + 26, end)
 }
 
 /// Maps each squad-table row's **ordinal** to the club eid that keys the row.
@@ -746,6 +829,30 @@ mod tests {
         let clubs = [(4321u32, 8765u32)];
         let buf = team_record_flagged(0x64, 0x24, 4321, 30_000, 0x7741_0001, Some(&[100, 200, 300]));
         assert!(scan_team_squads(&buf, &clubs).is_empty());
+    }
+
+    #[test]
+    fn a_representative_row_reads_as_a_national_squad() {
+        // The row the club walk refuses is exactly the one the international
+        // signal reads: South Korea's real key, eid 79.
+        let buf = team_record_flagged(0x64, 0x24, 79, 30_000, 134, Some(&[100, 200, 300]));
+        let found = scan_representative_squads(&buf);
+        assert_eq!(found.len(), 1);
+        assert_eq!(found.first().unwrap().team_eid, 79);
+        assert_eq!(found.first().unwrap().player_eids, vec![100, 200, 300]);
+    }
+
+    #[test]
+    fn a_club_row_is_not_a_national_squad() {
+        // Flag bit clear = a club's row, whichever way it binds; the
+        // international signal must not claim it.
+        let buf = team_record_flagged(0x64, 0x00, 4321, 30_000, 0x7741_0001, Some(&[100, 200, 300]));
+        assert!(scan_representative_squads(&buf).is_empty());
+
+        // A B row's flag legitimately carries the bit; only 0x64 rows are
+        // representative sides.
+        let buf = team_record_flagged(0x13, 0x34, 4321, 30_000, 0x7741_0001, Some(&[100, 200]));
+        assert!(scan_representative_squads(&buf).is_empty());
     }
 
     #[test]

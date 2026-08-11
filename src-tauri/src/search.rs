@@ -86,6 +86,11 @@ pub struct Filters {
     /// Positions the active tactic asks for. A row passes when it plays any of
     /// them, at the tier `position_tier` sets — the "fit my tactic" search.
     pub tactic_positions: Option<Vec<String>>,
+    /// International standing from the save's representative squad lists:
+    /// `"in"` keeps only people a national side's list names, `"out"` only
+    /// those no decoded list names — which is not proof of being uncapped,
+    /// only of no materialised selection, and the UI says so.
+    pub international: Option<String>,
 }
 
 /// One page of results: the true total, the rows the table renders, and each
@@ -438,6 +443,11 @@ pub fn matches(
     match filters.risk.as_deref() {
         Some("clean") if !has_flag_data(row) || risk_count(row) > 0 => return false,
         Some("flagged") if !has_flag_data(row) || risk_count(row) == 0 => return false,
+        _ => {}
+    }
+    match filters.international.as_deref() {
+        Some("in") if !row.in_national_squad => return false,
+        Some("out") if row.in_national_squad => return false,
         _ => {}
     }
     let query = filters.query.trim();
