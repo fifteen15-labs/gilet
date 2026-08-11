@@ -27,9 +27,17 @@ export type Filters = {
 	maxPotential: number | null;
 	/** Restrict to players or to staff. Players are the ones with ability data. */
 	kind: 'all' | 'players' | 'staff';
-	/** Only staff in this backroom role — the manager seat or a department.
-	 * An unknown role fails the filter: the save not saying is not a match. */
-	staffRole: 'any' | 'Manager' | 'Coaching' | 'Medical' | 'Recruitment';
+	/** Only staff in this backroom role — the manager seat, the boardroom
+	 * seats, or a department. An unknown role fails the filter: the save not
+	 * saying is not a match. */
+	staffRole:
+		| 'any'
+		| 'Manager'
+		| 'Director of Football'
+		| 'Board'
+		| 'Coaching'
+		| 'Medical'
+		| 'Recruitment';
 	/** Only players comfortable in this position, e.g. "ST". Null for any. */
 	position: string | null;
 	/** Which rating counts as playing there: `natural` (15+, their own

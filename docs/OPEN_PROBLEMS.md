@@ -1022,9 +1022,13 @@ right after the club's short name — long dismissed as "not teams" — is
 `01 [u16] [DoF person eid] [flag] [count] [board person eids] 01`.
 Real-world check on the 2035 save: Leca as Lens' sporting director with
 owner Oughourlian on the board, Viana at City, Hughes at Liverpool,
-Cavenagh chairing Rangers. Only ~700 clubs carry this exact shape — the
-variants are unmapped, so nothing is bound or shown yet; probe:
-`examples/teamlist.rs`.
+Cavenagh chairing Rangers. **Shipped 11 August 2026**: the exact shape
+binds as `Role::DirectorOfFootball` and `Role::Board` (four-in-five
+non-player gate, seats only for the unclaimed), shows in the backroom
+audit and the role filter — 96 DoFs and 628 board members on Day One,
+anchors real-world exact (`SAVE_FORMAT.md` §4). The ~19,900 clubs with
+variant shapes still bind nothing — mapping the variants is the open
+remainder; probe: `examples/teamlist.rs`, `examples/boardwho.rs`.
 
 Dead ends recorded so nobody re-treads them: no employer id within ±768
 bytes of a staff record (`staffclub`); `manager_manager.dat` holds one odd

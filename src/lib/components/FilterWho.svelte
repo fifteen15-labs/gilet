@@ -87,13 +87,15 @@
 			<select
 				value={scout.filters.staffRole ?? 'any'}
 				aria-label="Backroom role"
-				title="The save's own backroom groups: the manager seat, or the coaching, medical and recruitment department lists. Staff the save gives no department for only show under Any role."
+				title="The save's own backroom groups: the manager seat, the boardroom's director of football and board seats, or the coaching, medical and recruitment department lists. Staff the save gives no department for only show under Any role."
 				class="rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
 					text-[var(--color-mist)] focus:border-[var(--color-hivis)] focus:outline-none"
 				onchange={(event) => setStaffRole(event.currentTarget.value)}
 			>
 				<option value="any">Any role</option>
 				<option value="Manager">Manager</option>
+				<option value="Director of Football">Director of Football</option>
+				<option value="Board">Board</option>
 				<option value="Coaching">Coaching</option>
 				<option value="Medical">Medical</option>
 				<option value="Recruitment">Recruitment</option>

@@ -188,10 +188,13 @@ pub enum Department {
 }
 
 /// A person's decoded place in a club's backroom: the manager seat from
-/// the roster table, or the department whose staff list names them.
+/// the roster table, the boardroom run in the club record (`club.rs`,
+/// `SAVE_FORMAT.md` §4), or the department whose staff list names them.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Role {
     Manager,
+    DirectorOfFootball,
+    Board,
     Coaching,
     Medical,
     Recruitment,
@@ -203,6 +206,8 @@ impl Role {
     pub fn name(self) -> &'static str {
         match self {
             Self::Manager => "Manager",
+            Self::DirectorOfFootball => "Director of Football",
+            Self::Board => "Board",
             Self::Coaching => "Coaching",
             Self::Medical => "Medical",
             Self::Recruitment => "Recruitment",

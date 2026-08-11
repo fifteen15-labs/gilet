@@ -570,8 +570,21 @@ reality: Jean-Louis Leca as Lens' sporting director with owner Joseph
 Oughourlian on the board, Hugo Viana at Manchester City, Richard Hughes at
 Liverpool, Andrew Cavenagh chairing Rangers. Only ~700 of 20,611 clubs carry
 this exact byte shape — the rest vary and are not yet mapped
-(`OPEN_PROBLEMS.md` §3c; probe: `examples/teamlist.rs`). Not yet surfaced in
-the UI.
+(`OPEN_PROBLEMS.md` §3c; probe: `examples/teamlist.rs`).
+
+**Shipped 11 August 2026** (`club.rs::scan_boardrooms`, `link_boardrooms` in
+`lib.rs`): the exact shape parses into a `Boardroom` — director-of-football
+seat and board eids — and binds people as `Role::DirectorOfFootball` and
+`Role::Board`, gated four-in-five on the eids resolving to non-player people
+like the staff lists, seats binding only people nothing else claimed. Bound
+before the department lists so a DoF keeps the seat rather than reading as
+one more name in the recruitment run. Day One binds 96 DoFs and 628 board
+members; the anchors are real-world exact — Richard Hughes and the FSG
+owners at Liverpool, Viana with Sheikh Mansour's board at City, and on the
+women's side Therese Sjögran at Manchester City Women
+(`real_save.rs::the_boardroom_binds_its_real_people`; probe:
+`examples/boardwho.rs`). Variant shapes still yield nothing rather than a
+guess.
 
 ## 5. Players vs staff — a rejected approach (superseded by 6a)
 

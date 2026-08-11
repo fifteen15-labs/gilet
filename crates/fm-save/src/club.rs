@@ -111,6 +111,82 @@ pub fn scan_clubs(frame: &[u8]) -> Vec<Club> {
     out
 }
 
+/// A club's boardroom, read from the run right after the short name:
+/// `01 [u16] [u32 director-of-football eid] [flag] [count] [count x u32
+/// board eids] 01`. Verified against reality on the 2035 index save — Leca
+/// as Lens' sporting director with Oughourlian on the board, Viana at
+/// Manchester City, Cavenagh chairing Rangers (`SAVE_FORMAT.md` §4). Only
+/// clubs carrying this exact byte shape parse; the variants are unmapped
+/// and yield nothing rather than a guess.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Boardroom {
+    /// The club's entity id.
+    pub club_eid: u32,
+    /// The director of football's person eid. `None` when the seat is
+    /// vacant (0 or `FFFFFFFF` on disk).
+    pub dof_eid: Option<u32>,
+    /// The board members' person eids, chair among them, order as stored.
+    pub board_eids: Vec<u32>,
+}
+
+/// Person entity ids stay comfortably below this, matching the squad walk.
+const MAX_PERSON_EID: u32 = 3_000_000;
+
+/// No board list is longer than this in the exact shape.
+const MAX_BOARD: usize = 8;
+
+/// Reads each club's boardroom, where the exact shape holds.
+///
+/// The caller must still gate the result on the eids resolving to
+/// non-player people — a byte shape alone must not hand a club a board.
+#[must_use]
+pub fn scan_boardrooms(frame: &[u8], clubs: &[Club]) -> Vec<Boardroom> {
+    clubs
+        .iter()
+        .filter_map(|c| {
+            let body = c
+                .offset
+                .checked_add(8 + c.name.len() + c.short_name.len())?;
+            read_boardroom(frame, body, c.eid?)
+        })
+        .collect()
+}
+
+/// Parses the boardroom run at `body`, refusing anything but the exact
+/// shape: the `01` sentinels at both ends, a plausible seat id or an
+/// explicit vacant marker, and every board id in person-eid range.
+fn read_boardroom(frame: &[u8], body: usize, club_eid: u32) -> Option<Boardroom> {
+    if frame.get(body) != Some(&0x01) {
+        return None;
+    }
+    let seat = read_u32(frame, body.checked_add(3)?)?;
+    let dof_eid = match seat {
+        0 | u32::MAX => None,
+        e if e < MAX_PERSON_EID => Some(e),
+        _ => return None,
+    };
+    let count = usize::from(*frame.get(body.checked_add(8)?)?);
+    if count > MAX_BOARD {
+        return None;
+    }
+    let mut board_eids = Vec::with_capacity(count);
+    for i in 0..count {
+        let eid = read_u32(frame, body.checked_add(9 + i * 4)?)?;
+        if eid == 0 || eid >= MAX_PERSON_EID {
+            return None;
+        }
+        board_eids.push(eid);
+    }
+    if frame.get(body.checked_add(9 + count * 4)?) != Some(&0x01) {
+        return None;
+    }
+    Some(Boardroom {
+        club_eid,
+        dof_eid,
+        board_eids,
+    })
+}
+
 /// Whether the three bytes before the name length are the long-verified
 /// headless shape.
 fn has_headless_tail(frame: &[u8], len_at: usize) -> bool {
@@ -410,5 +486,70 @@ mod tests {
         for cut in 0..full.len() {
             let _ = scan_clubs(full.get(..cut).unwrap());
         }
+    }
+
+    /// The boardroom run as it sits after the short name: `01 [u16] [dof]
+    /// [flag] [count] [board eids] 01`.
+    fn boardroom_bytes(dof: u32, board: &[u32]) -> Vec<u8> {
+        let mut v = vec![0x01, 0x22, 0x00];
+        v.extend_from_slice(&dof.to_le_bytes());
+        v.push(0x02);
+        v.push(u8::try_from(board.len()).unwrap());
+        for e in board {
+            v.extend_from_slice(&e.to_le_bytes());
+        }
+        v.push(0x01);
+        v
+    }
+
+    #[test]
+    fn reads_a_boardroom_behind_a_club() {
+        let mut buf = record(139, 1075, "Manchester City", "Man City");
+        buf.extend(boardroom_bytes(2178, &[8242, 11039]));
+        let clubs = scan_clubs(&buf);
+        let rooms = scan_boardrooms(&buf, &clubs);
+        assert_eq!(rooms.len(), 1);
+        let room = rooms.first().unwrap();
+        assert_eq!(room.club_eid, 369);
+        assert_eq!(room.dof_eid, Some(2178));
+        assert_eq!(room.board_eids, vec![8242, 11039]);
+    }
+
+    #[test]
+    fn a_vacant_seat_reads_none_not_zero() {
+        for vacant in [0u32, u32::MAX] {
+            let mut buf = record(139, 1075, "Manchester City", "Man City");
+            buf.extend(boardroom_bytes(vacant, &[8242]));
+            let rooms = scan_boardrooms(&buf, &scan_clubs(&buf));
+            assert_eq!(rooms.first().unwrap().dof_eid, None, "seat {vacant:#x}");
+        }
+    }
+
+    #[test]
+    fn a_variant_shape_yields_no_boardroom() {
+        // A seat id past person-eid range is not the exact shape; nothing
+        // must be guessed from it.
+        let mut buf = record(139, 1075, "Manchester City", "Man City");
+        buf.extend(boardroom_bytes(50_000_000, &[8242]));
+        assert!(scan_boardrooms(&buf, &scan_clubs(&buf)).is_empty());
+
+        // A broken closing sentinel is refused too.
+        let mut buf = record(139, 1075, "Manchester City", "Man City");
+        let mut run = boardroom_bytes(2178, &[8242]);
+        *run.last_mut().unwrap() = 0x00;
+        buf.extend(run);
+        assert!(scan_boardrooms(&buf, &scan_clubs(&buf)).is_empty());
+    }
+
+    #[test]
+    fn a_club_without_an_eid_gets_no_boardroom() {
+        // Headless-tail record parses as a club but carries no entity id;
+        // a boardroom keyed to nothing is unusable and must not surface.
+        let mut buf = record(139, 1075, "Manchester City", "Man City");
+        *buf.get_mut(4).unwrap() ^= 0xFF; // break the repeated uid
+        buf.extend(boardroom_bytes(2178, &[8242]));
+        let clubs = scan_clubs(&buf);
+        assert_eq!(clubs.first().unwrap().eid, None);
+        assert!(scan_boardrooms(&buf, &clubs).is_empty());
     }
 }

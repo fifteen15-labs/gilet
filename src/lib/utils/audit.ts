@@ -186,6 +186,13 @@ export type BackroomAudit = {
 	counted: number;
 	/** The manager from the roster seat, when the club has one. */
 	manager: Player | null;
+	/** The director of football from the boardroom run, when the club's
+	 * exact shape decoded and the seat is filled. Null is undecoded-or-vacant,
+	 * which the UI must say rather than implying no such person exists. */
+	directorOfFootball: Player | null;
+	/** The board members from the same run, chair among them, undistinguished
+	 * — the save does not say which seat is the chair's. */
+	board: Player[];
 	departments: DepartmentCount[];
 	/** Staff at the club the save gives no department for. They are employed —
 	 * they are simply not in one of the three lists, so they are reported
@@ -235,6 +242,8 @@ export function auditBackroom(club: Club, players: readonly Player[]): BackroomA
 	return {
 		counted: staff.length,
 		manager: staff.find((p) => p.staff_role === 'Manager') ?? null,
+		directorOfFootball: staff.find((p) => p.staff_role === 'Director of Football') ?? null,
+		board: staff.filter((p) => p.staff_role === 'Board'),
 		departments,
 		unassigned: staff.filter((p) => p.staff_role === null).length,
 		gaps: departments.filter((d) => d.count === 0).map((d) => d.role),

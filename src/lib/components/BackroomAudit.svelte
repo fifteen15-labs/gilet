@@ -3,10 +3,11 @@
 	 * A club's backroom the way its staff screen reads: who is in each
 	 * department, how strong they are, and where there is nobody at all.
 	 *
-	 * Only the save's own three department lists and the roster's manager seat.
-	 * Staff bound to the club with no department are reported apart rather than
-	 * spread across the three, and a department nobody in has a decoded sheet
-	 * for shows no average rather than an average of nothing.
+	 * Only the save's own groups: the three department lists, the roster's
+	 * manager seat, and the boardroom run's director-of-football and board
+	 * seats. Staff bound to the club with no department are reported apart
+	 * rather than spread across the three, and a department nobody in has a
+	 * decoded sheet for shows no average rather than an average of nothing.
 	 */
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { auditBackroom } from '$lib/utils/audit';
@@ -52,7 +53,7 @@
 			either way.
 		</p>
 	{:else}
-		<div class="mb-2">
+		<div class="mb-2 space-y-1">
 			<button
 				type="button"
 				class="flex w-full items-center justify-between rounded-[2px] border border-[var(--color-line)] px-2 py-1
@@ -65,6 +66,30 @@
 				<span class="eyebrow">Manager</span>
 				<span class="truncate pl-2">{audit.manager?.name ?? 'vacant'}</span>
 			</button>
+			<button
+				type="button"
+				class="flex w-full items-center justify-between rounded-[2px] border border-[var(--color-line)] px-2 py-1
+					text-xs text-[var(--color-mist)] transition-colors hover:border-[var(--color-hivis)]
+					disabled:cursor-not-allowed disabled:opacity-40"
+				disabled={audit.directorOfFootball === null}
+				title="The director of football's seat in the club record's boardroom run. Empty means the seat is vacant or the club's boardroom did not decode — the save not saying, not proof there is nobody."
+				onclick={() => drill('Director of Football')}
+			>
+				<span class="eyebrow">DoF</span>
+				<span class="truncate pl-2">{audit.directorOfFootball?.name ?? 'vacant or undecoded'}</span>
+			</button>
+			{#if audit.board.length > 0}
+				<button
+					type="button"
+					class="flex w-full items-center justify-between rounded-[2px] border border-[var(--color-line)] px-2 py-1
+						text-xs text-[var(--color-mist)] transition-colors hover:border-[var(--color-hivis)]"
+					title={`The board from the club record's boardroom run, chair among them — the save does not mark which seat is the chair's: ${audit.board.map((p) => p.name).join(', ')}`}
+					onclick={() => drill('Board')}
+				>
+					<span class="eyebrow">Board</span>
+					<span class="tabular pl-2">{audit.board.length}</span>
+				</button>
+			{/if}
 		</div>
 
 		<div class="space-y-1">

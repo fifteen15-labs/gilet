@@ -464,10 +464,58 @@ fn bind_player_reputations(people: &mut [Person], lines: Vec<staff::PlayerLine>)
 }
 
 /// Sets `Person::club_eid` for the backroom: managers from the roster
-/// table's slot, then the staff lists in each club record's body.
+/// table's slot, the boardroom seats from the club record, then the staff
+/// lists in each club record's body. The boardroom binds before the lists
+/// so a director of football keeps that seat rather than reading as one
+/// more name in the recruitment run.
 fn link_backroom(frame: &[u8], people: &mut [Person], clubs: &[Club], club_ids: &[(u32, u32)]) {
     link_managers(frame, people, club_ids);
+    link_boardrooms(frame, people, clubs);
     link_staff(frame, people, clubs);
+}
+
+/// Sets `Person::club_eid` and the seat for each club's boardroom — the
+/// director of football and the board members from the exact-shape run
+/// after the club's short name (`club.rs::scan_boardrooms`).
+///
+/// Gated the way the staff lists are: at least four in five of the run's
+/// eids must resolve to non-player people, or the whole boardroom is
+/// dropped — a byte shape alone must not hand a club a board. Individual
+/// seats bind only for non-players not yet claimed by anything, so a
+/// manager stays a manager and a player never becomes a chairman.
+fn link_boardrooms(frame: &[u8], people: &mut [Person], clubs: &[Club]) {
+    let by_eid: std::collections::HashMap<u32, usize> = people
+        .iter()
+        .enumerate()
+        .filter_map(|(i, p)| Some((p.eid?, i)))
+        .collect();
+    for room in club::scan_boardrooms(frame, clubs) {
+        let seats: Vec<(u32, backroom::Role)> = room
+            .dof_eid
+            .into_iter()
+            .map(|e| (e, backroom::Role::DirectorOfFootball))
+            .chain(room.board_eids.iter().map(|&e| (e, backroom::Role::Board)))
+            .collect();
+        if seats.is_empty() {
+            continue;
+        }
+        let non_players = seats
+            .iter()
+            .filter_map(|(e, _)| by_eid.get(e))
+            .filter(|&&i| people.get(i).is_some_and(|p| p.ability.is_none()))
+            .count();
+        if non_players * 5 < seats.len() * 4 {
+            continue;
+        }
+        for (eid, role) in seats {
+            if let Some(person) = by_eid.get(&eid).and_then(|&i| people.get_mut(i)) {
+                if person.ability.is_none() && person.club_eid.is_none() {
+                    person.club_eid = Some(room.club_eid);
+                    person.staff_role = Some(role);
+                }
+            }
+        }
+    }
 }
 
 /// Sets `Person::club_eid` for managers, from the roster table's manager

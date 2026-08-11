@@ -472,6 +472,66 @@ fn a_cross_border_club_resolves_its_squad() {
     assert_eq!(resolved, squad.player_eids.len(), "every member should resolve to a person");
 }
 
+/// The boardroom run after the club's short name binds the director of
+/// football seat and the board (`SAVE_FORMAT.md` §4). Day One anchors are
+/// the real-world people: Richard Hughes as Liverpool's sporting director
+/// with the FSG owners on the board, Hugo Viana at Manchester City with
+/// Sheikh Mansour among his board.
+#[test]
+fn the_boardroom_binds_its_real_people() {
+    let Some(save) = load_named("Day One.fm") else {
+        eprintln!("skipped: no Day One.fm on this machine");
+        return;
+    };
+
+    let seat_of = |name: &str| {
+        let p = save
+            .people
+            .iter()
+            .find(|p| p.full_name == name)
+            .unwrap_or_else(|| panic!("{name} missing from the people table"));
+        (
+            p.staff_role.unwrap_or_else(|| panic!("{name} carries no role")),
+            p.club_eid.unwrap_or_else(|| panic!("{name} carries no club")),
+        )
+    };
+
+    let (role, club) = seat_of("Richard Hughes");
+    assert_eq!(role, fm_save::backroom::Role::DirectorOfFootball);
+    assert!(
+        save.clubs.iter().any(|c| c.eid == Some(club) && c.name == "Liverpool"),
+        "Hughes should sit at Liverpool, got club eid {club}"
+    );
+
+    let (role, club) = seat_of("Hugo Miguel Ferreira Gomes Viana");
+    assert_eq!(role, fm_save::backroom::Role::DirectorOfFootball);
+    let city = save
+        .clubs
+        .iter()
+        .find(|c| c.eid == Some(club))
+        .expect("Viana's club should parse");
+    assert_eq!(city.name, "Manchester City");
+
+    let (role, club) = seat_of("Mansour bin Zayed Al Nahyan");
+    assert_eq!(role, fm_save::backroom::Role::Board);
+    assert_eq!(Some(club), city.eid, "Mansour sits on City's board");
+
+    // Population sanity: the exact shape covers a fleet of clubs, not a
+    // couple of lucky hits.
+    let dofs = save
+        .people
+        .iter()
+        .filter(|p| p.staff_role == Some(fm_save::backroom::Role::DirectorOfFootball))
+        .count();
+    let board = save
+        .people
+        .iter()
+        .filter(|p| p.staff_role == Some(fm_save::backroom::Role::Board))
+        .count();
+    assert!(dofs >= 50, "expected a fleet of DoFs, got {dofs}");
+    assert!(board >= 300, "expected hundreds of board members, got {board}");
+}
+
 /// The squad table's 0x13/0x15-typed rows are a club's B and youth squads,
 /// keyed by the club's eid with the team entity's own uid — the rows the
 /// uid-validated first-team walk can never claim. They bind the players
