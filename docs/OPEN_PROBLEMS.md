@@ -156,12 +156,24 @@ squad-referenced, so the residuals below are untouched by the fix.
    (`real_save.rs::common_names_resolve_to_display_names`, probe:
    `examples/commonwho.rs`). An id the pool does not hold keeps the full
    name — undecoded is not licence to invent.
-4. **The women's-club ambiguity.** Two club entities can share a short name
-   (both Manchester Citys). The UI labels players with the short name, so a
-   club *filter* built on names conflates them; filter on club eid instead.
-5. **Junk contract rows read as contracts.** A tail of records parse as
-   wage 0 expiring 2 January 1900 (the null date + 1) — free-agent or
-   variant layouts that should read as no contract, but currently show one.
+4. **The women's-club ambiguity — SOLVED for filtering, confirmed 11 August
+   2026.** The club filter keys entity id end to end (`Filters.clubEid`,
+   `search.rs::club_eid`, the dropdown's options carry `c.eid`), so the two
+   Manchester Citys are distinct filters. Cosmetic residue: both options
+   *label* as "Man City" in the dropdown, indistinguishable until club
+   gender decodes — the save's club record carries no decoded women's flag
+   yet, and guessing from squad membership would label a mixed or empty
+   club wrongly.
+5. **Junk contract rows — RETIRED, confirmed 11 August 2026.** The 7 August
+   contract-hunt rework closed this without saying so: the expiry year
+   bound (1950-2060) rejects the null-era date, and a zero wage with no
+   surviving expiry is skipped as the free-agent sentinel
+   (`person.rs::bind_contracts`, locked by
+   `a_free_agents_sentinel_row_is_not_a_contract`). Counted zero
+   1900-expiry and zero wage-0-undated contracts on Day One and the 2030
+   Benchmark (`examples/junkdeals.rs`); the 549/1,209 zero-wage *dated*
+   deals those saves hold are real youth/amateur contracts, kept on
+   purpose.
 
 (The earlier "squad table stops at club eid 15986" residual is closed: with
 the flags byte fixed, squads parse up to the highest club eid in the table —
@@ -1205,13 +1217,14 @@ it.
 
 ---
 
-## 7. Index 25 is not an attribute
+## 7. Index 25 — SOLVED, it is the right foot
 
-Within the 54-byte attribute block, index 25 behaves unlike the rest: mean 17.30
-with most players at or near 20, against a typical attribute mean of 9–12. No
-1–20 attribute distributes that way. It may be a flag or a scaling factor that
-happens to sit inside the block. Currently displayed as an attribute, which is
-probably wrong.
+Stale entry, closed 11 August 2026: the feet fell with the attribute-name
+work (`ability.rs` — 24 Left Foot, 25 Right Foot, Musiala's "Very Strong"
+left against a 9 right matching his block exactly). The odd distribution
+was the answer — mean 17.3 with a spike at 20 is exactly how a strong-foot
+rating distributes across a population of mostly right-footers. It renders
+labelled as a foot, not as a skill.
 
 ---
 
