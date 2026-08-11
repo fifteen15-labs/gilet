@@ -20,6 +20,12 @@ pub struct Person {
     /// `"forename surname"`; otherwise composed from the string table, which
     /// is how "Virgil van Dijk" and every other plainly-named person is held.
     pub full_name: String,
+    /// The common name, resolved from the common-name pool when the record
+    /// references one — "Raúl", "Rivaldo", and the surname-first orderings
+    /// FM displays for East Asian players ("Yoon Jung-Hwan"). `None` when the
+    /// record has no reference or the id does not resolve. FM displays this
+    /// over the full name everywhere, so [`Person::display_name`] does too.
+    pub common_name: Option<String>,
     /// `None` for compact entries, which carry no birth date at all.
     pub date_of_birth: Option<Date>,
     /// Nation identifier, e.g. 139 for England. Shares the numbering the club
@@ -106,6 +112,13 @@ impl Person {
     #[must_use]
     pub fn is_player(&self) -> bool {
         self.ability.is_some()
+    }
+
+    /// The name FM displays: the common name when the person has one
+    /// ("Juanito", "Raúl"), the full name otherwise.
+    #[must_use]
+    pub fn display_name(&self) -> &str {
+        self.common_name.as_deref().unwrap_or(&self.full_name)
     }
 
     /// Hidden Adaptability, 1-20. Verified against staff report screens,
@@ -560,6 +573,9 @@ fn parse_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<(Person, u
             first_name_id,
             surname_id,
             common_name_id: (common_raw != NO_COMMON_NAME).then_some(common_raw),
+            common_name: (common_raw != NO_COMMON_NAME)
+                .then(|| strings.common_names.get(&common_raw).cloned())
+                .flatten(),
             full_name,
             date_of_birth: Some(date_of_birth),
             nation_id,
@@ -685,6 +701,7 @@ fn compact_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<Person> 
         first_name_id,
         surname_id,
         common_name_id: None,
+        common_name: None,
         full_name: format!("{forename} {surname}"),
         date_of_birth: None,
         nation_id: None,
@@ -1214,6 +1231,31 @@ mod tests {
         let found = scan_people(&buf, &table());
         assert_eq!(found.len(), 1);
         assert_eq!(found.first().unwrap().common_name_id, Some(555));
+    }
+
+    #[test]
+    fn resolves_the_common_name_and_displays_it() {
+        let mut strings = table();
+        strings.common_names.insert(555, "Vinícius Júnior".to_owned());
+        let buf = record(100, 200, 555, Some("Vinícius José de Oliveira Júnior"), 194, 2000);
+        let found = scan_people(&buf, &strings);
+        let p = found.first().unwrap();
+        assert_eq!(p.common_name.as_deref(), Some("Vinícius Júnior"));
+        assert_eq!(p.display_name(), "Vinícius Júnior");
+        // The legal name is untouched — the common name sits beside it.
+        assert_eq!(p.full_name, "Vinícius José de Oliveira Júnior");
+    }
+
+    #[test]
+    fn an_unresolved_common_name_id_displays_the_full_name() {
+        // The pool not holding the id is undecoded, not licence to invent:
+        // the id is kept, the name field stays honest.
+        let buf = record(100, 200, 555, Some("Vinícius José de Oliveira Júnior"), 194, 2000);
+        let found = scan_people(&buf, &table());
+        let p = found.first().unwrap();
+        assert_eq!(p.common_name_id, Some(555));
+        assert_eq!(p.common_name, None);
+        assert_eq!(p.display_name(), "Vinícius José de Oliveira Júnior");
     }
 
     #[test]

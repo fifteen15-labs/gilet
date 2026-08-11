@@ -472,6 +472,35 @@ fn a_cross_border_club_resolves_its_squad() {
     assert_eq!(resolved, squad.player_eids.len(), "every member should resolve to a person");
 }
 
+/// The common-name pool holds FM's display names — "Raúl", not "Raúl
+/// González Blanco" — and a person referencing one displays it. The pool
+/// also carries the surname-first orderings FM uses for East Asian players.
+#[test]
+fn common_names_resolve_to_display_names() {
+    let Some(save) = load_named("Day One.fm") else {
+        eprintln!("skipped: no Day One.fm on this machine");
+        return;
+    };
+
+    let raul = save
+        .people
+        .iter()
+        .find(|p| p.full_name == "Raúl González Blanco")
+        .expect("Raúl missing from the people table");
+    assert_eq!(raul.common_name.as_deref(), Some("Raúl"));
+    assert_eq!(raul.display_name(), "Raúl");
+
+    // Population sanity: the reference is common enough that resolution
+    // failing broadly would say the pool sectioning broke.
+    let with_id = save.people.iter().filter(|p| p.common_name_id.is_some()).count();
+    let resolved = save.people.iter().filter(|p| p.common_name.is_some()).count();
+    assert!(with_id >= 1_000, "expected a real population, got {with_id}");
+    assert!(
+        resolved * 10 >= with_id * 9,
+        "common names should mostly resolve: {resolved} of {with_id}"
+    );
+}
+
 /// The boardroom run after the club's short name binds the director of
 /// football seat and the board (`SAVE_FORMAT.md` §4). Day One anchors are
 /// the real-world people: Richard Hughes as Liverpool's sporting director

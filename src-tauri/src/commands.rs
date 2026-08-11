@@ -756,7 +756,7 @@ fn resolve_game_shortlists(save: &fm_save::Save) -> Vec<GameShortlistRow> {
     let people_by_eid: std::collections::HashMap<u32, &str> = save
         .people
         .iter()
-        .filter_map(|p| Some((p.eid?, p.full_name.as_str())))
+        .filter_map(|p| Some((p.eid?, p.display_name())))
         .collect();
     save.shortlists
         .iter()
@@ -788,7 +788,7 @@ fn person_row(
         id: p.offset,
         eid: p.eid,
         reputation: p.reputation.map(ReputationRow::from),
-        name: p.full_name.clone(),
+        name: p.display_name().to_owned(),
         born: p
             .date_of_birth
             .map(|d| format!("{:04}-{:02}-{:02}", d.year, d.month, d.day))
@@ -1102,7 +1102,7 @@ fn resolve_my_club(save: &fm_save::Save) -> Option<MyClub> {
         name: club.name.clone(),
         short_name: club.short_name.clone(),
         manager_eid: human_eid,
-        manager_name: manager.full_name.clone(),
+        manager_name: manager.display_name().to_owned(),
     })
 }
 

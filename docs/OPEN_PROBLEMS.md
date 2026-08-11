@@ -148,9 +148,14 @@ squad-referenced, so the residuals below are untouched by the fix.
    block `[1][45][45]` loses the LIS race because his uid, 45, is unusually
    small and something noisy precedes him). Affected people show no club.
    Diagnose with `research/pipeline_v2.py`.
-3. **Common names are not used for display.** People with a `common_name_id`
-   ("Juanito") still display forename + surname or the inline name; the
-   common-name pool is parsed but unused.
+3. **Common names display — SOLVED 11 August 2026.** `Person::common_name`
+   resolves the pool reference and `display_name()` prefers it, which is
+   FM's own behaviour: Raúl reads "Raúl", not "Raúl González Blanco", and
+   the East Asian surname-first orderings ("Yoon Jung-Hwan") come with it.
+   1,261 of Day One's 67,026 people carry the reference and >90% resolve
+   (`real_save.rs::common_names_resolve_to_display_names`, probe:
+   `examples/commonwho.rs`). An id the pool does not hold keeps the full
+   name — undecoded is not licence to invent.
 4. **The women's-club ambiguity.** Two club entities can share a short name
    (both Manchester Citys). The UI labels players with the short name, so a
    club *filter* built on names conflates them; filter on club eid instead.
