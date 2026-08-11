@@ -1169,6 +1169,34 @@ contracts in a 2035 save: all but 13). Other fields visible in the block but
 not yet parsed: contract start, the date the deal was signed, and several
 smaller money values that look like bonuses and clauses.
 
+**The money list is decoded — the release clause ships** (11 August 2026,
+`person.rs::find_release_clause`, probes `examples/contractdump.rs` and
+`examples/framehunt.rs`). Before the expiry run sits a count-prefixed row
+list:
+
+```
+00 00 00 [count u8]  [u32 value] FF FF
+  then per further row: [u16 type] [u32 value] FF FF
+```
+
+(the last row's two tail bytes belong to whatever follows). **Type 0x26 is
+the minimum fee release clause**, always last where present, reading
+`FF FF FF FF` when the contract has none. Values are the save's display
+currency by the game's own conversion, verified three ways against
+published FM26 data: Pedri's €1B buyout reads 864,206,784 (fminside shows
+the same figure), the €60M La Liga default lands byte-exact as 51,852,408
+on Álex Berenguer, Joan Jordán and a fleet of other La Liga players, and
+Haaland's clause-less deal carries the row unset. FM Scout's £-based
+clause table agrees to its own rounding (Kambwala 129.4M = €150M × the
+same rate). Types 0x20/0x21/0x22/0x27 and the bare first value are
+bonus-sized and undecoded — Haaland's read 82,000 / 85,000 / 22,500 —
+named nothing until a Contract-tab ground truth names them. The list also
+pins two dates: **contract start** follows the expiry pair directly
+(`[expiry doy][expiry year][start doy][start year]` — Pedri reads
+1 Jul 2020, his real Barcelona debut season; Yamal 2014, La Masia), and
+the pair at the block's tail is the person's own birth date. Start date is
+not yet surfaced.
+
 **The contract is not the only row anchored on the eid** (found 7 August
 2026). Between it and the record prefix other eid-anchored rows can appear —
 Jae-Wan Choi (2035 save, Rangers B) carries `[eid][u32][00 00 00 00][u32]

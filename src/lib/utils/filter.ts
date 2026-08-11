@@ -9,7 +9,8 @@ export type SortKey =
 	| 'potential'
 	| 'score'
 	| 'headroom'
-	| 'reputation';
+	| 'reputation'
+	| 'clause';
 export type SortDirection = 'asc' | 'desc';
 
 export type Filters = {
@@ -83,6 +84,10 @@ export type Filters = {
 	/** Highest weekly wage, in the save's display currency. The bargain
 	 * board's lever. Null for any. */
 	maxWage: number | null;
+	/** Highest minimum-fee release clause, in the save's display currency.
+	 * Keeps only players actually buyable through a clause of at most this —
+	 * no decoded clause fails the bound, since no clause is not a cheap one. */
+	maxReleaseClause: number | null;
 	/** Minimum Versatility (attribute 49) — how readily the player *learns* a
 	 * new role. Null for any. */
 	minVersatility: number | null;
@@ -133,6 +138,7 @@ export const emptyFilters: Filters = {
 	risk: 'any',
 	international: 'any',
 	maxWage: null,
+	maxReleaseClause: null,
 	minVersatility: null,
 	minPositions: null,
 	setPiece: null,
@@ -198,6 +204,8 @@ export function describeFilters(filters: Filters, nationName?: string, clubName?
 	if (pa !== null) parts.push(pa);
 	if (filters.minHeadroom !== null) parts.push(`+${filters.minHeadroom} to grow`);
 	if (filters.maxWage !== null) parts.push(`under £${filters.maxWage.toLocaleString()}/w`);
+	if (filters.maxReleaseClause !== null)
+		parts.push(`clause under £${filters.maxReleaseClause.toLocaleString()}`);
 	if (filters.minVersatility !== null) parts.push(`Versatility ${filters.minVersatility}+`);
 	if (filters.minPositions !== null)
 		parts.push(

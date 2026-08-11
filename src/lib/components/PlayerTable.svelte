@@ -49,6 +49,19 @@
 						</button>
 					</th>
 					<th class="w-20 pr-4 pb-2 text-right"><span class="eyebrow">Wage</span></th>
+					<th class="w-20 pr-4 pb-2 text-right">
+						<button
+							class="eyebrow hover:text-[var(--color-mist)]"
+							title="Minimum fee release clause, from the save's own contract data. Blank is no clause decoded, not a free transfer."
+							onclick={() => scout.sortBy('clause')}
+						>
+							Clause{scout.sortKey === 'clause'
+								? scout.sortDirection === 'asc'
+									? ' ↑'
+									: ' ↓'
+								: ''}
+						</button>
+					</th>
 					<th class="w-16 pr-4 pb-2 text-left">
 						<button class="eyebrow hover:text-[var(--color-mist)]" onclick={() => scout.sortBy('ability')}>
 							CA{scout.sortKey === 'ability' ? (scout.sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}

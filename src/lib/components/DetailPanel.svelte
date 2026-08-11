@@ -113,6 +113,19 @@
 							<dd class="tabular text-sm text-[var(--color-bright)]">{player.contract_until}</dd>
 						</div>
 					{/if}
+					{#if player.release_clause !== null}
+						<div>
+							<dt
+								class="eyebrow"
+								title="Minimum fee release clause, from the save's own contract data — bid this and the club must accept"
+							>
+								Release clause
+							</dt>
+							<dd class="tabular text-sm text-[var(--color-bright)]">
+								£{player.release_clause.toLocaleString()}
+							</dd>
+						</div>
+					{/if}
 					<div>
 						<dt class="eyebrow">Current ability</dt>
 						<dd class="tabular text-lg text-[var(--color-bright)]">{player.ability ?? '\u2014'}</dd>

@@ -501,6 +501,41 @@ fn common_names_resolve_to_display_names() {
     );
 }
 
+/// The minimum fee release clause reads from the type-0x26 row of the
+/// contract's money list, in the save's display currency. Ground truth is
+/// published FM26 data: Pedri's €1B buyout is 864,206,784 through the
+/// game's own rate (fminside shows the same figure), the €60M La Liga
+/// default lands byte-exact on Álex Berenguer, and Haaland's contract
+/// carries the row unset.
+#[test]
+fn release_clauses_read_from_the_money_list() {
+    let Some(save) = load_named("Day One.fm") else {
+        eprintln!("skipped: no Day One.fm on this machine");
+        return;
+    };
+
+    let clause_of = |name: &str| {
+        save.people
+            .iter()
+            .find(|p| p.full_name == name)
+            .unwrap_or_else(|| panic!("{name} missing from the people table"))
+            .release_clause
+    };
+    assert_eq!(clause_of("Pedro González López"), Some(864_206_784));
+    assert_eq!(clause_of("Álex Berenguer Remiro"), Some(51_852_408));
+    assert_eq!(clause_of("Erling Braut Haaland"), None);
+
+    // The clause population is a fleet, mostly Spanish, not a lucky few —
+    // and not the whole world either: most contracts have no clause.
+    let with_clause = save.people.iter().filter(|p| p.release_clause.is_some()).count();
+    let contracted = save.people.iter().filter(|p| p.wage.is_some()).count();
+    assert!(with_clause >= 200, "expected a real clause population, got {with_clause}");
+    assert!(
+        with_clause * 2 < contracted,
+        "most contracts carry no clause: {with_clause} of {contracted}"
+    );
+}
+
 /// The representative rows the club walk refuses are the international
 /// signal: a person a national side's list names is in that setup. Day One
 /// anchors: Saka, Haaland and van Dijk are all in their nations' selections;

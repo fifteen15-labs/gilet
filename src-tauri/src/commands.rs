@@ -178,6 +178,10 @@ pub struct PlayerRow {
     /// "no decoded selection names them", not proof of being uncapped —
     /// the save only materialises the selections it has needed.
     pub in_national_squad: bool,
+    /// Minimum fee release clause in the save's display currency, from the
+    /// contract's money list. `None` is no clause decoded — the row unset,
+    /// absent, or the whole contract unread — never a zero clause.
+    pub release_clause: Option<u32>,
 }
 
 /// A person's three game reputations, 0-200 as the editor stores them.
@@ -847,6 +851,7 @@ fn person_row(
         stub: false,
         staff_role: p.staff_role.map(|r| r.name().to_owned()),
         in_national_squad: p.in_national_squad,
+        release_clause: p.release_clause,
     }
 }
 
@@ -912,6 +917,7 @@ fn stub_rows(
                 stub: true,
                 staff_role: None,
                 in_national_squad: false,
+                release_clause: None,
                 first_team: kind == fm_save::squad::SquadKind::FirstTeam,
             })
         })

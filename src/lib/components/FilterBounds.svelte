@@ -47,6 +47,24 @@
 	/>
 </div>
 
+<div class="flex items-center gap-1">
+	<span
+		class="eyebrow mr-1"
+		title="Highest minimum-fee release clause — only players actually buyable through a clause of at most this. Players with no decoded clause are excluded: no clause is not a cheap one."
+	>
+		Max clause
+	</span>
+	<input
+		type="number"
+		min="0"
+		step="1000000"
+		bind:value={scout.filters.maxReleaseClause}
+		aria-label="Maximum release clause"
+		class="tabular w-24 rounded-[2px] border border-[var(--color-line)] bg-[var(--color-void)] px-2 py-1 text-xs
+			focus:border-[var(--color-hivis)] focus:outline-none"
+	/>
+</div>
+
 <div
 	class="flex items-center gap-1"
 	title="Age on the save's own in-game date. People with no readable birth date — stubs and compacted people — never pass an age cap: an unknown age is not a young one"

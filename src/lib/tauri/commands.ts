@@ -118,6 +118,9 @@ export type Player = {
 	 * False is "no decoded selection names them", not proof of being
 	 * uncapped — the save only materialises selections it has needed. */
 	in_national_squad: boolean;
+	/** Minimum fee release clause in the save's display currency. Null is no
+	 * clause decoded — unset, absent or unread — never a zero clause. */
+	release_clause: number | null;
 };
 
 export type Club = {

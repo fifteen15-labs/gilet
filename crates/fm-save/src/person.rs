@@ -70,6 +70,14 @@ pub struct Person {
     pub wage: Option<u32>,
     /// Contract expiry date, when the contract block carries one.
     pub contract_until: Option<Date>,
+    /// Minimum fee release clause in the save's display currency, from the
+    /// type-0x26 row of the contract's money list. Verified against
+    /// published FM26 figures: Pedri's €1B buyout reads 864,206,784 — the
+    /// game's own conversion — and the €60M La Liga default lands byte-for
+    /// byte on a fleet of players. `None` when the row reads the unset
+    /// sentinel, the list is absent, or no contract parses at all — no
+    /// clause decoded, which is not proof none exists.
+    pub release_clause: Option<u32>,
     /// Ability and attributes, when this person has an attribute block.
     /// `None` means staff: only players carry one.
     pub ability: Option<crate::ability::Ability>,
@@ -593,6 +601,7 @@ fn parse_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<(Person, u
             personality,
             wage: None,
             contract_until: None,
+            release_clause: None,
             // Filled in by `Save::parse`, which matches blocks to people once
             // both scans have run.
             ability: None,
@@ -720,6 +729,7 @@ fn compact_at(frame: &[u8], at: usize, strings: &StringTable) -> Option<Person> 
         personality: None,
         wage: None,
         contract_until: None,
+        release_clause: None,
         ability: None,
         staff: None,
         reputation: None,
@@ -955,7 +965,78 @@ pub fn bind_contracts(frame: &[u8], people: &mut [Person]) {
         }
         person.wage = wage;
         person.contract_until = until;
+        person.release_clause = find_release_clause(frame, p);
     }
+}
+
+/// How far before the wage anchor the contract's money list can start.
+/// Measured shapes sit within ~215 bytes; the margin covers longer lists.
+const MONEY_LIST_WINDOW: usize = 300;
+
+/// Most rows seen in a money list is five; a count beyond this is not one.
+const MAX_MONEY_ROWS: usize = 12;
+
+/// The money-list row type carrying the minimum fee release clause.
+const RELEASE_CLAUSE_TYPE: u16 = 0x26;
+
+/// Reads the minimum fee release clause from the contract's money list.
+///
+/// The list sits before the wage anchor:
+///
+/// ```text
+/// 00 00 00 [count u8] [u32 value] FF FF
+///   then per further row: [u16 type] [u32 value] FF FF
+/// ```
+///
+/// with the last row's two tail bytes belonging to whatever follows. The
+/// clause is the type-0x26 row — always last where present — reading
+/// `FF FF FF FF` when the contract has no clause. Values are the save's
+/// display currency, exactly as the wage is: Pedri's €1,000,000,000 buyout
+/// reads 864,206,784 through the game's own rate, the €60M La Liga default
+/// reads 51,852,408 on Berenguer, Joan Jordán and the rest of the fleet,
+/// and Haaland's clause-less contract still carries the row, unset. A block
+/// with no recognisable list yields `None` — undecoded, not clause-free.
+fn find_release_clause(frame: &[u8], anchor: usize) -> Option<u32> {
+    let lo = anchor.saturating_sub(MONEY_LIST_WINDOW);
+    let mut at = anchor;
+    while at > lo + 4 {
+        at -= 1;
+        // The count marker: three zero bytes then a small count.
+        if frame.get(at..at + 3) != Some(&[0u8; 3][..]) {
+            continue;
+        }
+        let count = usize::from(*frame.get(at + 3)?);
+        if !(1..=MAX_MONEY_ROWS).contains(&count) {
+            continue;
+        }
+        // First row: bare value, FF FF tail.
+        if frame.get(at + 8..at + 10) != Some(&[0xFF, 0xFF][..]) {
+            continue;
+        }
+        // Typed rows follow; every tail but the last must read FF FF.
+        let mut clause = None;
+        let mut shape_holds = true;
+        for i in 1..count {
+            let row = at + 10 + (i - 1) * 8;
+            let Some(ty) = read_u16(frame, row) else {
+                shape_holds = false;
+                break;
+            };
+            let last = i == count - 1;
+            if !last && frame.get(row + 6..row + 8) != Some(&[0xFF, 0xFF][..]) {
+                shape_holds = false;
+                break;
+            }
+            if ty == RELEASE_CLAUSE_TYPE {
+                clause = read_u32(frame, row + 2);
+            }
+        }
+        if !shape_holds {
+            continue;
+        }
+        return clause.filter(|&v| v != 0 && v != u32::MAX);
+    }
+    None
 }
 
 /// Names the employer of contracted people no squad list claimed.
@@ -1611,8 +1692,45 @@ mod tests {
 
     /// Builds a contract block for `eid`: expiry after an 8xFF run, then the
     /// eid-anchored wage row, as found on disk before the record prefix.
+    /// No money list — the shape most lower-league contracts carry.
     fn contract(eid: u32, wage: u32, expiry_doy: u16, expiry_year: u16) -> Vec<u8> {
         let mut v = vec![0u8; 8];
+        v.extend_from_slice(&[0xFF; 8]);
+        v.extend_from_slice(&expiry_doy.to_le_bytes());
+        v.extend_from_slice(&expiry_year.to_le_bytes());
+        v.extend_from_slice(&[0u8; 12]);
+        v.extend_from_slice(&eid.to_le_bytes());
+        v.extend_from_slice(&501u32.to_le_bytes());
+        v.extend_from_slice(&[0u8; 4]);
+        v.extend_from_slice(&wage.to_le_bytes());
+        v.extend_from_slice(&[0x01, 0x0B, 0x00]);
+        v.extend_from_slice(&[0xFF; 4]);
+        v.extend_from_slice(&[0u8; 6]);
+        v
+    }
+
+    /// The same block with the typed money list in front, as Berenguer's
+    /// real bytes hold it: count 5, a bare first value, three typed bonus
+    /// rows, then the type-0x26 clause row — `None` writes the unset
+    /// `FF FF FF FF` sentinel Haaland's contract carries.
+    fn contract_with_clause(
+        eid: u32,
+        wage: u32,
+        expiry_doy: u16,
+        expiry_year: u16,
+        clause: Option<u32>,
+    ) -> Vec<u8> {
+        let mut v = vec![0u8; 8];
+        v.extend_from_slice(&[0x00, 0x00, 0x00, 0x05]);
+        v.extend_from_slice(&4304u32.to_le_bytes());
+        v.extend_from_slice(&[0xFF, 0xFF]);
+        for (ty, val) in [(0x20u16, 3228u32), (0x27, 3228), (0x22, 1076)] {
+            v.extend_from_slice(&ty.to_le_bytes());
+            v.extend_from_slice(&val.to_le_bytes());
+            v.extend_from_slice(&[0xFF, 0xFF]);
+        }
+        v.extend_from_slice(&0x26u16.to_le_bytes());
+        v.extend_from_slice(&clause.unwrap_or(u32::MAX).to_le_bytes());
         v.extend_from_slice(&[0xFF; 8]);
         v.extend_from_slice(&expiry_doy.to_le_bytes());
         v.extend_from_slice(&expiry_year.to_le_bytes());
@@ -1689,6 +1807,54 @@ mod tests {
 
         assert_eq!(people.first().unwrap().wage, Some(0));
         assert_eq!(people.first().unwrap().contract_until.map(|d| d.year), Some(2027));
+    }
+
+    #[test]
+    fn reads_the_release_clause_from_the_money_list() {
+        // Berenguer's real shape: the typed list before the expiry run,
+        // clause row last. The value is the game's own display-currency
+        // conversion of the €60M La Liga default.
+        let mut buf = contract_with_clause(50, 21_522, 181, 2027, Some(51_852_408));
+        buf.extend(record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000));
+        buf.extend(identity_block(50, 9_000_001));
+
+        let mut people = scan_people(&buf, &table());
+        bind_identities(&buf, &mut people, 0);
+        bind_contracts(&buf, &mut people);
+
+        assert_eq!(people.first().unwrap().release_clause, Some(51_852_408));
+        assert_eq!(people.first().unwrap().wage, Some(21_522));
+    }
+
+    #[test]
+    fn an_unset_clause_row_reads_none() {
+        // Haaland's real shape: the row exists, the value is the FFFFFFFF
+        // sentinel — a contract with no release clause, not a zero one.
+        let mut buf = contract_with_clause(50, 450_000, 181, 2034, None);
+        buf.extend(record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000));
+        buf.extend(identity_block(50, 9_000_001));
+
+        let mut people = scan_people(&buf, &table());
+        bind_identities(&buf, &mut people, 0);
+        bind_contracts(&buf, &mut people);
+
+        assert_eq!(people.first().unwrap().release_clause, None);
+        assert_eq!(people.first().unwrap().wage, Some(450_000));
+    }
+
+    #[test]
+    fn a_contract_without_a_money_list_reads_no_clause() {
+        // The plain fixture has no list at all: undecoded, not clause-free,
+        // and above all not a misread of neighbouring bytes.
+        let mut buf = contract(50, 450_000, 181, 2034);
+        buf.extend(record(100, 200, NO_COMMON_NAME, Some("Erling Braut Haaland"), 203, 2000));
+        buf.extend(identity_block(50, 9_000_001));
+
+        let mut people = scan_people(&buf, &table());
+        bind_identities(&buf, &mut people, 0);
+        bind_contracts(&buf, &mut people);
+
+        assert_eq!(people.first().unwrap().release_clause, None);
     }
 
     #[test]

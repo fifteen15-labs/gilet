@@ -91,6 +91,9 @@ pub struct Filters {
     /// those no decoded list names — which is not proof of being uncapped,
     /// only of no materialised selection, and the UI says so.
     pub international: Option<String>,
+    /// Keep only players buyable through a release clause of at most this.
+    /// No decoded clause fails the bound — it is not a cheap clause.
+    pub max_release_clause: Option<u32>,
 }
 
 /// One page of results: the true total, the rows the table renders, and each
@@ -391,6 +394,15 @@ pub fn matches(
             _ => return false,
         }
     }
+    if let Some(max_clause) = filters.max_release_clause {
+        // A player with no decoded clause fails the bound: the filter means
+        // "buyable through a clause of at most this", and no clause is not
+        // a cheap one.
+        match row.release_clause {
+            Some(clause) if clause <= max_clause => {}
+            _ => return false,
+        }
+    }
     if let Some(min) = filters.min_versatility {
         match row.attributes.get(VERSATILITY) {
             Some(v) if *v >= min => {}
@@ -468,6 +480,7 @@ fn sort_value(row: &PlayerRow, key: &str, row_score: Option<f64>) -> Option<f64>
         "potential" => potential_of(row).map(f64::from),
         "reputation" => world_reputation(row).map(f64::from),
         "age" => row.age.map(f64::from),
+        "clause" => row.release_clause.map(f64::from),
         _ => None,
     }
 }

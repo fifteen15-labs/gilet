@@ -2,7 +2,7 @@
 	import AbilityBar from './AbilityBar.svelte';
 	import { scout } from '$lib/classes/Scout.svelte';
 	import { abilityOf, flagsFor, headroom, potentialOf } from '$lib/utils/flags';
-	import { formatWage } from '$lib/utils/money';
+	import { formatBill, formatWage } from '$lib/utils/money';
 	import type { Player } from '$lib/tauri/commands';
 
 	type Props = {
@@ -58,6 +58,9 @@
 	<td class="tabular pr-4 text-sm text-[var(--color-mist)]">{player.age ?? ''}</td>
 	<td class="tabular pr-4 text-right text-xs text-[var(--color-mist)]" title={player.contract_until ? `Contract until ${player.contract_until}` : ''}>
 		{formatWage(player.wage)}
+	</td>
+	<td class="tabular pr-4 text-right text-xs text-[var(--color-mist)]">
+		{formatBill(player.release_clause)}
 	</td>
 	<td
 		class="tabular pr-4 text-sm text-[var(--color-bright)]"

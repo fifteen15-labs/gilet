@@ -1101,12 +1101,28 @@ says the game derives both ends from one internal figure it recomputes from
 ability, age, contract and reputation. Replicating that formula would mean
 inventing a number, so the tool shows wage and contract instead.
 
-Still in the block, unparsed: contract start date, signing date (Haaland's
-holds 17/1/2025 — the real-world date of his extension), and several smaller
-money fields that look like appearance/goal bonuses and clauses (£85,000 and
-£82,000 shapes in Haaland's). A player's full Contract tab screenshot against
-`cargo run --release --example player` output would name them the same way
-the attribute screen named the attributes.
+**The release clause is SOLVED and shipped** (11 August 2026,
+`SAVE_FORMAT.md` §6e): the money fields are a count-prefixed typed row
+list before the expiry run, type 0x26 is the minimum fee release clause
+(FFFFFFFF = none), and the values are display-currency by the game's own
+rate — Pedri's €1B buyout reads 864,206,784, the €60M La Liga default
+51,852,408 byte-exact across the fleet, Haaland's row unset. Shown in the
+panel, a sortable Clause column, and a Max clause filter where no decoded
+clause fails the bound. The same session found the **contract start date**
+(directly after the expiry pair — Pedri 2020, Yamal's La Masia 2014), not
+yet surfaced.
+
+Still in the block, unparsed: the bonus-sized typed rows (0x20/0x21/0x22/
+0x27 and the bare first value — Haaland's read 82,000 / 85,000 / 22,500,
+appearance/goal-bonus shaped), and the signing date (Haaland's holds
+17/1/2025 — the real-world date of his extension). A player's full
+Contract tab screenshot against `cargo run --release --example player`
+output would name the bonus types the way the attribute screen named the
+attributes. Method note: FM Scout's and fminside's published clause values
+are the save's numbers (FM Scout rounds to 0.1M), so published lists can
+verify clauses without a screenshot — but DB revisions move clauses
+(Jofre Torrents carried 17.3M in the launch DB and reads unset in 26.2),
+so ground truth must be version-matched.
 
 Roughly a third of eid-anchored candidates fail the strict structure test and
 keep `None` — variant layouts (part-time, youth, non-contract) not yet
