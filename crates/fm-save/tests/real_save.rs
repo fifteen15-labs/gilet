@@ -2,6 +2,15 @@
 //! captains and entity ids are not part of what the UI consumes yet.
 //!
 //! Skips rather than fails when no save is present, like the journey tests.
+//!
+//! **Every test here is `#[ignore]`** (owner's call, 12 August 2026): each
+//! one parses a real save from scratch, minutes apiece, and the suite had
+//! grown to two hours — too slow for the default `cargo test --workspace`.
+//! The locks still hold; run them on demand, and before a release:
+//!
+//! ```text
+//! cargo test -p fm-save --test real_save -- --ignored
+//! ```
 
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
 
@@ -49,6 +58,7 @@ macro_rules! save_or_skip {
 }
 
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn squad_records_name_the_captains() {
     let save = save_or_skip!();
 
@@ -91,6 +101,7 @@ fn squad_records_name_the_captains() {
 }
 
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn known_entity_ids_read_back_exactly() {
     let save = save_or_skip!();
 
@@ -111,6 +122,7 @@ fn known_entity_ids_read_back_exactly() {
 }
 
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn contracts_match_public_figures() {
     let save = save_or_skip!();
     let person = |name: &str| save.people.iter().find(|p| p.full_name == name).unwrap();
@@ -148,6 +160,7 @@ fn contracts_match_public_figures() {
 /// list out of entity-id order. The values asserted here are read straight
 /// from the in-game player report for Jamal Musiala on 28 May 2035.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn an_aged_save_decodes_against_the_in_game_report() {
     let Some(save) = load_named("Ongoing.fm") else {
         eprintln!("skipped: no Ongoing.fm on this machine");
@@ -207,6 +220,7 @@ fn an_aged_save_decodes_against_the_in_game_report() {
 /// day-one saves hold his full record (uid 85139014 in both, FM's public
 /// database id for him).
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn an_aged_save_keeps_its_compacted_people() {
     let Some(save) = load_named("Ongoing.fm") else {
         eprintln!("skipped: no Ongoing.fm on this machine");
@@ -245,6 +259,7 @@ fn an_aged_save_keeps_its_compacted_people() {
 /// keeper is the only way to check them. Values from Lucas Chevalier's
 /// in-game report in the same 2035 save.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn a_goalkeepers_report_confirms_the_goalkeeping_set() {
     let Some(save) = load_named("Ongoing.fm") else {
         eprintln!("skipped: no Ongoing.fm on this machine");
@@ -316,6 +331,7 @@ fn a_goalkeepers_report_confirms_the_goalkeeping_set() {
 /// Without it, ages on an aged save compute against the real-world clock and
 /// come out years wrong.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn an_aged_save_reads_its_own_date() {
     let Some(save) = load_named("Ongoing.fm") else {
         eprintln!("skipped: no Ongoing.fm on this machine");
@@ -333,6 +349,7 @@ fn an_aged_save_reads_its_own_date() {
 /// men's Tottenham club record reads flags 0x12, which dropped the club and
 /// left its whole squad showing no club.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn a_262_career_reads_its_date_and_flagged_clubs() {
     let Some(save) = load_named("Paul Dolden - Afan Lido.fm") else {
         eprintln!("skipped: no Afan Lido save on this machine");
@@ -378,6 +395,7 @@ fn a_262_career_reads_its_date_and_flagged_clubs() {
 /// save sit behind a pair that is not `FF FF`; Newport County, Birmingham
 /// City, Blackburn Rovers and Bolton Wanderers are among them.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn a_club_whose_tail_pair_is_not_ffff_keeps_its_squad() {
     let Some(save) = load_named("Heybridge Swifts.fm") else {
         eprintln!("skipped: no Heybridge Swifts.fm on this machine");
@@ -428,6 +446,7 @@ fn a_club_whose_tail_pair_is_not_ffff_keeps_its_squad() {
 /// and Newport County in the English pyramid, Derry City in the Irish one and
 /// Berwick Rangers in the Scottish one.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn a_cross_border_club_resolves_its_squad() {
     let Some(save) = load_named("Day One.fm") else {
         eprintln!("skipped: no Day One.fm on this machine");
@@ -476,6 +495,7 @@ fn a_cross_border_club_resolves_its_squad() {
 /// González Blanco" — and a person referencing one displays it. The pool
 /// also carries the surname-first orderings FM uses for East Asian players.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn common_names_resolve_to_display_names() {
     let Some(save) = load_named("Day One.fm") else {
         eprintln!("skipped: no Day One.fm on this machine");
@@ -508,6 +528,7 @@ fn common_names_resolve_to_display_names() {
 /// default lands byte-exact on Álex Berenguer, and Haaland's contract
 /// carries the row unset.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn release_clauses_read_from_the_money_list() {
     let Some(save) = load_named("Day One.fm") else {
         eprintln!("skipped: no Day One.fm on this machine");
@@ -541,6 +562,7 @@ fn release_clauses_read_from_the_money_list() {
 /// anchors: Saka, Haaland and van Dijk are all in their nations' selections;
 /// Ethan Mbappé — a real player, uncapped — is in none.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn national_squad_lists_mark_their_members() {
     let Some(save) = load_named("Day One.fm") else {
         eprintln!("skipped: no Day One.fm on this machine");
@@ -572,6 +594,7 @@ fn national_squad_lists_mark_their_members() {
 /// with the FSG owners on the board, Hugo Viana at Manchester City with
 /// Sheikh Mansour among his board.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn the_boardroom_binds_its_real_people() {
     let Some(save) = load_named("Day One.fm") else {
         eprintln!("skipped: no Day One.fm on this machine");
@@ -634,6 +657,7 @@ fn the_boardroom_binds_its_real_people() {
 /// Day-one anchor: Jay Spearing, in Liverpool's youth setup in the FM26
 /// database, appears in no first-team list — only a team squad links him.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn team_squads_bind_players_outside_first_team_lists() {
     let Some(save) = load_named("Day One.fm") else {
         eprintln!("skipped: no Day One.fm on this machine");
@@ -685,6 +709,7 @@ fn team_squads_bind_players_outside_first_team_lists() {
 /// elsewhere is what refuses the row, after which Messi's real Inter Miami
 /// row is the only claim left.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn contracts_name_the_employer_and_unmask_represented_squads() {
     let Some(save) = load_named("Day One.fm") else {
         eprintln!("skipped: no Day One.fm on this machine");
@@ -743,6 +768,7 @@ fn contracts_name_the_employer_and_unmask_represented_squads() {
 /// career, so the assertions stay structural: the player reads as *someone*,
 /// with a club and a wage.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn a_b_team_player_carries_his_club_and_wage() {
     let Some(save) = load_named("TJ.fm") else {
         eprintln!("skipped: no TJ.fm on this machine");
@@ -775,6 +801,7 @@ fn a_b_team_player_carries_his_club_and_wage() {
 /// 15 across the board. His decoded block matches that split (16/15/14/18),
 /// and Alisson's is consistent with his page (85/70/70/85 → 17/14/14/17).
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn published_keeper_attributes_split_the_last_four() {
     let save = save_or_skip!();
 
@@ -804,6 +831,7 @@ fn published_keeper_attributes_split_the_last_four() {
 /// label pins it: Adaptability is visible on staff reports, and the
 /// Model Professional / Model Citizen labels constrain Professionalism.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn hidden_personality_matches_the_in_game_labels() {
     let Some(save) = load_named("Ongoing.fm") else {
         eprintln!("skipped: no Ongoing.fm on this machine");
@@ -849,6 +877,7 @@ fn hidden_personality_matches_the_in_game_labels() {
 /// The probe save was made after creating shortlists whose contents are
 /// known exactly — the ground truth that unlocked `scout_man.dat`.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn probe_save_reads_the_in_game_shortlists() {
     let Some(save) = load_named("Probe.fm") else {
         eprintln!("skipped: no Probe.fm on this machine");
@@ -896,6 +925,7 @@ fn probe_save_reads_the_in_game_shortlists() {
 /// an in-memory shortlist edit must survive a full reparse. No file on disk
 /// is touched.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn probe_save_survives_reassembly_and_a_shortlist_edit() {
     let Some(bytes) = ({
         std::env::var_os("HOME").and_then(|home| {
@@ -959,6 +989,7 @@ fn probe_save_survives_reassembly_and_a_shortlist_edit() {
 /// the coverage is the loaded world's managed clubs (1,646 filled slots on
 /// this save), not a handful of big names.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn managers_bind_to_their_clubs() {
     let Some(save) = load_named("Day One.fm") else {
         eprintln!("skipping: no Day One.fm");
@@ -1019,6 +1050,7 @@ fn managers_bind_to_their_clubs() {
 /// the next person's numbers — the mistake that defeated every earlier attempt
 /// (`docs/OPEN_PROBLEMS.md` §3b).
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn staff_sheets_match_the_editor() {
     let Some(save) = load_named("Day One.fm") else {
         eprintln!("skipping: no Day One.fm");
@@ -1139,6 +1171,7 @@ fn staff_sheets_match_the_editor() {
 /// versions — and `game_db.dat` must come from the manifest, because on a
 /// career this long the match-history member is the larger frame.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn an_aged_2600_save_reads_its_date_from_the_database_not_the_wall_clock() {
     let Some(bytes) = read_named("Adam Clouston.fm") else {
         eprintln!("skipped: no Adam Clouston.fm on this machine");
@@ -1173,6 +1206,7 @@ fn an_aged_2600_save_reads_its_date_from_the_database_not_the_wall_clock() {
 /// nation field is the tell — FM's highest identifier is 249, and these read
 /// 1280, 8704, 45209.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn nobody_is_born_outside_a_footballing_lifetime() {
     let Some(save) = load() else {
         eprintln!("skipped: no Career.fm on this machine");
@@ -1208,6 +1242,7 @@ fn nobody_is_born_outside_a_footballing_lifetime() {
 /// (`OPEN_PROBLEMS.md` §3b) read the line after the person's *own* identity
 /// copy, which belongs to the next person over.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn player_reputation_reads_haalands_editor_page() {
     let Some(save) = load_named("Day One.fm") else {
         eprintln!("skipped: no Day One.fm on this machine");
@@ -1238,6 +1273,7 @@ fn player_reputation_reads_haalands_editor_page() {
 /// manager-seat binding — no club id is stored in the member itself. The
 /// Day One career is a Bala Town save.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn the_human_manager_resolves_to_their_club() {
     let Some(save) = load_named("Day One.fm") else {
         eprintln!("skipped: no Day One.fm on this machine");
@@ -1265,6 +1301,7 @@ fn the_human_manager_resolves_to_their_club() {
 /// resolve to a person, and a fresh career must read no tactic at all
 /// rather than a template.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn the_active_tactic_reads_name_shape_and_eleven() {
     let Some(save) = load_named("Port Talbot.fm") else {
         eprintln!("skipped: no Port Talbot.fm on this machine");
@@ -1294,6 +1331,7 @@ fn the_active_tactic_reads_name_shape_and_eleven() {
 /// against fminside), the ordering for the rest — a scale that inverts or
 /// collapses is what a wrong field would show.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn club_reputation_orders_the_ladder() {
     let Some(save) = load_named("Day One.fm") else {
         eprintln!("skipped: no Day One.fm on this machine");
@@ -1332,6 +1370,7 @@ fn club_reputation_orders_the_ladder() {
 /// Gender now reads from the identity-object header's type byte, bit 0x10 —
 /// FM's own record — verified by squad purity on three saves.
 #[test]
+#[ignore = "parses a real save, minutes each — run explicitly with: cargo test -p fm-save --test real_save -- --ignored"]
 fn men_are_not_filed_as_women() {
     let Some(save) = load_named("Day One.fm") else {
         eprintln!("skipped: no Day One.fm on this machine");
